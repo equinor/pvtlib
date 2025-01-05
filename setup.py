@@ -5,7 +5,7 @@ setup(
     version='0.3',
     author='Christian Hågenvik',
     author_email='chaagen2013@gmail.com',
-    description='A library containing various tools in the cathegories of thermodynamics, fluid mechanics, metering etc.
+    description='A library containing various tools in the cathegories of thermodynamics, fluid mechanics, metering etc.',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
     url='https://https://github.com/chagenvik/pvtlib',
