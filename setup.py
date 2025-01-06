@@ -8,7 +8,7 @@ setup(
     description='A library containing various tools in the cathegories of thermodynamics, fluid mechanics, metering etc.',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
-    url='https://https://github.com/chagenvik/pvtlib',
+    url='https://github.com/chagenvik/pvtlib',
     packages=find_packages(),
     install_requires=[
         'numpy',
