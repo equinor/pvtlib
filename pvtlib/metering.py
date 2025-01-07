@@ -24,7 +24,7 @@ def calculate_flow_V_cone(D, beta, dP, rho1, C = None, epsilon = None):
         Under the following conditions, the value of the discharge coefficient, C, for an uncalibrated meter is C=0.82
             - 50 mm ≤ D ≤ 500 mm
             - 0,45 ≤ β ≤ 0,75
-            - 8 × 104 ≤ ReD ≤ 1,2 × 107
+            - 8 × 10^4 ≤ ReD ≤ 1,2 × 10^7
     epsilon : float, optional
         expansibility factor (ε) is a coefficient used to take into account the compressibility of the fluid. 
         If no expansibility is provided, the function will use 1.0. 
@@ -84,7 +84,8 @@ def calculate_flow_V_cone(D, beta, dP, rho1, C = None, epsilon = None):
 
 
 def calculate_expansibility_Stewart_V_cone(beta , P1, dP, k):
-    '''Calculates the expansibility factor for a cone flow meter,
+    '''
+    Calculates the expansibility factor for a cone flow meter
     based on the geometry of the cone meter, measured differential pressures of the orifice,
     and the isentropic exponent of the fluid. 
 
