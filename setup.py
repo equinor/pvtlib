@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='pvtlib',
-    version='0.4',
+    version='0.5',
     author='Christian Hågenvik',
     author_email='chaagen2013@gmail.com',
     description='A library containing various tools in the cathegories of thermodynamics, fluid mechanics, metering etc.',
