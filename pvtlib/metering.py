@@ -4,6 +4,13 @@ from math import sqrt, pi
 def calculate_flow_venturi(D, d, dP, rho1, C=None, epsilon=None):
     '''
     Calculate the flow rate using a Venturi meter.
+    Calculations performed according to ISO 5167-4:2022.
+
+    If dicharge coefficient is not provided, the function uses the value of 0.984 given in ISO 5167-4:2022, 
+    which is valid for an "as cast" convergent section Classical Venturi tube at the following conditions:
+        - 100 mm ≤ D ≤ 800 mm
+        - 0.3 ≤ β ≤ 0.75
+        - 2 × 10^5 ≤ ReD ≤ 2 × 10^6
 
     Parameters
     ----------
