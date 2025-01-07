@@ -261,9 +261,6 @@ def calculate_expansibility_Stewart_V_cone(beta , P1, dP, k):
     based on the geometry of the cone meter, measured differential pressures of the orifice,
     and the isentropic exponent of the fluid. 
 
-    .. math::
-        \epsilon = 1 - (0.649 + 0.696\beta^4) \frac{\Delta P}{\kappa P_1}
-
     Parameters
     ----------
     beta : float
