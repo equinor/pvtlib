@@ -1,5 +1,154 @@
 from math import sqrt, pi
 
+#%% Venturi equations
+def calculate_flow_venturi(D, d, dP, rho1, C=None, epsilon=None):
+    '''
+    Calculate the flow rate using a Venturi meter.
+    Calculations performed according to ISO 5167-4:2022.
+
+    If dicharge coefficient is not provided, the function uses the value of 0.984 given in ISO 5167-4:2022, 
+    which is valid for an "as cast" convergent section Classical Venturi tube at the following conditions:
+        - 100 mm ≤ D ≤ 800 mm
+        - 0.3 ≤ β ≤ 0.75
+        - 2 × 10^5 ≤ ReD ≤ 2 × 10^6
+
+    Parameters
+    ----------
+    D : float
+        Diameter of the pipe (must be greater than zero). [m]
+    d : float
+        Diameter of the throat (must be greater than zero). [m]
+    dP : float
+        Differential pressure (must be greater than zero). [mbar]
+    rho1 : float
+        Density of the fluid (must be greater than zero). [kg/m3]
+    C : float, optional
+        Discharge coefficient (default is 0.984). [-]
+    epsilon : float, optional
+        Expansion factor (default is None). [-]
+
+    Returns
+    -------
+    results : dict
+        Dictionary containing all results from calculations.
+
+    Raises
+    ------
+    Exception
+        If any of the input parameters are invalid (negative or zero where not allowed).
+    '''
+    
+    # Dictionary containing all results from calculations
+    results = {}
+    
+    if D <= 0.0:
+        raise Exception('ERROR: Negative diameter input. Diameter (D) must be a float greater than zero')
+    
+    if rho1 <= 0.0:
+        raise Exception('ERROR: Negative density input. Density (rho1) must be a float greater than zero')
+    
+    if dP < 0.0:
+        raise Exception('ERROR: Negative dP input. dP must be a float greater than zero')
+    
+    if C is None:
+        C_used = 0.984
+    else:
+        C_used = C
+
+    if epsilon is None:
+        epsilon_used = 1.0
+    else:
+        epsilon_used = epsilon
+    
+    # Calculate diameter ratio (beta) of the Venturi meter
+    beta = calculate_beta_venturi(D, d)
+    
+    # Convert differential pressure to Pascal
+    dP_Pa = dP * 100 # 100 Pa/mbar
+
+    # Calculate mass flowrate in kg/h
+    results['MassFlow'] = (C_used/sqrt(1 - (beta**4)))*epsilon_used*(pi/4)*((d)**2)*sqrt(2*dP_Pa*rho1)*3600 # kg/h
+
+    # Calculate volume flowrate in m3/h
+    results['VolFlow'] = results['MassFlow']/rho1 # m3/h
+
+    # Calculate velocity in m/s
+    r = d/2
+    results['Velocity'] = results['VolFlow']/((pi*(r**2))*3600) # m/s
+
+    # Return epsilon used and discharge coefficient used
+    results['C'] = C_used
+    results['epsilon'] = epsilon_used
+
+    return results
+
+
+def calculate_expansibility_venturi(P1, dP, beta, kappa):
+    '''
+    Calculate the expansibility factor for a Venturi meter.
+
+    Parameters
+    ----------
+    P1 : float
+        Upstream pressure. [bara]
+    dP : float
+        Differential pressure. [mbar]
+    beta : float
+        Diameter ratio (d/D). [-]
+    kappa : float
+        Isentropic exponent. [-]
+
+    Returns
+    -------
+    epsilon : float
+        Expansibility factor. [-]
+    '''
+
+    # Calculate pressure ratio
+    P2 = P1 - (dP/1000) # Convert dP from mbar to bar
+    tau = P2/P1
+
+    # Calculate expansibility factor
+    epsilon = sqrt((kappa*tau**(2/kappa)/(kappa-1))*((1-beta**4)/(1-beta**4*tau**(2/kappa)))*(((1-tau**((kappa-1)/kappa))/(1-tau))))
+
+    return epsilon
+
+
+def calculate_beta_venturi(D, d):
+    '''
+    Calculate the diameter ratio (beta) for a Venturi meter.
+    
+    From ISO 5167-1:2022
+    In ISO 5167-4, where the primary device has a cylindrical section upstream, having the same
+    diameter as that of the pipe, the diameter ratio is the ratio of the throat diameter to the diameter of this cylindrical
+    section at the plane of the upstream pressure tappings.
+
+    Calculate the beta ratio for a Venturi meter.
+    Parameters
+    ----------
+    D : float
+        The diameter of the pipe at the upstream tapping(s). Must be greater than zero.
+    d : float
+        The diameter of the throat.
+    Returns
+    -------
+    beta : float
+        The beta ratio (d/D).
+    Raises
+    ------
+    Exception
+        If the diameter of the pipe (D) is less than or equal to zero.
+    '''
+    
+    if D<=0.0:
+        raise Exception('ERROR: Negative diameter input. Diameter (D) must be a float greater than zero')
+
+    beta = d/D
+    
+    return beta
+
+
+
 #%% V-cone equations
 def calculate_flow_V_cone(D, beta, dP, rho1, C = None, epsilon = None):
     '''

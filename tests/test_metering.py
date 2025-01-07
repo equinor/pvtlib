@@ -1,4 +1,5 @@
 from pvtlib import metering, utilities
+import os
 
 #%% Test V-cone calculations
 def test_V_cone_calculation_1():
@@ -136,4 +137,137 @@ def test_calculate_expansibility_Stewart_V_cone():
     assert round(epsilon,4)==0.9847, 'Expansibility calculation failed'
     
     assert round(beta,4)==0.6014, 'Beta calculation failed'
+
+
+#%% Test venturi calculations
+def test_calculate_flow_venturi():
+    '''
+    Validate Venturi calculation against known values.
+    '''
+
+    # Cases generated based on the python fluids package (fluids==1.1.0)
+    cases = {
+        'case1': {
+            'D': 0.13178, 
+            'd': 0.06664, 
+            'dP': 200, 
+            'rho': 39.6, 
+            'C': 0.984, 
+            'epsilon': 0.997456, 
+            'expected_massflow': 16044.073835047437, 
+            'expected_volflow': 405.1533796729151
+        },
+        'case2': {
+            'D': 0.13178, 
+            'd': 0.06664, 
+            'dP': 800, 
+            'rho': 39.6, 
+            'C': 0.984, 
+            'epsilon': 0.997456, 
+            'expected_massflow': 32088.147670094873, 
+            'expected_volflow': 810.3067593458302
+        },
+        'case3': {
+            'D': 0.2, 
+            'd': 0.15, 
+            'dP': 800, 
+            'rho': 39.6, 
+            'C': 0.984, 
+            'epsilon': 0.997456, 
+            'expected_massflow': 190095.69790414887, 
+            'expected_volflow': 4800.396411720931
+        },
+        'case4': {
+            'D': 0.2, 
+            'd': 0.15, 
+            'dP': 800, 
+            'rho': 20.0, 
+            'C': 0.984, 
+            'epsilon': 0.997456, 
+            'expected_massflow': 135095.12989761416, 
+            'expected_volflow': 6754.756494880708
+        },
+        'case5': {
+            'D': 0.2, 
+            'd': 0.15, 
+            'dP': 800, 
+            'rho': 39.6, 
+            'C': 0.984, 
+            'epsilon': 0.9, 
+            'expected_massflow': 171522.48130617687, 
+            'expected_volflow': 4331.375790560021
+        }
+    }
+
+    criteria = 0.0001 # [%] Allowable deviation
     
+    for case, case_dict in cases.items():
+        res = metering.calculate_flow_venturi(
+            D=case_dict['D'],
+            d=case_dict['d'],
+            dP=case_dict['dP'],
+            rho1=case_dict['rho'],
+            C=case_dict['C'],
+            epsilon=case_dict['epsilon']
+        )
+        
+        # Calculate relative deviation [%] in mass flow from reference
+        reldev = abs(utilities.calculate_relative_deviation(res['MassFlow'], case_dict['expected_massflow']))
+        
+        assert reldev < criteria, f'Mass flow from venturi calculation failed for {case}'
+
+        # Calculate relative deviation [%] in volume flow from reference
+        reldev = abs(utilities.calculate_relative_deviation(res['VolFlow'], case_dict['expected_volflow']))
+        
+        assert reldev < criteria, f'Volume flow from venturi calculation failed for {case}'
+
+
+def test_calculate_beta_venturi():
+    assert metering.calculate_beta_venturi(D=0.1, d=0.05)==0.5, 'Beta calculation failed'
+    assert metering.calculate_beta_venturi(D=0.2, d=0.05)==0.25, 'Beta calculation failed'
+
+
+def test_calculate_expansibility_ventiruri():
+    '''
+    Validate calculate_expansibility_venturi function against known values from ISO 5176-4:2022, table A.1
+    '''
+
+    cases = {
+        'case1': {
+            'P1': 50,
+            'dP': 12500,
+            'kappa': 1.2,
+            'beta': 0.75,
+            'expected': 0.7690
+        },
+        'case2': {
+            'P1': 50,
+            'dP': 3000,
+            'kappa': 1.4,
+            'beta': 0.75,
+            'expected': 0.9489
+        },
+        'case3': {
+            'P1': 100,
+            'dP': 2000,
+            'kappa': 1.66,
+            'beta': 0.3,
+            'expected': 0.9908
+        },
+        'case4': {
+            'P1': 100,
+            'dP': 25000,
+            'kappa': 1.4,
+            'beta': 0.5623,
+            'expected': 0.8402
+        },
+    }
+
+    for case, case_dict in cases.items():
+        epsilon = metering.calculate_expansibility_venturi(
+            P1=case_dict['P1'],
+            dP=case_dict['dP'],
+            beta=case_dict['beta'],
+            kappa=case_dict['kappa']
+        )
+        assert round(epsilon,4)==case_dict['expected'], f'Expansibility calculation failed for {case}'
