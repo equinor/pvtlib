@@ -22,6 +22,7 @@ SOFTWARE.
 """
 
 from math import sqrt, pi
+import numpy as np
 
 #%% Venturi equations
 def calculate_flow_venturi(D, d, dP, rho1, C=None, epsilon=None):
@@ -130,6 +131,10 @@ def calculate_expansibility_venturi(P1, dP, beta, kappa):
     # Calculate pressure ratio
     P2 = P1 - (dP/1000) # Convert dP from mbar to bar
     tau = P2/P1
+
+    # Isentropic exponent cannot be equal to 1, as it would result in division by zero. Return NaN in this case.
+    if kappa==1:
+        return np.nan
 
     # Calculate expansibility factor
     epsilon = sqrt((kappa*tau**(2/kappa)/(kappa-1))*((1-beta**4)/(1-beta**4*tau**(2/kappa)))*(((1-tau**((kappa-1)/kappa))/(1-tau))))
@@ -320,6 +325,9 @@ def calculate_beta_V_cone(D, dc):
 
     '''
     
+    if D<=0.0:
+        raise Exception('ERROR: Negative diameter input. Diameter (D) must be a float greater than zero')
+
     beta = sqrt(1-((dc**2)/(D**2)))
     
     return beta
