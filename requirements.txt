@@ -15,7 +15,7 @@ maturin==1.8.1
 mdurl==0.1.2
 more-itertools==10.5.0
 nh3==0.2.20
-numpy==2.2.1
+numpy==2.0.2
 packaging==24.2
 pandas==2.2.3
 pkginfo==1.12.0
