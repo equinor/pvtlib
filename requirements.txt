@@ -20,7 +20,6 @@ packaging==24.2
 pandas==2.2.3
 pkginfo==1.12.0
 pluggy==1.5.0
-pvtlib @ file:///C:/Appl/GitHub/pvtlib/dist/pvtlib-0.4-py3-none-any.whl#sha256=b9b9096a820d926ceeaafc915cc6f947d340f211c195e893cc759aafedc5841f
 Pygments==2.18.0
 pytest==8.3.4
 python-dateutil==2.9.0.post0
