@@ -25,10 +25,12 @@ from tests.test_metering import *
 
 if __name__ == '__main__':
     test_calculate_flow_venturi()
+    test_calculate_beta_DP_meter()
     test_calculate_expansibility_ventiruri()
     test_calculate_beta_V_cone()
     test_calculate_expansibility_Stewart_V_cone()
     test_V_cone_calculation_1()
     test_V_cone_calculation_2()
     test_calculate_expansibility_orifice()
+    test_calculate_C_orifice_ReaderHarrisGallagher()
     print('All tests passed')

@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from math import sqrt, pi
+from math import sqrt, pi, e
 import numpy as np
 
 
@@ -137,7 +137,7 @@ def calculate_flow_venturi(D, d, dP, rho1, C=None, epsilon=None, check_input=Fal
         epsilon_used = epsilon
     
     # Calculate diameter ratio (beta) of the Venturi meter
-    beta = calculate_beta_venturi(D, d)
+    beta = calculate_beta_DP_meter(D, d)
     
     # Convert differential pressure to Pascal
     dP_Pa = dP * 100 # 100 Pa/mbar
@@ -194,16 +194,10 @@ def calculate_expansibility_venturi(P1, dP, beta, kappa):
     return epsilon
 
 
-def calculate_beta_venturi(D, d):
+def calculate_beta_DP_meter(D, d):
     '''
-    Calculate the diameter ratio (beta) for a Venturi meter.
-    
-    From ISO 5167-1:2022
-    In ISO 5167-4, where the primary device has a cylindrical section upstream, having the same
-    diameter as that of the pipe, the diameter ratio is the ratio of the throat diameter to the diameter of this cylindrical
-    section at the plane of the upstream pressure tappings.
+    Calculate the diameter ratio (beta) for a traditional DP based meter, such as venturi and orifice plates.
 
-    Calculate the beta ratio for a Venturi meter.
     Parameters
     ----------
     D : float
@@ -218,7 +212,17 @@ def calculate_beta_venturi(D, d):
     ------
     Exception
         If the diameter of the pipe (D) is less than or equal to zero.
-    '''
+    
+    Notes
+    -----
+    From ISO 5167-1:2022:
+    In ISO 5167-2 and ISO 5167-3 the diameter ratio is the ratio of the diameter of the throat of the
+    primary device to the internal diameter of the measuring pipe upstream of the primary device.
+    In ISO 5167-4, where the primary device has a cylindrical section upstream, having the same
+    diameter as that of the pipe, the diameter ratio is the ratio of the throat diameter to the diameter of this cylindrical
+    section at the plane of the upstream pressure tappings.
+
+    This function cannot be used for cone meters, as the diameter ratio is defined differently (see calculate_beta_V_cone).    '''
     
     if D<=0.0:
         raise Exception('ERROR: Negative diameter input. Diameter (D) must be a float greater than zero')
@@ -502,4 +506,85 @@ if __name__ == '__main__':
         k=k
         )
     print(f'Expansibility factor from fluids: {e_fluids}')
+
+
+def calculate_C_orifice_ReaderHarrisGallagher(D, beta, Re, tapping='corner', check_input=False):
+
+    if check_input:
+        if Re <= 0.0:
+            raise Exception('ERROR: Negative Reynolds number input. Reynolds number (Re) must be a float greater than zero')
+        if type(tapping) != str:
+            raise Exception('ERROR: Invalid tapping input. Tapping (tapping) must be a string')
+    else:
+        if Re==0:
+            return np.nan
+        if type(tapping) != str:
+            return np.nan
+    
+    # Convert diameter to mm, as required by the Reader-Harris-Gallagher equation
+    D_mm=D*1000
+
+    if tapping.lower() == 'corner':
+        L1 = 0.0
+        L2 = 0.0
+    elif tapping.lower() in ['D','D/2']:
+        L1 = 1.0
+        L2 = 0.47
+    elif tapping.lower() == 'flange':
+        L1 = 25.4/D_mm
+        L2 = 25.4/D_mm
+    else:
+        if check_input:
+            raise Exception('ERROR: Invalid tapping input. Tapping (tapping) must be either "corner", "D", "D/2" or "flange"')
+        else:
+            return np.nan
+    
+    M2 = 2*L2/(1-beta)
+
+    A = (19000*beta/Re)**0.8
+
+    # From ISO 5167-1:2022: Where D < 71,12 mm (2,8 in), 
+    # the following term shall be added to Formula (4), with diameter D expressed in millimetres:
+    if D_mm < 71.12:
+        additional_term = 0.011*(0.75-beta)*(2.8-(D_mm/25.4))
+    else:
+        additional_term = 0.0
+
+    C = (0.596 + 0.0261*(beta**2) + (0.000521 * (((1e6*beta)/Re)**0.7)) + ((0.0188 + (0.0063*A))*(beta**3.5)*((1e6/Re)**0.3))
+         + (0.043 + (0.080*(e**(-10*L1)))-(0.123*(e**(-7*L1)))) * (1-0.11*A)*((beta**4)/(1-(beta**4)))
+         - (0.031*(M2-(0.8*(M2**1.1))))*(beta**1.3) + additional_term
+        )
+
+    return C
+
+
+if __name__ == '__main__':
+    D = 0.1
+    beta = 0.5
+    Re = 1e6
+    tapping = 'corner'
+
+    indata= {
+        'D': 0.07391,
+        'beta': 0.300365309159789,
+        'Re': 111742.0,
+        'tapping': 'flange',
+        'Do': 0.0222,
+        'rho': 1.165,
+        'mu': 1.85e-05,
+        'm': 0.12,
+        'taps': 'flange'
+        }
+    
+    # isotest = {'D': 0.05, 'beta': 0.3, 'Re': 100000, 'tapping': 'flange', 'result': 0.603}
+
+    # C_pvtlib = calculate_C_orifice_ReaderHarrisGallagher(D=isotest['D'], beta=isotest['beta'], Re=isotest['Re'], tapping=isotest['tapping'])
+    # print(f'''C from pvtlib: {C_pvtlib}''')
+    # print(f'''C from isotest: {isotest['result']}''')
+
+    C_pvtlib = calculate_C_orifice_ReaderHarrisGallagher(D=indata['D'], beta=indata['beta'], Re=indata['Re'], tapping=indata['tapping'])
+    print(f'C from pvtlib: {C_pvtlib}')
+
+    C_fluids = fluids.flow_meter.C_Reader_Harris_Gallagher(D=indata['D'], Do=indata['Do'], rho=indata['rho'], mu=indata['mu'], m=indata['m'], taps=indata['taps'])
+    print(f'C from fluids: {C_fluids}')
 
