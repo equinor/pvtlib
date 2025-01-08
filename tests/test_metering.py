@@ -297,6 +297,9 @@ def test_calculate_expansibility_ventiruri():
 
 #%% Test orifice calculations
 def test_calculate_expansibility_orifice():
+    '''
+    Validate calculate_expansibility_orifice function against known values from ISO 5176-2:2022, table A.12
+    '''
     cases = {
         'case1': {
             'P1': 50,
