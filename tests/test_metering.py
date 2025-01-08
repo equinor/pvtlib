@@ -294,3 +294,45 @@ def test_calculate_expansibility_ventiruri():
             kappa=case_dict['kappa']
         )
         assert round(epsilon,4)==case_dict['expected'], f'Expansibility calculation failed for {case}'
+
+#%% Test orifice calculations
+def test_calculate_expansibility_orifice():
+    cases = {
+        'case1': {
+            'P1': 50,
+            'dP': 12500,
+            'beta': 0.1,
+            'kappa': 1.2,
+            'expected': 0.9252
+        },
+        'case2': {
+            'P1': 50,
+            'dP': 12500,
+            'beta': 0.75,
+            'kappa': 1.2,
+            'expected': 0.8881
+        },
+        'case3': {
+            'P1': 50,
+            'dP': 1000,
+            'beta': 0.1,
+            'kappa': 1.2,
+            'expected': 0.9941
+        },
+        'case4': {
+            'P1': 50,
+            'dP': 1000,
+            'beta': 0.75,
+            'kappa': 1.2,
+            'expected': 0.9912
+        }
+    }
+
+    for case, case_dict in cases.items():
+        epsilon = metering.calculate_expansibility_orifice(
+            P1=case_dict['P1'],
+            dP=case_dict['dP'],
+            beta=case_dict['beta'],
+            kappa=case_dict['kappa']
+        )
+        assert round(epsilon, 4) == case_dict['expected'], f'Expansibility calculation failed for {case}'

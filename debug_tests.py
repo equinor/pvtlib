@@ -30,4 +30,5 @@ if __name__ == '__main__':
     test_calculate_expansibility_Stewart_V_cone()
     test_V_cone_calculation_1()
     test_V_cone_calculation_2()
+    test_calculate_expansibility_orifice()
     print('All tests passed')
