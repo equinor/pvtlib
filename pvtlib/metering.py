@@ -21,11 +21,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from math import sqrt, pi, e
 import numpy as np
+from math import sqrt, pi, e
 
+from fluid_mechanics import reynolds_number
 
-def _calculate_massflow_DP_meter(beta, dP, rho1, C, epsilon):
+def _calculate_flow_DP_meter(C, beta, epsilon, d, dP, rho1):
     """
     Calculate the mass flow rate through a differential pressure (DP) meter.
     This formula is given as "Formula (1)" in ISO 5167 part 2 and 4 (2022 edition),
@@ -33,32 +34,42 @@ def _calculate_massflow_DP_meter(beta, dP, rho1, C, epsilon):
 
     Parameters
     ----------
-    beta : float
-        Diameter ratio of the orifice (d/D).
-    dP : float
-        Differential pressure across the meter in mbar.
-    rho1 : float
-        Density of the fluid upstream of the meter in kg/m^3.
     C : float
         Discharge coefficient of the meter.
+    beta : float
+        Diameter ratio
     epsilon : float
-        Expansion factor of the fluid.
-    
+        Expansion factor.
+    d : float
+        Diameter of the throat [m].
+    dP : float
+        Differential pressure across the meter [mbar].
+    rho1 : float
+        Density of the fluid [kg/m3].
     Returns
     -------
-    float
-        Mass flow rate in kg/h.
-    
-    Notes
-    -----
-    The differential pressure (dP) is converted from mbar to Pa within the function.
+    results : dict
+        Dictionary containing the following keys:
+        - 'MassFlow': Mass flow rate [kg/h].
+        - 'VolFlow': Volume flow rate [m3/h].
+        - 'Velocity': Flow velocity [m/s].
     """
     
+    results = {}
+
     dP_Pa = dP * 100  # Convert mbar to Pa
 
-    massflow = (C/sqrt(1 - (beta**4)))*epsilon*(pi/4)*((d)**2)*sqrt(2*dP_Pa*rho1)*3600 # kg/h
+    # Calculate mass flowrate in kg/h
+    results['MassFlow'] = (C/sqrt(1 - (beta**4)))*epsilon*(pi/4)*((d)**2)*sqrt(2*dP_Pa*rho1)*3600 # kg/h
 
-    return massflow
+    # Calculate volume flowrate in m3/h
+    results['VolFlow'] = results['MassFlow']/rho1 # m3/h
+
+    # Calculate velocity in m/s
+    r = d/2
+    results['Velocity'] = results['VolFlow']/((pi*(r**2))*3600) # m/s
+
+    return results
 
 
 #%% Venturi equations
@@ -138,19 +149,16 @@ def calculate_flow_venturi(D, d, dP, rho1, C=None, epsilon=None, check_input=Fal
     
     # Calculate diameter ratio (beta) of the Venturi meter
     beta = calculate_beta_DP_meter(D, d)
-    
-    # Convert differential pressure to Pascal
-    dP_Pa = dP * 100 # 100 Pa/mbar
 
-    # Calculate mass flowrate in kg/h
-    results['MassFlow'] = (C_used/sqrt(1 - (beta**4)))*epsilon_used*(pi/4)*((d)**2)*sqrt(2*dP_Pa*rho1)*3600 # kg/h
-
-    # Calculate volume flowrate in m3/h
-    results['VolFlow'] = results['MassFlow']/rho1 # m3/h
-
-    # Calculate velocity in m/s
-    r = d/2
-    results['Velocity'] = results['VolFlow']/((pi*(r**2))*3600) # m/s
+    # Calculate flowrates
+    results = _calculate_flow_DP_meter(
+        C=C_used,
+        beta=beta,
+        epsilon=epsilon_used,
+        d=d,
+        dP=dP,
+        rho1=rho1
+        )
 
     # Return epsilon used and discharge coefficient used
     results['C'] = C_used
@@ -416,7 +424,7 @@ def calculate_beta_V_cone(D, dc):
 
 
 #%% Orifice equations
-def calculate_flow_orifice(D, d, dP, rho1, C=None, epsilon=None, check_input=False):
+def calculate_flow_orifice(D, d, dP, rho1, mu=None, C=None, epsilon=None, check_input=False):
 
     restults = {
         'MassFlow': np.nan,
@@ -433,6 +441,8 @@ def calculate_flow_orifice(D, d, dP, rho1, C=None, epsilon=None, check_input=Fal
             raise Exception('ERROR: Negative density input. Density (rho1) must be a float greater than zero')
         if dP < 0.0:
             raise Exception('ERROR: Negative differential pressure input. Differential pressure (dP) must be a float greater than zero')
+        if (mu is None) and (C is None):
+            raise Exception('ERROR: Either dynamic viscosity (mu) or discharge coefficient (C) must be provided. If C is not given, it is calculated, which requires viscosity as an input.')
     else:
         if D <= 0.0:
             return results
@@ -440,12 +450,84 @@ def calculate_flow_orifice(D, d, dP, rho1, C=None, epsilon=None, check_input=Fal
             return results
         if dP < 0.0:
             return results
-        
-    
+        if (mu is None) and (C is None):
+            return results
+
+    # If expansibility (epsilon) is not provided, the function will use 1.0, which is valid for incompressible fluids.
+    if epsilon is None:
+        epsilon_used = 1.0
+
     if not C is None:
         C_used = C
+    else:
+        C_used = 0.6 # initial guess for iterative calculation
 
-    return
+    # Calculate beta
+    beta = calculate_beta_DP_meter(D, d)
+
+    # Perform initial calculation of flowrates
+    res1 = _calculate_flow_DP_meter(
+        C=C_used, 
+        beta=beta, 
+        epsilon=epsilon_used,
+        d=d,
+        dP=dP,
+        rho1=rho1
+        )
+
+    # Calculate Reynolds number
+    Re = reynolds_number(rho=rho1, v=res1['Velocity'], D=D, mu=mu)
+
+    # Calculate discharge coefficient using Reader-Harris/Gallagher equation
+    C_used = calculate_C_orifice_ReaderHarrisGallagher(D=D, Do=d, Re=Re, tapping='corner', check_input=False)
+
+    # Perform calculation of flowrates with updated discharge coefficient
+    res1 = _calculate_flow_DP_meter(
+        C=C_used, 
+        beta=beta, 
+        epsilon=epsilon_used,
+        d=d,
+        dP=dP,
+        rho1=rho1
+        )
+
+    return res1
+
+if __name__ == '__main__':
+    # import fluids
+
+    P1 = 50.0
+    dP = 300.0
+    beta = 0.5
+    k = 1.4
+    D=1.0
+    mu=0.0011
+
+    res = calculate_flow_orifice(
+        D=D, 
+        d=beta*D, 
+        dP=dP, 
+        rho1=1.0,
+        mu=mu, 
+        C=None, 
+        epsilon=None, 
+        check_input=False
+        )
+
+    print(res)
+
+    # e_pvtlib = calculate_expansibility_orifice(P1=P1, dP=dP, beta=beta, kappa=k)
+    # print(f'Expansibility factor from pvtlib: {e_pvtlib}')
+
+    # e_fluids = fluids.flow_meter.orifice_expansibility(
+    #     D=D, 
+    #     Do=beta*D, 
+    #     P1=P1*1e5, 
+    #     P2=(P1-dP/1000)*1e5, 
+    #     k=k
+    #     )
+    # print(f'Expansibility factor from fluids: {e_fluids}')
+
 
 
 def calculate_expansibility_orifice(P1, dP, beta, kappa):
@@ -485,27 +567,6 @@ def calculate_expansibility_orifice(P1, dP, beta, kappa):
     epsilon = 1-(0.351+0.256*(beta**4)+0.93*(beta**8))*(1-(tau**(1/kappa)))
 
     return epsilon
-
-if __name__ == '__main__':
-    import fluids
-
-    P1 = 50.0
-    dP = 300.0
-    beta = 0.5
-    k = 1.4
-    D=1.0
-
-    e_pvtlib = calculate_expansibility_orifice(P1=P1, dP=dP, beta=beta, kappa=k)
-    print(f'Expansibility factor from pvtlib: {e_pvtlib}')
-
-    e_fluids = fluids.flow_meter.orifice_expansibility(
-        D=D, 
-        Do=beta*D, 
-        P1=P1*1e5, 
-        P2=(P1-dP/1000)*1e5, 
-        k=k
-        )
-    print(f'Expansibility factor from fluids: {e_fluids}')
 
 
 def calculate_C_orifice_ReaderHarrisGallagher(D, beta, Re, tapping='corner', check_input=False):
@@ -585,3 +646,5 @@ def calculate_C_orifice_ReaderHarrisGallagher(D, beta, Re, tapping='corner', che
         - 0.031*(M2-0.8*M2**1.1)*beta**1.3 + additional_term
 
     return C
+
+
