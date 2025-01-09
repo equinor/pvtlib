@@ -509,6 +509,36 @@ if __name__ == '__main__':
 
 
 def calculate_C_orifice_ReaderHarrisGallagher(D, beta, Re, tapping='corner', check_input=False):
+    """
+    Calculate the discharge coefficient (C) for an orifice plate using the Reader-Harris/Gallagher equation.
+    Perform calculations according to ISO 5167-2:2022.
+    
+    Parameters
+    ----------
+    D : float
+        Pipe diameter in meters.
+    beta : float
+        Diameter ratio (orifice diameter / pipe diameter).
+    Re : float
+        Reynolds number.
+    tapping : str, optional
+        Type of pressure tapping. Options are 'corner', 'D', 'D/2', or 'flange'. Default is 'corner'.
+    check_input : bool, optional
+        If True, input values are checked for validity. Default is False.
+    Returns
+    -------
+    float
+        Discharge coefficient (C). Returns NaN if inputs are invalid and `check_input` is False.
+    Raises
+    ------
+    Exception
+        If `check_input` is True and any of the inputs are invalid.
+    Notes
+    -----
+    The function converts the pipe diameter to millimeters as required by the Reader-Harris/Gallagher equation.
+    The equation includes an additional term for pipe diameters less than 71.12 mm as specified by ISO 5167-1:2022.
+    """
+
 
     if check_input:
         if Re <= 0.0:
