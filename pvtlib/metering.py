@@ -550,9 +550,8 @@ def calculate_C_orifice_ReaderHarrisGallagher(D, beta, Re, tapping='corner', che
     else:
         additional_term = 0.0
 
-    C = (0.5961 + 0.0261*(beta**2) - (0.216*(beta**8)) + (0.000521 * (((1e6*beta)/Re)**0.7)) + ((0.0188 + (0.0063*A))*(beta**3.5)*((1e6/Re)**0.3))
-         + (0.043 + (0.080*(e**(-10*L1)))-(0.123*(e**(-7*L1)))) * (1-0.11*A)*((beta**4)/(1-(beta**4)))
-         - (0.031*(M2-(0.8*(M2**1.1))))*(beta**1.3) + additional_term
-        )
+    C = 0.5961 + 0.0261*beta**2 - 0.216*beta**8 + 0.000521 * (1e6*beta/Re)**0.7 + (0.0188 + 0.0063*A)*beta**3.5*(1e6/Re)**0.3 \
+        + (0.043 + 0.080*e**(-10*L1) - 0.123*e**(-7*L1)) * (1-0.11*A)*(beta**4/(1-beta**4)) \
+        - 0.031*(M2-0.8*M2**1.1)*beta**1.3 + additional_term
 
     return C
