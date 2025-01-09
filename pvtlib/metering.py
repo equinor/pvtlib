@@ -550,40 +550,9 @@ def calculate_C_orifice_ReaderHarrisGallagher(D, beta, Re, tapping='corner', che
     else:
         additional_term = 0.0
 
-    C = (0.596 + 0.0261*(beta**2) + (0.000521 * (((1e6*beta)/Re)**0.7)) + ((0.0188 + (0.0063*A))*(beta**3.5)*((1e6/Re)**0.3))
+    C = (0.5961 + 0.0261*(beta**2) - (0.216*(beta**8)) + (0.000521 * (((1e6*beta)/Re)**0.7)) + ((0.0188 + (0.0063*A))*(beta**3.5)*((1e6/Re)**0.3))
          + (0.043 + (0.080*(e**(-10*L1)))-(0.123*(e**(-7*L1)))) * (1-0.11*A)*((beta**4)/(1-(beta**4)))
          - (0.031*(M2-(0.8*(M2**1.1))))*(beta**1.3) + additional_term
         )
 
     return C
-
-
-if __name__ == '__main__':
-    D = 0.1
-    beta = 0.5
-    Re = 1e6
-    tapping = 'corner'
-
-    indata= {
-        'D': 0.07391,
-        'beta': 0.300365309159789,
-        'Re': 111742.0,
-        'tapping': 'flange',
-        'Do': 0.0222,
-        'rho': 1.165,
-        'mu': 1.85e-05,
-        'm': 0.12,
-        'taps': 'flange'
-        }
-    
-    # isotest = {'D': 0.05, 'beta': 0.3, 'Re': 100000, 'tapping': 'flange', 'result': 0.603}
-
-    # C_pvtlib = calculate_C_orifice_ReaderHarrisGallagher(D=isotest['D'], beta=isotest['beta'], Re=isotest['Re'], tapping=isotest['tapping'])
-    # print(f'''C from pvtlib: {C_pvtlib}''')
-    # print(f'''C from isotest: {isotest['result']}''')
-
-    C_pvtlib = calculate_C_orifice_ReaderHarrisGallagher(D=indata['D'], beta=indata['beta'], Re=indata['Re'], tapping=indata['tapping'])
-    print(f'C from pvtlib: {C_pvtlib}')
-
-    C_fluids = fluids.flow_meter.C_Reader_Harris_Gallagher(D=indata['D'], Do=indata['Do'], rho=indata['rho'], mu=indata['mu'], m=indata['m'], taps=indata['taps'])
-    print(f'C from fluids: {C_fluids}')

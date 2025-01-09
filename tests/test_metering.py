@@ -354,11 +354,11 @@ def test_calculate_C_orifice_ReaderHarrisGallagher():
         'case6': {'D': 0.072, 'beta': 0.1, 'Re': 100000000, 'tapping': 'D', 'expected': 0.5961},
         'case7': {'D': 0.072, 'beta': 0.5, 'Re': 5000, 'tapping': 'D', 'expected': 0.6264},
         'case8': {'D': 0.072, 'beta': 0.5, 'Re': 100000000, 'tapping': 'D', 'expected': 0.6016},
-        'case9': {'D': 0.05, 'beta': 0.25, 'Re': 5000, 'tapping': 'flange', 'expected': 0.6012},
+        'case9': {'D': 0.05, 'beta': 0.25, 'Re': 5000, 'tapping': 'flange', 'expected': 0.6102},
         'case10': {'D': 0.05, 'beta': 0.25, 'Re': 100000000, 'tapping': 'flange', 'expected': 0.6013},
         'case11': {'D': 0.05, 'beta': 0.75, 'Re': 5000, 'tapping': 'flange', 'expected': 0.6732},
         'case12': {'D': 0.05, 'beta': 0.75, 'Re': 100000000, 'tapping': 'flange', 'expected': 0.6025},
-        'case13': {'D': 0.075, 'beta': 0.17, 'Re': 10000, 'tapping': 'flange', 'expected': 0.6027},
+        'case13': {'D': 0.075, 'beta': 0.17, 'Re': 10000, 'tapping': 'flange', 'expected': 0.6003},
         'case14': {'D': 0.075, 'beta': 0.17, 'Re': 100000000, 'tapping': 'flange', 'expected': 0.5964},
         'case15': {'D': 0.075, 'beta': 0.75, 'Re': 10000, 'tapping': 'flange', 'expected': 0.6462},
         'case16': {'D': 0.075, 'beta': 0.75, 'Re': 100000000, 'tapping': 'flange', 'expected': 0.6000},
@@ -380,18 +380,8 @@ def test_calculate_C_orifice_ReaderHarrisGallagher():
             tapping=case_dict['tapping']
         )
         
-        criteria = 1.0 # [%] Allowable deviation
+        assert round(C,4)==case_dict['expected'], f'C calculation failed for {case}'
 
-        # Calculate relative deviation [%] in C from reference
-        reldev = abs(utilities.calculate_relative_deviation(C, case_dict['expected']))
-        print(reldev)
-
-        import numpy as np
-        if reldev > criteria or np.isnan(reldev):
-            pass
-            # print(f'C calculation failed for {case}')
-
-        #assert reldev < criteria, f'C calculation failed for {case}'
 
 
 
