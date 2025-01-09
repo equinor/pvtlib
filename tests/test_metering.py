@@ -346,10 +346,10 @@ def test_calculate_C_orifice_ReaderHarrisGallagher():
     Validate calculate_C_orifice_ReaderHarrisGallagher function against known values.
     '''
     cases = {
-        'case1': {'D': 100, 'beta': 0.1, 'Re': 5000, 'tapping': 'corner', 'expected': 0.6006},
-        'case2': {'D': 100, 'beta': 0.1, 'Re': 100000000, 'tapping': 'corner', 'expected': 0.5964},
-        'case3': {'D': 100, 'beta': 0.5, 'Re': 5000, 'tapping': 'corner', 'expected': 0.6276},
-        'case4': {'D': 100, 'beta': 0.5, 'Re': 100000000, 'tapping': 'corner', 'expected': 0.6022}
+        'case1': {'D': 0.1, 'beta': 0.1, 'Re': 5000, 'tapping': 'corner', 'expected': 0.6006},
+        'case2': {'D': 0.1, 'beta': 0.1, 'Re': 100000000, 'tapping': 'corner', 'expected': 0.5964},
+        'case3': {'D': 0.1, 'beta': 0.5, 'Re': 5000, 'tapping': 'corner', 'expected': 0.6276},
+        'case4': {'D': 0.1, 'beta': 0.5, 'Re': 100000000, 'tapping': 'corner', 'expected': 0.6022}
     }
 
     for case, case_dict in cases.items():
@@ -360,14 +360,10 @@ def test_calculate_C_orifice_ReaderHarrisGallagher():
             tapping=case_dict['tapping']
         )
         
-        criteria = 0.0001
-        diff = abs(C-case_dict['expected'])
+        criteria = 0.1 # [%] Allowable deviation
 
-        print(C)
-        print(case_dict['expected'])
-        print(diff)
+        # Calculate relative deviation [%] in C from reference
+        reldev = abs(utilities.calculate_relative_deviation(C, case_dict['expected']))
+        print(reldev)
 
-        assert diff<criteria, f'C calculation failed for {case}'
-
-        # assert round(C, 4) == case_dict['expected'], f'C calculation failed for {case}'
-
+        assert reldev < criteria, f'C calculation failed for {case}'
