@@ -527,7 +527,7 @@ def calculate_C_orifice_ReaderHarrisGallagher(D, beta, Re, tapping='corner', che
     if tapping.lower() == 'corner':
         L1 = 0.0
         L2 = 0.0
-    elif tapping.lower() in ['D','D/2']:
+    elif tapping.lower() in ['d','d/2']:
         L1 = 1.0
         L2 = 0.47
     elif tapping.lower() == 'flange':
@@ -587,4 +587,3 @@ if __name__ == '__main__':
 
     C_fluids = fluids.flow_meter.C_Reader_Harris_Gallagher(D=indata['D'], Do=indata['Do'], rho=indata['rho'], mu=indata['mu'], m=indata['m'], taps=indata['taps'])
     print(f'C from fluids: {C_fluids}')
-
