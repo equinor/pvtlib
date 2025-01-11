@@ -426,7 +426,7 @@ def calculate_beta_V_cone(D, dc):
 #%% Orifice equations
 def calculate_flow_orifice(D, d, dP, rho1, mu=None, C=None, epsilon=None, check_input=False):
 
-    restults = {
+    results = {
         'MassFlow': np.nan,
         'VolFlow': np.nan,
         'Velocity': np.nan,
@@ -457,77 +457,55 @@ def calculate_flow_orifice(D, d, dP, rho1, mu=None, C=None, epsilon=None, check_
     if epsilon is None:
         epsilon_used = 1.0
 
+    # If discharge coefficient is provided, flowrates can be calculated directly
     if not C is None:
         C_used = C
+        # Calculate beta
+        beta = calculate_beta_DP_meter(D, d)
+
+        results = _calculate_flow_DP_meter(
+            C=C_used, 
+            beta=beta, 
+            epsilon=epsilon_used,
+            d=d,
+            dP=dP,
+            rho1=rho1
+            )
+        
+        return results
+
     else:
-        C_used = 0.6 # initial guess for iterative calculation
+    # Solve for discharge coefficient using iterative calculation
+        # Max number of iterations
+        max_iter = 100
 
-    # Calculate beta
-    beta = calculate_beta_DP_meter(D, d)
+        # Criteria for convergence
+        criteria = 1e-6
 
-    # Perform initial calculation of flowrates
-    res1 = _calculate_flow_DP_meter(
-        C=C_used, 
-        beta=beta, 
-        epsilon=epsilon_used,
-        d=d,
-        dP=dP,
-        rho1=rho1
-        )
+        # Initial guess for discharge coefficient
+        C_init = 0.6
 
-    # Calculate Reynolds number
-    Re = reynolds_number(rho=rho1, v=res1['Velocity'], D=D, mu=mu)
+        # Calculate beta
+        beta = calculate_beta_DP_meter(D, d)
 
-    # Calculate discharge coefficient using Reader-Harris/Gallagher equation
-    C_used = calculate_C_orifice_ReaderHarrisGallagher(D=D, Do=d, Re=Re, tapping='corner', check_input=False)
+        # Perform initial calculation of flowrates
+        res1 = _calculate_flow_DP_meter(
+            C=C_used, 
+            beta=beta, 
+            epsilon=epsilon_used,
+            d=d,
+            dP=dP,
+            rho1=rho1
+            )
 
-    # Perform calculation of flowrates with updated discharge coefficient
-    res1 = _calculate_flow_DP_meter(
-        C=C_used, 
-        beta=beta, 
-        epsilon=epsilon_used,
-        d=d,
-        dP=dP,
-        rho1=rho1
-        )
+        # Calculate Reynolds number
+        Re = reynolds_number(rho=rho1, v=res1['Velocity'], D=D, mu=mu)
 
-    return res1
+        # Calculate discharge coefficient using Reader-Harris/Gallagher equation
+        C_calc = calculate_C_orifice_ReaderHarrisGallagher(D=D, beta=beta, Re=Re, tapping='corner', check_input=False)
 
-if __name__ == '__main__':
-    # import fluids
 
-    P1 = 50.0
-    dP = 300.0
-    beta = 0.5
-    k = 1.4
-    D=1.0
-    mu=0.0011
-
-    res = calculate_flow_orifice(
-        D=D, 
-        d=beta*D, 
-        dP=dP, 
-        rho1=1.0,
-        mu=mu, 
-        C=None, 
-        epsilon=None, 
-        check_input=False
-        )
-
-    print(res)
-
-    # e_pvtlib = calculate_expansibility_orifice(P1=P1, dP=dP, beta=beta, kappa=k)
-    # print(f'Expansibility factor from pvtlib: {e_pvtlib}')
-
-    # e_fluids = fluids.flow_meter.orifice_expansibility(
-    #     D=D, 
-    #     Do=beta*D, 
-    #     P1=P1*1e5, 
-    #     P2=(P1-dP/1000)*1e5, 
-    #     k=k
-    #     )
-    # print(f'Expansibility factor from fluids: {e_fluids}')
-
+        return res1
 
 
 def calculate_expansibility_orifice(P1, dP, beta, kappa):
@@ -648,3 +626,37 @@ def calculate_C_orifice_ReaderHarrisGallagher(D, beta, Re, tapping='corner', che
     return C
 
 
+if __name__ == '__main__':
+    # import fluids
+
+    P1 = 50.0
+    dP = 300.0
+    beta = 0.5
+    k = 1.4
+    D=1.0
+    mu=0.0011
+
+    res = calculate_flow_orifice(
+        D=D, 
+        d=beta*D, 
+        dP=dP, 
+        rho1=20.0,
+        mu=mu, 
+        C=None, 
+        epsilon=None, 
+        check_input=False
+        )
+
+    print(res)
+
+    # e_pvtlib = calculate_expansibility_orifice(P1=P1, dP=dP, beta=beta, kappa=k)
+    # print(f'Expansibility factor from pvtlib: {e_pvtlib}')
+
+    # e_fluids = fluids.flow_meter.orifice_expansibility(
+    #     D=D, 
+    #     Do=beta*D, 
+    #     P1=P1*1e5, 
+    #     P2=(P1-dP/1000)*1e5, 
+    #     k=k
+    #     )
+    # print(f'Expansibility factor from fluids: {e_fluids}')
