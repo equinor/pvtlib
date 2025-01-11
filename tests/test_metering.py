@@ -387,94 +387,18 @@ def test_calculate_flow_orifice():
 
     # Cases generated based on the python fluids package (fluids==1.1.0)
     cases = {
-        'case1': {
-            'D': 0.3, 
-            'd': 0.17, 
-            'dP': 600, 
-            'rho1': 20, 
-            'mu': 0.0001, 
-            'C': 0.65, 
-            'epsilon': 0.99, 
-            'expected_massflow': 86015.23377060085, 
-            'expected_volflow': 4300.761688530043
-        },
-        'case2': {
-            'D': 0.3, 
-            'd': 0.17, 
-            'dP': 400, 
-            'rho1': 20, 
-            'mu': 0.0001, 
-            'C': 0.65, 
-            'epsilon': 0.99, 
-            'expected_massflow': 70231.14428139466, 
-            'expected_volflow': 3511.557214069733
-        },
-        'case3': {
-            'D': 0.3, 
-            'd': 0.17, 
-            'dP': 200, 
-            'rho1': 20, 
-            'mu': 0.0001, 
-            'C': 0.65, 
-            'epsilon': 0.99, 
-            'expected_massflow': 49660.91837186499, 
-            'expected_volflow': 2483.0459185932496
-        },
-        'case4': {
-            'D': 0.3, 
-            'd': 0.17, 
-            'dP': 50, 
-            'rho1': 20, 
-            'mu': 0.0001, 
-            'C': 0.65, 
-            'epsilon': 0.99, 
-            'expected_massflow': 24830.459185932494, 
-            'expected_volflow': 1241.5229592966248
-        },
-        'case5': {
-            'D': 0.2, 
-            'd': 0.1, 
-            'dP': 100, 
-            'rho1': 20, 
-            'mu': 0.0001, 
-            'C': 0.55, 
-            'epsilon': 0.99, 
-            'expected_massflow': 10056.216708333148, 
-            'expected_volflow': 502.81083541665737
-        },
-        'case6': {
-            'D': 0.2, 
-            'd': 0.1, 
-            'dP': 75, 
-            'rho1': 20, 
-            'mu': 0.0001, 
-            'C': 0.55, 
-            'epsilon': 0.99, 
-            'expected_massflow': 8708.939135378032, 
-            'expected_volflow': 435.4469567689016
-        },
-        'case7': {
-            'D': 0.2, 
-            'd': 0.1, 
-            'dP': 50, 
-            'rho1': 20, 
-            'mu': 0.0001, 
-            'C': 0.55, 
-            'epsilon': 0.99, 
-            'expected_massflow': 7110.819027543829, 
-            'expected_volflow': 355.54095137719145
-        },
-        'case8': {
-            'D': 0.2, 
-            'd': 0.1, 
-            'dP': 25, 
-            'rho1': 20, 
-            'mu': 0.0001, 
-            'C': 0.55, 
-            'epsilon': 0.99, 
-            'expected_massflow': 5028.108354166574, 
-            'expected_volflow': 251.40541770832868
-        }
+        'case1': {'D': 0.3, 'd': 0.17, 'dP': 600, 'rho1': 20, 'mu': 0.0001, 'C': 0.65, 'epsilon': 0.99, 'massflow_per_hour': 86015.23377060085, 'volflow_per_hour': 4300.761688530043},
+        'case2': {'D': 0.3, 'd': 0.17, 'dP': 400, 'rho1': 20, 'mu': 0.0001, 'C': 0.65, 'epsilon': 0.99, 'massflow_per_hour': 70231.14428139466, 'volflow_per_hour': 3511.557214069733},
+        'case3': {'D': 0.3, 'd': 0.17, 'dP': 200, 'rho1': 20, 'mu': 0.0001, 'C': 0.65, 'epsilon': 0.99, 'massflow_per_hour': 49660.91837186499, 'volflow_per_hour': 2483.0459185932496},
+        'case4': {'D': 0.3, 'd': 0.17, 'dP': 50, 'rho1': 20, 'mu': 0.0001, 'C': 0.65, 'epsilon': 0.99, 'massflow_per_hour': 24830.459185932494, 'volflow_per_hour': 1241.5229592966248},
+        'case5': {'D': 0.2, 'd': 0.1, 'dP': 100, 'rho1': 20, 'mu': 0.0001, 'C': 0.55, 'epsilon': 0.99, 'massflow_per_hour': 10056.216708333148, 'volflow_per_hour': 502.81083541665737},
+        'case6': {'D': 0.2, 'd': 0.1, 'dP': 75, 'rho1': 20, 'mu': 0.0001, 'C': 0.55, 'epsilon': 0.99, 'massflow_per_hour': 8708.939135378032, 'volflow_per_hour': 435.4469567689016},
+        'case7': {'D': 0.2, 'd': 0.1, 'dP': 50, 'rho1': 20, 'mu': 0.0001, 'C': 0.55, 'epsilon': 0.99, 'massflow_per_hour': 7110.819027543829, 'volflow_per_hour': 355.54095137719145},
+        'case8': {'D': 0.2, 'd': 0.1, 'dP': 25, 'rho1': 20, 'mu': 0.0001, 'C': 0.55, 'epsilon': 0.99, 'massflow_per_hour': 5028.108354166574, 'volflow_per_hour': 251.40541770832868},
+        'case9': {'D': 1.0, 'd': 0.55, 'dP': 100, 'rho1': 50, 'mu': 0.00015, 'C': 0.6, 'epsilon': 0.98, 'massflow_per_hour': 527635.6305884372, 'volflow_per_hour': 10552.712611768744},
+        'case10': {'D': 1.0, 'd': 0.55, 'dP': 1500, 'rho1': 50, 'mu': 0.00015, 'C': 0.6, 'epsilon': 0.98, 'massflow_per_hour': 2043524.0101346665, 'volflow_per_hour': 40870.48020269333},
+        'case11': {'D': 0.05, 'd': 0.025, 'dP': 100, 'rho1': 50, 'mu': 0.00015, 'C': 0.6, 'epsilon': 0.98, 'massflow_per_hour': 1073.1590376626177, 'volflow_per_hour': 21.463180753252356},
+        'case12': {'D': 0.05, 'd': 0.025, 'dP': 50, 'rho1': 50, 'mu': 0.00015, 'C': 0.6, 'epsilon': 0.98, 'massflow_per_hour': 758.8380328228665, 'volflow_per_hour': 15.17676065645733}
     }
 
     criteria = 0.0001 # [%] Allowable deviation
@@ -491,12 +415,12 @@ def test_calculate_flow_orifice():
         )
         
         # Calculate relative deviation [%] in mass flow from reference
-        reldev = abs(utilities.calculate_relative_deviation(res['MassFlow'], case_dict['expected_massflow']))
+        reldev = abs(utilities.calculate_relative_deviation(res['MassFlow'], case_dict['massflow_per_hour']))
         
         assert reldev < criteria, f'Mass flow from orifice calculation failed for {case}'
 
         # Calculate relative deviation [%] in volume flow from reference
-        reldev = abs(utilities.calculate_relative_deviation(res['VolFlow'], case_dict['expected_volflow']))
+        reldev = abs(utilities.calculate_relative_deviation(res['VolFlow'], case_dict['volflow_per_hour']))
         
         assert reldev < criteria, f'Volume flow from orifice calculation failed for {case}'
 
@@ -512,8 +436,11 @@ def test_calculate_flow_orifice_without_C():
         'case5': {'D': 0.2, 'd': 0.1, 'dP': 100, 'rho1': 20, 'mu': 0.0001, 'epsilon': 0.99, 'tapping': 'D', 'massflow_per_hour': 11060.187865887872, 'volflow_per_hour': 553.0093932943936, 'C_calculated': 0.6049097292421641},
         'case6': {'D': 0.2, 'd': 0.1, 'dP': 75, 'rho1': 20, 'mu': 0.0001, 'epsilon': 0.99, 'tapping': 'D', 'massflow_per_hour': 9582.137318691242, 'volflow_per_hour': 479.1068659345621, 'C_calculated': 0.6051455227045194},
         'case7': {'D': 0.2, 'd': 0.1, 'dP': 50, 'rho1': 20, 'mu': 0.0001, 'epsilon': 0.99, 'tapping': 'D/2', 'massflow_per_hour': 7828.486950173011, 'volflow_per_hour': 391.42434750865056, 'C_calculated': 0.6055094083982603},
-        'case8': {'D': 0.2, 'd': 0.1, 'dP': 25, 'rho1': 20, 'mu': 0.0001, 'epsilon': 0.99, 'tapping': 'D/2', 'massflow_per_hour': 5542.170314224395, 'volflow_per_hour': 277.10851571121975, 'C_calculated': 0.6062307050916101}
-
+        'case8': {'D': 0.2, 'd': 0.1, 'dP': 25, 'rho1': 20, 'mu': 0.0001, 'epsilon': 0.99, 'tapping': 'D/2', 'massflow_per_hour': 5542.170314224395, 'volflow_per_hour': 277.10851571121975, 'C_calculated': 0.6062307050916101},
+        'case9': {'D': 1.0, 'd': 0.55, 'dP': 100, 'rho1': 50, 'mu': 0.00015, 'epsilon': 0.98, 'tapping': 'flange', 'massflow_per_hour': 531416.2969186406, 'volflow_per_hour': 10628.325938372813, 'C_calculated': 0.6042991785744116},
+        'case10': {'D': 1.0, 'd': 0.55, 'dP': 1500, 'rho1': 50, 'mu': 0.00015, 'epsilon': 0.98, 'tapping': 'corner', 'massflow_per_hour': 2056290.2561173881, 'volflow_per_hour': 41125.80512234776, 'C_calculated': 0.6037483032015505},
+        'case11': {'D': 0.05, 'd': 0.025, 'dP': 100, 'rho1': 50, 'mu': 0.00015, 'epsilon': 0.98, 'tapping': 'D', 'massflow_per_hour': 1091.584843780707, 'volflow_per_hour': 21.83169687561414, 'C_calculated': 0.6103018129493022},
+        'case12': {'D': 0.05, 'd': 0.025, 'dP': 50, 'rho1': 50, 'mu': 0.00015, 'epsilon': 0.98, 'tapping': 'D/2', 'massflow_per_hour': 773.4784497907841, 'volflow_per_hour': 15.469568995815683, 'C_calculated': 0.6115759223981871}
     }
 
     criteria = 0.0001 # [%] Allowable deviation
