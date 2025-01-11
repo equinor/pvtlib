@@ -427,7 +427,44 @@ def calculate_beta_V_cone(D, dc):
 
 #%% Orifice equations
 def calculate_flow_orifice(D, d, dP, rho1, mu=None, C=None, epsilon=None, tapping='corner', check_input=False):
-
+    """
+    Calculate the flow rate through an orifice plate.
+    Parameters
+    ----------
+    D : float
+        Pipe diameter (m).
+    d : float
+        Orifice diameter (m).
+    dP : float
+        Differential pressure across the orifice (mbar).
+    rho1 : float
+        Fluid density upstream of the orifice (kg/m3).
+    mu : float, optional
+        Dynamic viscosity of the fluid (Pa*s). Required if `C` is not provided.
+    C : float, optional
+        Discharge coefficient. If not provided, it will be calculated iteratively.
+    epsilon : float, optional
+        Expansibility factor. If not provided, 1.0 will be used (valid for incompressible fluids).
+    tapping : str, optional
+        Tapping type for the orifice plate. Default is 'corner'.
+    check_input : bool, optional
+        If True, the function will raise exceptions for invalid input parameters. If False, it will return a dictionary with NaN values for invalid inputs.
+    Returns
+    -------
+    dict
+        A dictionary containing the following keys:
+        - 'MassFlow': Mass flow rate (kg/h).
+        - 'VolFlow': Volumetric flow rate (m3/h).
+        - 'Velocity': Fluid velocity (m/s).
+        - 'C': Discharge coefficient.
+        - 'epsilon': Expansibility factor.
+        - 'Re': Reynolds number.
+    Raises
+    ------
+    Exception
+        If `check_input` is True and any of the input parameters are invalid, or if the iterative calculation for the discharge coefficient does not converge.
+    """
+    
     # Define a dictionary that is returned if the function is called with check_input=False and the input parameters are invalid
     # This is done to preserve the structure of the results dictionary, even if the function is called with invalid input parameters
     results_error = {key : np.nan for key in ['MassFlow', 'VolFlow', 'Velocity', 'C', 'epsilon', 'Re']}

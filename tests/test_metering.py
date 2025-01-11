@@ -22,7 +22,7 @@ SOFTWARE.
 """
 
 from pvtlib import metering, utilities
-import os
+import numpy as np
 
 #%% Test V-cone calculations
 def test_V_cone_calculation_1():
@@ -368,17 +368,16 @@ def test_calculate_flow_orifice_without_C():
 
         # Calculate relative deviation [%] in mass flow from reference
         reldev = abs(utilities.calculate_relative_deviation(res['MassFlow'], case_dict['massflow_per_hour']))
-        print(f'{reldev} {case_dict["massflow_per_hour"]} {res["MassFlow"]}')
-        # assert reldev < criteria, f'Mass flow from orifice calculation failed for {case}'
+        assert reldev < criteria, f'Mass flow from orifice calculation failed for {case}'
 
         # Calculate relative deviation [%] in discharge coefficient from reference
         reldev = abs(utilities.calculate_relative_deviation(res['C'], case_dict['C_calculated']))
-        print(f'{reldev} {case_dict["C_calculated"]} {res["C"]}')
+        assert reldev < criteria, f'C from orifice calculation failed for {case}'
 
-        # # Calculate relative deviation [%] in volume flow from reference
-        # reldev = abs(utilities.calculate_relative_deviation(res['VolFlow'], case_dict['volflow_per_hour']))
+        # Calculate relative deviation [%] in volume flow from reference
+        reldev = abs(utilities.calculate_relative_deviation(res['VolFlow'], case_dict['volflow_per_hour']))
 
-        # assert reldev < criteria, f'Volume flow from orifice calculation failed for {case}'
+        assert reldev < criteria, f'Volume flow from orifice calculation failed for {case}'
 
 
 def test_calculate_flow_orifice_vs_ISO5167_1_E1():
@@ -446,4 +445,30 @@ def test_calculate_flow_orifice_vs_ISO5167_1_E1():
     reldev = abs(utilities.calculate_relative_deviation(res['Velocity'], data['Velocity']))
     assert reldev < criteria, 'Velocity from orifice calculation failed'
 
-    
+
+def test_calculate_flow_orifice_invalid_inputs():
+    # Test orifice calculation with invalid inputs. Should return np.nan for all cases
+    cases = {
+        'case1': {'D': -0.3, 'd': 0.17, 'dP': 600, 'rho1': 20, 'mu': 0.0001, 'epsilon': 0.99, 'tapping': 'corner'},
+        'case2': {'D': 0.3, 'd': -0.17, 'dP': 600, 'rho1': 20, 'mu': 0.0001, 'epsilon': 0.99, 'tapping': 5.0},
+        'case3': {'D': 0.3, 'd': 0.17, 'dP': -600, 'rho1': 20, 'mu': 0.0001, 'epsilon': 0.99, 'tapping': 'corner'},
+        'case4': {'D': 0.3, 'd': 0.17, 'dP': 600, 'rho1': -20, 'mu': 0.0001, 'epsilon': 0.99, 'tapping': 'corner'},
+        'case5': {'D': 0.3, 'd': 0.17, 'dP': 600, 'rho1': 20, 'mu': None, 'epsilon': 0.99, 'tapping': 'corner'},
+        'case6': {'D': 0.3, 'd': 0.17, 'dP': 600, 'rho1': 20, 'mu': 0.0001, 'epsilon': 0.99, 'tapping': 'invalid_tapping'}
+    }
+
+    for case_name, case_dict in cases.items():
+        res = metering.calculate_flow_orifice(
+            D=case_dict['D'],
+            d=case_dict['d'],
+            dP=case_dict['dP'],
+            rho1=case_dict['rho1'],
+            mu=case_dict['mu'],
+            epsilon=case_dict['epsilon'],
+            tapping=case_dict['tapping'],
+            check_input=False
+        )
+
+        # Check that all results are np.nan
+        for key in ['MassFlow', 'VolFlow', 'Velocity', 'C', 'epsilon', 'Re']:
+            assert np.isnan(res[key])==True, f'Expected np.nan for {key} but got {res[key]} for case {case_name}'

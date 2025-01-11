@@ -36,4 +36,5 @@ if __name__ == '__main__':
     test_calculate_flow_orifice()
     test_calculate_flow_orifice_without_C()
     test_calculate_flow_orifice_vs_ISO5167_1_E1()
+    test_calculate_flow_orifice_invalid_inputs()
     print('All tests passed')
