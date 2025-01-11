@@ -42,6 +42,9 @@ def fahrenheit_to_celsius(fahrenheit):
     celsius = (fahrenheit-32)*5/9
     return celsius
 
+def celsius_to_rankine(celsius):
+    rankine = (celsius+273.15)*9/5
+    return rankine
 
 # Pressure
 def barg_to_bara(barg, P_atm=1.01325):
@@ -53,6 +56,9 @@ def bara_to_barg(bara, P_atm=1.01325):
     barg = bara-P_atm
     return barg
 
+def bar_to_psi(bar):
+    psi = bar*14.503773773
+    return psi
 
 def kPa_to_Pa(kPa):
     Pa = kPa*1000
@@ -210,7 +216,12 @@ def g_to_kg(g):
     kg = g/1000
     return kg
 
+# Density
+def kgperm3_to_gpercm3(kgperm3):
+    gpercm3 = kgperm3/1000
+    return gpercm3
 
+# Molar mass: kg/mol, g/mol, kg/kmol
 def gpermol_to_kgperkmol(gpermol):
     kgperkmol = gpermol
     return kgperkmol

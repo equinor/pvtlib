@@ -21,6 +21,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+from pvtlib import unit_converters
+import numpy as np
+
 def energy_rate_balance(h_in, h_out, massflow, vel_in, vel_out):
     '''
     Energy rate balance over control volume
@@ -98,10 +101,10 @@ def energy_rate_diffperc(energy_rate_A, energy_rate_B):
     return energy_rate_diffperc
 
 
-
 def natural_gas_viscosity_Lee_et_al(P, T, M, rho):
     '''
-    Calculate natural gas viscosity using Lee et al. correlation
+    Calculate natural gas viscosity using Lee et al. correlation. 
+    Correlation developed for natural gases at pressures between 100 psia (6.9 bar) and 8000 psia (551 bar) and temperatures between 100 and 340 F (37.8 and 171.1 C)
 
     Parameters
     ----------
@@ -113,7 +116,30 @@ def natural_gas_viscosity_Lee_et_al(P, T, M, rho):
         Molar mass [g/mol]
     rho : float
         Density [kg/m3]
+
+    Returns
+    -------
+    mu : float
+        Viscosity [cP]
+
+    Notes
+    -----
+    Lee, A.L., M.H. Gonzalez, and B.E. Eakin, The Viscosity of Natural Gases. Journal of Petroleum Technology, 1966 
+    https://petrowiki.spe.org/Gas_viscosity
     '''
 
-    P_psia = P*14.5038
-    
+    P_psi = unit_converters.bar_to_psi(P)
+    T_R = unit_converters.celsius_to_rankine(T)
+    rho_gpercm3 = rho/1000
+
+    K1 = (0.00094+2e-6*M)*T_R**1.5/(209+19*M+T_R)
+    X = 3.5+(986/T_R)+0.01*M
+    Y = 2.4-0.2*X
+
+    mu = K1*np.exp(X*(rho_gpercm3)**Y)
+
+    return mu
+
+
+
+
