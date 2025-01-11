@@ -170,56 +170,11 @@ def test_calculate_flow_venturi():
 
     # Cases generated based on the python fluids package (fluids==1.1.0)
     cases = {
-        'case1': {
-            'D': 0.13178, 
-            'd': 0.06664, 
-            'dP': 200, 
-            'rho': 39.6, 
-            'C': 0.984, 
-            'epsilon': 0.997456, 
-            'expected_massflow': 16044.073835047437, 
-            'expected_volflow': 405.1533796729151
-        },
-        'case2': {
-            'D': 0.13178, 
-            'd': 0.06664, 
-            'dP': 800, 
-            'rho': 39.6, 
-            'C': 0.984, 
-            'epsilon': 0.997456, 
-            'expected_massflow': 32088.147670094873, 
-            'expected_volflow': 810.3067593458302
-        },
-        'case3': {
-            'D': 0.2, 
-            'd': 0.15, 
-            'dP': 800, 
-            'rho': 39.6, 
-            'C': 0.984, 
-            'epsilon': 0.997456, 
-            'expected_massflow': 190095.69790414887, 
-            'expected_volflow': 4800.396411720931
-        },
-        'case4': {
-            'D': 0.2, 
-            'd': 0.15, 
-            'dP': 800, 
-            'rho': 20.0, 
-            'C': 0.984, 
-            'epsilon': 0.997456, 
-            'expected_massflow': 135095.12989761416, 
-            'expected_volflow': 6754.756494880708
-        },
-        'case5': {
-            'D': 0.2, 
-            'd': 0.15, 
-            'dP': 800, 
-            'rho': 39.6, 
-            'C': 0.984, 
-            'epsilon': 0.9, 
-            'expected_massflow': 171522.48130617687, 
-            'expected_volflow': 4331.375790560021
-        }
+        'case1': {'D': 0.13178, 'd': 0.06664, 'dP': 200, 'rho': 39.6, 'C': 0.984, 'epsilon': 0.997456, 'expected_massflow': 16044.073835047437, 'expected_volflow': 405.1533796729151},
+        'case2': {'D': 0.13178, 'd': 0.06664, 'dP': 800, 'rho': 39.6, 'C': 0.984, 'epsilon': 0.997456, 'expected_massflow': 32088.147670094873, 'expected_volflow': 810.3067593458302},
+        'case3': {'D': 0.2, 'd': 0.15, 'dP': 800, 'rho': 39.6, 'C': 0.984, 'epsilon': 0.997456, 'expected_massflow': 190095.69790414887, 'expected_volflow': 4800.396411720931},
+        'case4': {'D': 0.2, 'd': 0.15, 'dP': 800, 'rho': 20.0, 'C': 0.984, 'epsilon': 0.997456, 'expected_massflow': 135095.12989761416, 'expected_volflow': 6754.756494880708},
+        'case5': {'D': 0.2, 'd': 0.15, 'dP': 800, 'rho': 39.6, 'C': 0.984, 'epsilon': 0.9, 'expected_massflow': 171522.48130617687, 'expected_volflow': 4331.375790560021}
     }
 
     criteria = 0.0001 # [%] Allowable deviation
@@ -256,34 +211,10 @@ def test_calculate_expansibility_ventiruri():
     '''
 
     cases = {
-        'case1': {
-            'P1': 50,
-            'dP': 12500,
-            'kappa': 1.2,
-            'beta': 0.75,
-            'expected': 0.7690
-        },
-        'case2': {
-            'P1': 50,
-            'dP': 3000,
-            'kappa': 1.4,
-            'beta': 0.75,
-            'expected': 0.9489
-        },
-        'case3': {
-            'P1': 100,
-            'dP': 2000,
-            'kappa': 1.66,
-            'beta': 0.3,
-            'expected': 0.9908
-        },
-        'case4': {
-            'P1': 100,
-            'dP': 25000,
-            'kappa': 1.4,
-            'beta': 0.5623,
-            'expected': 0.8402
-        },
+        'case1': {'P1': 50, 'dP': 12500, 'kappa': 1.2, 'beta': 0.75, 'expected': 0.7690},
+        'case2': {'P1': 50, 'dP': 3000, 'kappa': 1.4, 'beta': 0.75, 'expected': 0.9489},
+        'case3': {'P1': 100, 'dP': 2000, 'kappa': 1.66, 'beta': 0.3, 'expected': 0.9908},
+        'case4': {'P1': 100, 'dP': 25000, 'kappa': 1.4, 'beta': 0.5623, 'expected': 0.8402}
     }
 
     for case, case_dict in cases.items():
@@ -301,34 +232,10 @@ def test_calculate_expansibility_orifice():
     Validate calculate_expansibility_orifice function against known values from ISO 5176-2:2022, table A.12
     '''
     cases = {
-        'case1': {
-            'P1': 50,
-            'dP': 12500,
-            'beta': 0.1,
-            'kappa': 1.2,
-            'expected': 0.9252
-        },
-        'case2': {
-            'P1': 50,
-            'dP': 12500,
-            'beta': 0.75,
-            'kappa': 1.2,
-            'expected': 0.8881
-        },
-        'case3': {
-            'P1': 50,
-            'dP': 1000,
-            'beta': 0.1,
-            'kappa': 1.2,
-            'expected': 0.9941
-        },
-        'case4': {
-            'P1': 50,
-            'dP': 1000,
-            'beta': 0.75,
-            'kappa': 1.2,
-            'expected': 0.9912
-        }
+        'case1': {'P1': 50, 'dP': 12500, 'beta': 0.1, 'kappa': 1.2, 'expected': 0.9252},
+        'case2': {'P1': 50, 'dP': 12500, 'beta': 0.75, 'kappa': 1.2, 'expected': 0.8881},
+        'case3': {'P1': 50, 'dP': 1000, 'beta': 0.1, 'kappa': 1.2, 'expected': 0.9941},
+        'case4': {'P1': 50, 'dP': 1000, 'beta': 0.75, 'kappa': 1.2, 'expected': 0.9912}
     }
 
     for case, case_dict in cases.items():
