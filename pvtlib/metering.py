@@ -36,16 +36,17 @@ def _calculate_flow_DP_meter(C, D, d, epsilon, dP, rho1):
     ----------
     C : float
         Discharge coefficient of the meter.
-    beta : float
-        Diameter ratio
-    epsilon : float
-        Expansion factor.
+    D : float
+        Diameter of the pipe [m].
     d : float
         Diameter of the throat [m].
+    epsilon : float
+        Expansion factor.
     dP : float
         Differential pressure across the meter [mbar].
     rho1 : float
         Density of the fluid [kg/m3].
+
     Returns
     -------
     results : dict
@@ -80,7 +81,7 @@ def calculate_flow_venturi(D, d, dP, rho1, C=None, epsilon=None, check_input=Fal
     Calculate the flow rate using a Venturi meter.
     Calculations performed according to ISO 5167-4:2022.
 
-    If dicharge coefficient is not provided, the function uses the value of 0.984 given in ISO 5167-4:2022, 
+    If discharge coefficient is not provided, the function uses the value of 0.984 given in ISO 5167-4:2022, 
     which is valid for an "as cast" convergent section Classical Venturi tube at the following conditions:
         - 100 mm ≤ D ≤ 800 mm
         - 0.3 ≤ β ≤ 0.75
