@@ -383,5 +383,218 @@ def test_calculate_C_orifice_ReaderHarrisGallagher():
         assert round(C,4)==case_dict['expected'], f'C calculation failed for {case}'
 
 
+def test_calculate_flow_orifice():
+
+    # Cases generated based on the python fluids package (fluids==1.1.0)
+    cases = {
+        'case1': {
+            'D': 0.3, 
+            'd': 0.17, 
+            'dP': 600, 
+            'rho1': 20, 
+            'mu': 0.0001, 
+            'C': 0.65, 
+            'epsilon': 0.99, 
+            'expected_massflow': 86015.23377060085, 
+            'expected_volflow': 4300.761688530043
+        },
+        'case2': {
+            'D': 0.3, 
+            'd': 0.17, 
+            'dP': 400, 
+            'rho1': 20, 
+            'mu': 0.0001, 
+            'C': 0.65, 
+            'epsilon': 0.99, 
+            'expected_massflow': 70231.14428139466, 
+            'expected_volflow': 3511.557214069733
+        },
+        'case3': {
+            'D': 0.3, 
+            'd': 0.17, 
+            'dP': 200, 
+            'rho1': 20, 
+            'mu': 0.0001, 
+            'C': 0.65, 
+            'epsilon': 0.99, 
+            'expected_massflow': 49660.91837186499, 
+            'expected_volflow': 2483.0459185932496
+        },
+        'case4': {
+            'D': 0.3, 
+            'd': 0.17, 
+            'dP': 50, 
+            'rho1': 20, 
+            'mu': 0.0001, 
+            'C': 0.65, 
+            'epsilon': 0.99, 
+            'expected_massflow': 24830.459185932494, 
+            'expected_volflow': 1241.5229592966248
+        },
+        'case5': {
+            'D': 0.2, 
+            'd': 0.1, 
+            'dP': 100, 
+            'rho1': 20, 
+            'mu': 0.0001, 
+            'C': 0.55, 
+            'epsilon': 0.99, 
+            'expected_massflow': 10056.216708333148, 
+            'expected_volflow': 502.81083541665737
+        },
+        'case6': {
+            'D': 0.2, 
+            'd': 0.1, 
+            'dP': 75, 
+            'rho1': 20, 
+            'mu': 0.0001, 
+            'C': 0.55, 
+            'epsilon': 0.99, 
+            'expected_massflow': 8708.939135378032, 
+            'expected_volflow': 435.4469567689016
+        },
+        'case7': {
+            'D': 0.2, 
+            'd': 0.1, 
+            'dP': 50, 
+            'rho1': 20, 
+            'mu': 0.0001, 
+            'C': 0.55, 
+            'epsilon': 0.99, 
+            'expected_massflow': 7110.819027543829, 
+            'expected_volflow': 355.54095137719145
+        },
+        'case8': {
+            'D': 0.2, 
+            'd': 0.1, 
+            'dP': 25, 
+            'rho1': 20, 
+            'mu': 0.0001, 
+            'C': 0.55, 
+            'epsilon': 0.99, 
+            'expected_massflow': 5028.108354166574, 
+            'expected_volflow': 251.40541770832868
+        }
+    }
+
+    criteria = 0.0001 # [%] Allowable deviation
+
+    for case, case_dict in cases.items():
+        res = metering.calculate_flow_orifice(
+            D=case_dict['D'],
+            d=case_dict['d'],
+            dP=case_dict['dP'],
+            rho1=case_dict['rho1'],
+            mu=case_dict['mu'],
+            C=case_dict['C'],
+            epsilon=case_dict['epsilon']
+        )
+        
+        # Calculate relative deviation [%] in mass flow from reference
+        reldev = abs(utilities.calculate_relative_deviation(res['MassFlow'], case_dict['expected_massflow']))
+        
+        assert reldev < criteria, f'Mass flow from orifice calculation failed for {case}'
+
+        # Calculate relative deviation [%] in volume flow from reference
+        reldev = abs(utilities.calculate_relative_deviation(res['VolFlow'], case_dict['expected_volflow']))
+        
+        assert reldev < criteria, f'Volume flow from orifice calculation failed for {case}'
+
+def test_calculate_flow_orifice_without_C():
+    # Test orifice calculation without a provided C value (will be calculated using Reader-Harris-Gallagher in an iterative process)
+
+    # Cases generated based on the python fluids package (fluids==1.1.0)
+    cases = {
+        'case1': {'D': 0.3, 'd': 0.17, 'dP': 600, 'rho1': 20, 'mu': 0.0001, 'epsilon': 0.99, 'tapping': 'corner', 'massflow_per_hour': 80085.91838755546, 'volflow_per_hour': 4004.295919377773, 'C_calculated': 0.6051933438993131},
+        'case2': {'D': 0.3, 'd': 0.17, 'dP': 400, 'rho1': 20, 'mu': 0.0001, 'epsilon': 0.99, 'tapping': 'corner', 'massflow_per_hour': 65414.248342171566, 'volflow_per_hour': 3270.7124171085784, 'C_calculated': 0.6054188901158989},
+        'case3': {'D': 0.3, 'd': 0.17, 'dP': 200, 'rho1': 20, 'mu': 0.0001, 'epsilon': 0.99, 'tapping': 'flange', 'massflow_per_hour': 46249.23494614883, 'volflow_per_hour': 2312.4617473074413, 'C_calculated': 0.6053452835867839},
+        'case4': {'D': 0.3, 'd': 0.17, 'dP': 50, 'rho1': 20, 'mu': 0.0001, 'epsilon': 0.99, 'tapping': 'flange', 'massflow_per_hour': 23166.34881177747, 'volflow_per_hour': 1158.3174405888735, 'C_calculated': 0.6064377068059384},
+        'case5': {'D': 0.2, 'd': 0.1, 'dP': 100, 'rho1': 20, 'mu': 0.0001, 'epsilon': 0.99, 'tapping': 'D', 'massflow_per_hour': 11060.187865887872, 'volflow_per_hour': 553.0093932943936, 'C_calculated': 0.6049097292421641},
+        'case6': {'D': 0.2, 'd': 0.1, 'dP': 75, 'rho1': 20, 'mu': 0.0001, 'epsilon': 0.99, 'tapping': 'D', 'massflow_per_hour': 9582.137318691242, 'volflow_per_hour': 479.1068659345621, 'C_calculated': 0.6051455227045194},
+        'case7': {'D': 0.2, 'd': 0.1, 'dP': 50, 'rho1': 20, 'mu': 0.0001, 'epsilon': 0.99, 'tapping': 'D/2', 'massflow_per_hour': 7828.486950173011, 'volflow_per_hour': 391.42434750865056, 'C_calculated': 0.6055094083982603},
+        'case8': {'D': 0.2, 'd': 0.1, 'dP': 25, 'rho1': 20, 'mu': 0.0001, 'epsilon': 0.99, 'tapping': 'D/2', 'massflow_per_hour': 5542.170314224395, 'volflow_per_hour': 277.10851571121975, 'C_calculated': 0.6062307050916101}
+    }
+
+    criteria = 0.0001 # [%] Allowable deviation
+
+    for case, case_dict in cases.items():
+        # Calculate orifice beta
+        beta = metering.calculate_beta_DP_meter(D=case_dict['D'], d=case_dict['d'])
+
+        res = metering.calculate_flow_orifice(
+            D=case_dict['D'],
+            d=case_dict['d'],
+            dP=case_dict['dP'],
+            rho1=case_dict['rho1'],
+            mu=case_dict['mu'],
+            epsilon=case_dict['epsilon'],
+            tapping=case_dict['tapping']
+        )
+
+        # Calculate relative deviation [%] in mass flow from reference
+        reldev = abs(utilities.calculate_relative_deviation(res['MassFlow'], case_dict['massflow_per_hour']))
+        print(f'{reldev} {case_dict["massflow_per_hour"]} {res["MassFlow"]}')
+        # assert reldev < criteria, f'Mass flow from orifice calculation failed for {case}'
+
+        # Calculate relative deviation [%] in discharge coefficient from reference
+        reldev = abs(utilities.calculate_relative_deviation(res['C'], case_dict['C_calculated']))
+        print(f'{reldev} {case_dict["C_calculated"]} {res["C"]}')
+
+        # # Calculate relative deviation [%] in volume flow from reference
+        # reldev = abs(utilities.calculate_relative_deviation(res['VolFlow'], case_dict['volflow_per_hour']))
+
+        # assert reldev < criteria, f'Volume flow from orifice calculation failed for {case}'
 
 
+def test_calculate_flow_orifice_vs_ISO5167_1_E1():
+    # Test orifice calculation against ISO 5167-1:2022, Annex E, E.1 Meter setup
+
+    data={
+        'D': 0.19368, # m
+        'd': 0.09684, # m
+        'dP': 257.6, # mbar
+        'rho1': 13.93,
+        'mu': 1.1145e-05,
+        'C': 0.6026,
+        'kappa': 1.308,
+        'VolFlow': 1000.0,
+        'MassFlow': 13928.4,
+        'Re': 2282000.0,
+        'Velocity': 9.43,
+        'P1': 20.0, # bar
+    }
+
+    # Calculate orifice beta
+    beta = metering.calculate_beta_DP_meter(D=data['D'], d=data['d'])
+
+    # Calculate expansibility
+    epsilon = metering.calculate_expansibility_orifice(
+        P1=data['P1'],
+        dP=data['dP'],
+        beta=beta,
+        kappa=data['kappa']
+    )
+
+    # Calculate discharge coefficient
+    C = metering.calculate_C_orifice_ReaderHarrisGallagher(
+        D=data['D'],
+        beta=beta,
+        Re=data['Re'],
+        tapping='flange'
+    )
+    
+    assert round(C, 4) == data['C'], 'Discharge coefficient calculation failed'
+
+    # Calculate orifice flow
+    res = metering.calculate_flow_orifice(
+        D=data['D'],
+        d=data['d'],
+        dP=data['dP'],
+        rho1=data['rho1'],
+        mu=data['mu'],
+        #C=data['C'],
+        epsilon=epsilon
+    )
+
+    print(f'Mass flow: {res["MassFlow"]}, Vol flow: {res["VolFlow"]}')
+    

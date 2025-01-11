@@ -24,9 +24,9 @@ SOFTWARE.
 import numpy as np
 from math import sqrt, pi, e
 
-from fluid_mechanics import reynolds_number
+from pvtlib.fluid_mechanics import reynolds_number, superficial_velocity
 
-def _calculate_flow_DP_meter(C, beta, epsilon, d, dP, rho1):
+def _calculate_flow_DP_meter(C, D, d, epsilon, dP, rho1):
     """
     Calculate the mass flow rate through a differential pressure (DP) meter.
     This formula is given as "Formula (1)" in ISO 5167 part 2 and 4 (2022 edition),
@@ -59,6 +59,9 @@ def _calculate_flow_DP_meter(C, beta, epsilon, d, dP, rho1):
 
     dP_Pa = dP * 100  # Convert mbar to Pa
 
+    # Calculate beta
+    beta = calculate_beta_DP_meter(D, d)
+
     # Calculate mass flowrate in kg/h
     results['MassFlow'] = (C/sqrt(1 - (beta**4)))*epsilon*(pi/4)*((d)**2)*sqrt(2*dP_Pa*rho1)*3600 # kg/h
 
@@ -66,8 +69,7 @@ def _calculate_flow_DP_meter(C, beta, epsilon, d, dP, rho1):
     results['VolFlow'] = results['MassFlow']/rho1 # m3/h
 
     # Calculate velocity in m/s
-    r = d/2
-    results['Velocity'] = results['VolFlow']/((pi*(r**2))*3600) # m/s
+    results['Velocity'] = superficial_velocity(results['VolFlow'], D) # m/s
 
     return results
 
@@ -152,10 +154,10 @@ def calculate_flow_venturi(D, d, dP, rho1, C=None, epsilon=None, check_input=Fal
 
     # Calculate flowrates
     results = _calculate_flow_DP_meter(
-        C=C_used,
-        beta=beta,
-        epsilon=epsilon_used,
+        D=D,
         d=d,
+        C=C_used,
+        epsilon=epsilon_used,
         dP=dP,
         rho1=rho1
         )
@@ -422,17 +424,15 @@ def calculate_beta_V_cone(D, dc):
     
     return beta
 
+def _orifice_Re_iterator(Re, )
+
 
 #%% Orifice equations
-def calculate_flow_orifice(D, d, dP, rho1, mu=None, C=None, epsilon=None, check_input=False):
+def calculate_flow_orifice(D, d, dP, rho1, mu=None, C=None, epsilon=None, tapping='corner', check_input=False):
 
-    results = {
-        'MassFlow': np.nan,
-        'VolFlow': np.nan,
-        'Velocity': np.nan,
-        'C': np.nan,
-        'epsilon': np.nan
-    }
+    # Define a dictionary that is returned if the function is called with check_input=False and the input parameters are invalid
+    # This is done to preserve the structure of the results dictionary, even if the function is called with invalid input parameters
+    results_error = {key : np.nan for key in ['MassFlow', 'VolFlow', 'Velocity', 'C', 'epsilon', 'Re']}
 
     if check_input:
         if D <= 0.0:
@@ -445,67 +445,93 @@ def calculate_flow_orifice(D, d, dP, rho1, mu=None, C=None, epsilon=None, check_
             raise Exception('ERROR: Either dynamic viscosity (mu) or discharge coefficient (C) must be provided. If C is not given, it is calculated, which requires viscosity as an input.')
     else:
         if D <= 0.0:
-            return results
+            return results_error
         if rho1 <= 0.0:
-            return results
+            return results_error
         if dP < 0.0:
-            return results
+            return results_error
         if (mu is None) and (C is None):
-            return results
+            return results_error
 
     # If expansibility (epsilon) is not provided, the function will use 1.0, which is valid for incompressible fluids.
     if epsilon is None:
         epsilon_used = 1.0
+    else:
+        epsilon_used = epsilon
+
 
     # If discharge coefficient is provided, flowrates can be calculated directly
     if not C is None:
         C_used = C
-        # Calculate beta
-        beta = calculate_beta_DP_meter(D, d)
 
         results = _calculate_flow_DP_meter(
             C=C_used, 
-            beta=beta, 
-            epsilon=epsilon_used,
+            D=D,
             d=d,
+            epsilon=epsilon_used,
             dP=dP,
             rho1=rho1
             )
         
+        # Calculate Reynolds number
+        results['Re'] = reynolds_number(rho=rho1, v=results['Velocity'], D=D, mu=mu)
+        
         return results
 
     else:
-    # Solve for discharge coefficient using iterative calculation
+        # Solve for discharge coefficient using iterative calculation
         # Max number of iterations
         max_iter = 100
 
         # Criteria for convergence
-        criteria = 1e-6
+        criteria = 1e-100
 
         # Initial guess for discharge coefficient
         C_init = 0.6
+        C = C_init
 
-        # Calculate beta
-        beta = calculate_beta_DP_meter(D, d)
-
-        # Perform initial calculation of flowrates
-        res1 = _calculate_flow_DP_meter(
-            C=C_used, 
-            beta=beta, 
-            epsilon=epsilon_used,
-            d=d,
-            dP=dP,
-            rho1=rho1
+        for i in range(max_iter):
+            # Perform initial calculation of flowrates
+            results = _calculate_flow_DP_meter(
+                D=D,
+                d=d,
+                C=C, 
+                epsilon=epsilon_used,
+                dP=dP,
+                rho1=rho1
             )
 
-        # Calculate Reynolds number
-        Re = reynolds_number(rho=rho1, v=res1['Velocity'], D=D, mu=mu)
+            # Calculate Reynolds number
+            Re = reynolds_number(rho=rho1, v=results['Velocity'], D=D, mu=mu)
 
-        # Calculate discharge coefficient using Reader-Harris/Gallagher equation
-        C_calc = calculate_C_orifice_ReaderHarrisGallagher(D=D, beta=beta, Re=Re, tapping='corner', check_input=False)
+            # Calculate beta
+            beta = calculate_beta_DP_meter(D=D, d=d)
 
+            # Calculate discharge coefficient using Reader-Harris/Gallagher equation
+            C_calc = calculate_C_orifice_ReaderHarrisGallagher(D=D, beta=beta, Re=Re, tapping=tapping, check_input=False)
 
-        return res1
+            # Check for convergence
+            diff_C = abs(C_calc - C)
+
+            if diff_C < criteria:
+                break
+
+            # Update discharge coefficient for next iteration
+            C = C_calc
+            
+        # If the loop completes without convergence, raise an exception
+        else:
+            if check_input:
+                raise Exception('ERROR: Iterative calculation for discharge coefficient did not converge')
+            else:
+                return results_error
+
+        # Add C_used, epsilon_used and reynolds number to results
+        results['C'] = C
+        results['epsilon'] = epsilon_used
+        results['Re'] = Re
+
+        return results
 
 
 def calculate_expansibility_orifice(P1, dP, beta, kappa):
