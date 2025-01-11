@@ -513,6 +513,7 @@ def test_calculate_flow_orifice_without_C():
         'case6': {'D': 0.2, 'd': 0.1, 'dP': 75, 'rho1': 20, 'mu': 0.0001, 'epsilon': 0.99, 'tapping': 'D', 'massflow_per_hour': 9582.137318691242, 'volflow_per_hour': 479.1068659345621, 'C_calculated': 0.6051455227045194},
         'case7': {'D': 0.2, 'd': 0.1, 'dP': 50, 'rho1': 20, 'mu': 0.0001, 'epsilon': 0.99, 'tapping': 'D/2', 'massflow_per_hour': 7828.486950173011, 'volflow_per_hour': 391.42434750865056, 'C_calculated': 0.6055094083982603},
         'case8': {'D': 0.2, 'd': 0.1, 'dP': 25, 'rho1': 20, 'mu': 0.0001, 'epsilon': 0.99, 'tapping': 'D/2', 'massflow_per_hour': 5542.170314224395, 'volflow_per_hour': 277.10851571121975, 'C_calculated': 0.6062307050916101}
+
     }
 
     criteria = 0.0001 # [%] Allowable deviation
@@ -585,16 +586,30 @@ def test_calculate_flow_orifice_vs_ISO5167_1_E1():
     
     assert round(C, 4) == data['C'], 'Discharge coefficient calculation failed'
 
-    # Calculate orifice flow
+    # Calculate orifice flow, without any C provided
     res = metering.calculate_flow_orifice(
         D=data['D'],
         d=data['d'],
         dP=data['dP'],
         rho1=data['rho1'],
         mu=data['mu'],
-        #C=data['C'],
-        epsilon=epsilon
+        epsilon=epsilon,
+        tapping='flange'
     )
 
-    print(f'Mass flow: {res["MassFlow"]}, Vol flow: {res["VolFlow"]}')
+    # Check that calculated C is equal to the actual C
+    assert round(res['C'], 4) == data['C'], 'Discharge coefficient calculation failed'
+
+    criteria = 0.02 # [%] Allowable deviation
+
+    # Check that calculated mass flow, volume flow and velocity are within the criteria
+    reldev = abs(utilities.calculate_relative_deviation(res['MassFlow'], data['MassFlow']))
+    assert reldev < criteria, 'Mass flow from orifice calculation failed'
+
+    reldev = abs(utilities.calculate_relative_deviation(res['VolFlow'], data['VolFlow']))
+    assert reldev < criteria, 'Volume flow from orifice calculation failed'
+
+    reldev = abs(utilities.calculate_relative_deviation(res['Velocity'], data['Velocity']))
+    assert reldev < criteria, 'Velocity from orifice calculation failed'
+
     

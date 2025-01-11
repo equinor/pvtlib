@@ -424,8 +424,6 @@ def calculate_beta_V_cone(D, dc):
     
     return beta
 
-def _orifice_Re_iterator(Re, )
-
 
 #%% Orifice equations
 def calculate_flow_orifice(D, d, dP, rho1, mu=None, C=None, epsilon=None, tapping='corner', check_input=False):
@@ -487,7 +485,7 @@ def calculate_flow_orifice(D, d, dP, rho1, mu=None, C=None, epsilon=None, tappin
         criteria = 1e-100
 
         # Initial guess for discharge coefficient
-        C_init = 0.6
+        C_init = 0.5
         C = C_init
 
         for i in range(max_iter):
@@ -522,7 +520,7 @@ def calculate_flow_orifice(D, d, dP, rho1, mu=None, C=None, epsilon=None, tappin
         # If the loop completes without convergence, raise an exception
         else:
             if check_input:
-                raise Exception('ERROR: Iterative calculation for discharge coefficient did not converge')
+                raise Exception(f'ERROR: Iterative calculation for discharge coefficient did not converge in {max_iter} iterations.') 
             else:
                 return results_error
 
@@ -650,39 +648,3 @@ def calculate_C_orifice_ReaderHarrisGallagher(D, beta, Re, tapping='corner', che
         - 0.031*(M2-0.8*M2**1.1)*beta**1.3 + additional_term
 
     return C
-
-
-if __name__ == '__main__':
-    # import fluids
-
-    P1 = 50.0
-    dP = 300.0
-    beta = 0.5
-    k = 1.4
-    D=1.0
-    mu=0.0011
-
-    res = calculate_flow_orifice(
-        D=D, 
-        d=beta*D, 
-        dP=dP, 
-        rho1=20.0,
-        mu=mu, 
-        C=None, 
-        epsilon=None, 
-        check_input=False
-        )
-
-    print(res)
-
-    # e_pvtlib = calculate_expansibility_orifice(P1=P1, dP=dP, beta=beta, kappa=k)
-    # print(f'Expansibility factor from pvtlib: {e_pvtlib}')
-
-    # e_fluids = fluids.flow_meter.orifice_expansibility(
-    #     D=D, 
-    #     Do=beta*D, 
-    #     P1=P1*1e5, 
-    #     P2=(P1-dP/1000)*1e5, 
-    #     k=k
-    #     )
-    # print(f'Expansibility factor from fluids: {e_fluids}')
