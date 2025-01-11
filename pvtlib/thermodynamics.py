@@ -96,3 +96,24 @@ def energy_rate_diffperc(energy_rate_A, energy_rate_B):
     energy_rate_diffperc = 100*(abs(energy_rate_A) - abs(energy_rate_B))/((abs(energy_rate_A) + abs(energy_rate_B))/2)
     
     return energy_rate_diffperc
+
+
+
+def natural_gas_viscosity_Lee_et_al(P, T, M, rho):
+    '''
+    Calculate natural gas viscosity using Lee et al. correlation
+
+    Parameters
+    ----------
+    P : float
+        Pressure [bara]
+    T : float
+        Temperature [C]
+    M : float
+        Molar mass [g/mol]
+    rho : float
+        Density [kg/m3]
+    '''
+
+    P_psia = P*14.5038
+    
