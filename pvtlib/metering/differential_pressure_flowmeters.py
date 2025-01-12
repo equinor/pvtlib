@@ -108,7 +108,12 @@ def calculate_flow_venturi(D, d, dP, rho1, C=None, epsilon=None, check_input=Fal
     Returns
     -------
     results : dict
-        Dictionary containing all results from calculations.
+        Dictionary containing the following keys:
+        - 'MassFlow': Mass flow rate [kg/h].
+        - 'VolFlow': Volume flow rate [m3/h].
+        - 'Velocity': Flow velocity [m/s].
+        - 'C': Discharge coefficient used.
+        - 'epsilon': Expansion factor used.
 
     Raises
     ------
@@ -279,12 +284,12 @@ def calculate_flow_V_cone(D, beta, dP, rho1, C = None, epsilon = None, check_inp
     Returns
     -------
     results : dict
-        A dictionary containing the following key-value pairs:
-            'MassFlow': The mass flowrate of the fluid in kg/h.
-            'VolFlow': The volume flowrate of the fluid in m3/h.
-            'Velocity': The velocity of the fluid in m/s.
-            'C': The discharge coefficient used in the calculations.
-            'epsilon': The expansibility factor used in the calculations.
+        Dictionary containing the following keys:
+        - 'MassFlow': Mass flow rate [kg/h].
+        - 'VolFlow': Volume flow rate [m3/h].
+        - 'Velocity': Flow velocity [m/s].
+        - 'C': Discharge coefficient used.
+        - 'epsilon': Expansion factor used.
         
     '''
     
@@ -452,13 +457,13 @@ def calculate_flow_orifice(D, d, dP, rho1, mu=None, C=None, epsilon=None, tappin
         If True, the function will raise exceptions for invalid input parameters. If False, it will return a dictionary with NaN values for invalid inputs.
     Returns
     -------
-    dict
-        A dictionary containing the following keys:
-        - 'MassFlow': Mass flow rate (kg/h).
-        - 'VolFlow': Volumetric flow rate (m3/h).
-        - 'Velocity': Fluid velocity (m/s).
-        - 'C': Discharge coefficient.
-        - 'epsilon': Expansibility factor.
+    results : dict
+        Dictionary containing the following keys:
+        - 'MassFlow': Mass flow rate [kg/h].
+        - 'VolFlow': Volume flow rate [m3/h].
+        - 'Velocity': Flow velocity [m/s].
+        - 'C': Discharge coefficient used.
+        - 'epsilon': Expansion factor used.
         - 'Re': Reynolds number.
     Raises
     ------
@@ -628,7 +633,7 @@ def calculate_C_orifice_ReaderHarrisGallagher(D, beta, Re, tapping='corner', che
         If True, input values are checked for validity. Default is False.
     Returns
     -------
-    float
+    C : float
         Discharge coefficient (C). Returns NaN if inputs are invalid and `check_input` is False.
     Raises
     ------
