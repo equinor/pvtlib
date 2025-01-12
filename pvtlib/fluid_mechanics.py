@@ -24,6 +24,36 @@ SOFTWARE.
 from math import pi
 from numpy import nan
 
+def reynolds_number(rho, v, D, mu):
+    '''
+    Calculate Reynolds number for a fluid flow.
+    
+    Parameters
+    ----------
+    rho : float
+        Fluid density [kg/m3].
+    v : float
+        Fluid velocity [m/s].
+    D : float
+        Inner pipe diameter [m].
+    mu : float
+        Fluid dynamic viscosity [Pa⋅s].
+
+    Returns
+    -------
+    Re : float
+        Reynolds number [-].
+
+    '''
+    
+    if mu == 0:
+        Re = nan
+    else:
+        Re = rho * v * D / mu
+    
+    return Re
+
+
 def superficial_velocity(Q_phase, D):
     '''
     Calculates superficial velocity of a phase
