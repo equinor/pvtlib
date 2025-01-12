@@ -21,8 +21,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from pvtlib import metering, utilities
+from pvtlib import utilities
 import numpy as np
+
+from pvtlib.metering import differential_pressure_flowmeters
 
 #%% Test V-cone calculations
 def test_V_cone_calculation_1():
@@ -32,12 +34,12 @@ def test_V_cone_calculation_1():
     
     criteria = 0.003 # %
     
-    beta = metering.calculate_beta_V_cone(D=0.073406, dc=0.0586486)
+    beta = differential_pressure_flowmeters.calculate_beta_V_cone(D=0.073406, dc=0.0586486)
     
     dP = 603.29
     epsilon = 0.9809
     
-    res = metering.calculate_flow_V_cone(
+    res = differential_pressure_flowmeters.calculate_flow_V_cone(
         D=0.073406,  
         beta=beta, 
         dP=dP,
@@ -54,7 +56,7 @@ def test_V_cone_calculation_1():
     dP = 289.71
     epsilon = 0.9908
     
-    res = metering.calculate_flow_V_cone(
+    res = differential_pressure_flowmeters.calculate_flow_V_cone(
         D=0.073406,
         beta=beta,
         dP=dP,
@@ -71,7 +73,7 @@ def test_V_cone_calculation_1():
     dP = 5.8069
     epsilon = 0.9998
     
-    res = metering.calculate_flow_V_cone(
+    res = differential_pressure_flowmeters.calculate_flow_V_cone(
         D=0.073406,
         beta=beta,
         dP=dP,
@@ -96,7 +98,7 @@ def test_V_cone_calculation_2():
     dP = 71.66675
     epsilon = 0.9809
     
-    res = metering.calculate_flow_V_cone(
+    res = differential_pressure_flowmeters.calculate_flow_V_cone(
         D=0.024,  
         beta=0.55, 
         dP=dP,
@@ -124,7 +126,7 @@ def test_calculate_beta_V_cone():
     criteria = 0.001 # %
     
     # Unit of inputs doesnt matter, as long as its the same for both D and dc. mm used in this example
-    beta = metering.calculate_beta_V_cone(
+    beta = differential_pressure_flowmeters.calculate_beta_V_cone(
         D=24, #mm
         dc=20.044 #mm
         )
@@ -146,11 +148,11 @@ def test_calculate_expansibility_Stewart_V_cone():
     beta=0.6014
     '''
     
-    beta = metering.calculate_beta_V_cone(D=0.073406, dc=0.0586486)
+    beta = differential_pressure_flowmeters.calculate_beta_V_cone(D=0.073406, dc=0.0586486)
     
     criteria = 0.003 # %
     
-    epsilon = metering.calculate_expansibility_Stewart_V_cone(
+    epsilon = differential_pressure_flowmeters.calculate_expansibility_Stewart_V_cone(
         beta=beta, 
         P1=18.0, 
         dP=484.93, 
@@ -180,7 +182,7 @@ def test_calculate_flow_venturi():
     criteria = 0.0001 # [%] Allowable deviation
     
     for case, case_dict in cases.items():
-        res = metering.calculate_flow_venturi(
+        res = differential_pressure_flowmeters.calculate_flow_venturi(
             D=case_dict['D'],
             d=case_dict['d'],
             dP=case_dict['dP'],
@@ -201,8 +203,8 @@ def test_calculate_flow_venturi():
 
 
 def test_calculate_beta_DP_meter():
-    assert metering.calculate_beta_DP_meter(D=0.1, d=0.05)==0.5, 'Beta calculation failed'
-    assert metering.calculate_beta_DP_meter(D=0.2, d=0.05)==0.25, 'Beta calculation failed'
+    assert differential_pressure_flowmeters.calculate_beta_DP_meter(D=0.1, d=0.05)==0.5, 'Beta calculation failed'
+    assert differential_pressure_flowmeters.calculate_beta_DP_meter(D=0.2, d=0.05)==0.25, 'Beta calculation failed'
 
 
 def test_calculate_expansibility_ventiruri():
@@ -218,7 +220,7 @@ def test_calculate_expansibility_ventiruri():
     }
 
     for case, case_dict in cases.items():
-        epsilon = metering.calculate_expansibility_venturi(
+        epsilon = differential_pressure_flowmeters.calculate_expansibility_venturi(
             P1=case_dict['P1'],
             dP=case_dict['dP'],
             beta=case_dict['beta'],
@@ -239,7 +241,7 @@ def test_calculate_expansibility_orifice():
     }
 
     for case, case_dict in cases.items():
-        epsilon = metering.calculate_expansibility_orifice(
+        epsilon = differential_pressure_flowmeters.calculate_expansibility_orifice(
             P1=case_dict['P1'],
             dP=case_dict['dP'],
             beta=case_dict['beta'],
@@ -280,7 +282,7 @@ def test_calculate_C_orifice_ReaderHarrisGallagher():
     }
 
     for case, case_dict in cases.items():
-        C = metering.calculate_C_orifice_ReaderHarrisGallagher(
+        C = differential_pressure_flowmeters.calculate_C_orifice_ReaderHarrisGallagher(
             D=case_dict['D'],
             beta=case_dict['beta'],
             Re=case_dict['Re'],
@@ -311,7 +313,7 @@ def test_calculate_flow_orifice():
     criteria = 0.0001 # [%] Allowable deviation
 
     for case, case_dict in cases.items():
-        res = metering.calculate_flow_orifice(
+        res = differential_pressure_flowmeters.calculate_flow_orifice(
             D=case_dict['D'],
             d=case_dict['d'],
             dP=case_dict['dP'],
@@ -354,9 +356,9 @@ def test_calculate_flow_orifice_without_C():
 
     for case, case_dict in cases.items():
         # Calculate orifice beta
-        beta = metering.calculate_beta_DP_meter(D=case_dict['D'], d=case_dict['d'])
+        beta = differential_pressure_flowmeters.calculate_beta_DP_meter(D=case_dict['D'], d=case_dict['d'])
 
-        res = metering.calculate_flow_orifice(
+        res = differential_pressure_flowmeters.calculate_flow_orifice(
             D=case_dict['D'],
             d=case_dict['d'],
             dP=case_dict['dP'],
@@ -399,10 +401,10 @@ def test_calculate_flow_orifice_vs_ISO5167_1_E1():
     }
 
     # Calculate orifice beta
-    beta = metering.calculate_beta_DP_meter(D=data['D'], d=data['d'])
+    beta = differential_pressure_flowmeters.calculate_beta_DP_meter(D=data['D'], d=data['d'])
 
     # Calculate expansibility
-    epsilon = metering.calculate_expansibility_orifice(
+    epsilon = differential_pressure_flowmeters.calculate_expansibility_orifice(
         P1=data['P1'],
         dP=data['dP'],
         beta=beta,
@@ -410,7 +412,7 @@ def test_calculate_flow_orifice_vs_ISO5167_1_E1():
     )
 
     # Calculate discharge coefficient
-    C = metering.calculate_C_orifice_ReaderHarrisGallagher(
+    C = differential_pressure_flowmeters.calculate_C_orifice_ReaderHarrisGallagher(
         D=data['D'],
         beta=beta,
         Re=data['Re'],
@@ -420,7 +422,7 @@ def test_calculate_flow_orifice_vs_ISO5167_1_E1():
     assert round(C, 4) == data['C'], 'Discharge coefficient calculation failed'
 
     # Calculate orifice flow, without any C provided
-    res = metering.calculate_flow_orifice(
+    res = differential_pressure_flowmeters.calculate_flow_orifice(
         D=data['D'],
         d=data['d'],
         dP=data['dP'],
@@ -458,7 +460,7 @@ def test_calculate_flow_orifice_invalid_inputs():
     }
 
     for case_name, case_dict in cases.items():
-        res = metering.calculate_flow_orifice(
+        res = differential_pressure_flowmeters.calculate_flow_orifice(
             D=case_dict['D'],
             d=case_dict['d'],
             dP=case_dict['dP'],
