@@ -101,15 +101,13 @@ def energy_rate_diffperc(energy_rate_A, energy_rate_B):
     return energy_rate_diffperc
 
 
-def natural_gas_viscosity_Lee_et_al(P, T, M, rho):
+def natural_gas_viscosity_Lee_et_al(T, M, rho):
     '''
     Calculate natural gas viscosity using Lee et al. correlation. 
     Correlation developed for natural gases at pressures between 100 psia (6.9 bar) and 8000 psia (551 bar) and temperatures between 100 and 340 F (37.8 and 171.1 C)
 
     Parameters
     ----------
-    P : float
-        Pressure [bara]
     T : float
         Temperature [C]
     M : float
@@ -124,22 +122,20 @@ def natural_gas_viscosity_Lee_et_al(P, T, M, rho):
 
     Notes
     -----
+    The correlation is developed for hydrocarbon natural gases at certain condistions and may not be valid for other gases.
+    However, the simplicity of the correlation makes it a good choice for quick calculations where high accuracy is not required.
+
     Lee, A.L., M.H. Gonzalez, and B.E. Eakin, The Viscosity of Natural Gases. Journal of Petroleum Technology, 1966 
     https://petrowiki.spe.org/Gas_viscosity
     '''
 
-    P_psi = unit_converters.bar_to_psi(P)
     T_R = unit_converters.celsius_to_rankine(T)
     rho_gpercm3 = rho/1000
 
-    K1 = (0.00094+2e-6*M)*T_R**1.5/(209+19*M+T_R)
+    K1 = ((9.4+0.02*M)*T_R**1.5)/(209+19*M+T_R)
     X = 3.5+(986/T_R)+0.01*M
     Y = 2.4-0.2*X
 
-    mu = K1*math.exp(X*(rho_gpercm3)**Y)
+    mu = K1*math.exp(X*(rho_gpercm3)**Y)/1e4 #Convert from microPoise to cP
 
     return mu
-
-
-
-

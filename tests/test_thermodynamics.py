@@ -27,17 +27,20 @@ def test_natural_gas_viscosity_Lee_et_al():
 
     # Test data against experimental data from Lee, A.L., M.H. Gonzalez, and B.E. Eakin, The Viscosity of Natural Gases. Journal of Petroleum Technology, 1966 
 
-    cases={
-        'case1':{'P':206.84,'T':171.11,'M':18.26,'rho':102.67,'mu_expected':0.01990}, # 3000 psi and 340 F
-        'case2':{'P':551.58,'T':37.78,'M':18.26,'rho':309.13,'mu_expected':0.04074}, # 8000 psi and 100 F
-        'case3':{'P':27.58,'T':137.78,'M':18.26,'rho':102.67,'mu_expected':0.01602}, # 400 psi and 280 F
+    cases={ 
+        # case1, case2 and case3 are from the paper (sample 4) where mu_expected is the experimental value of viscosity (mu_E). Use a accept criteria of 10% for these
+        # however, I was not able to reproduce the calculated values (mu_c) from the paper. Could be an error in the paper..?
+        'case1':{'T':171.11,'M':18.26,'rho':105.6,'mu_expected':0.01990 , 'criteria':10.0}, # 3000 psi and 340 F
+        'case2':{'T':37.78,'M':18.26,'rho':310.6,'mu_expected':0.04074, 'criteria':10.0}, # 8000 psi and 100 F 309.13 g/cc
+        'case3':{'T':137.78,'M':18.26,'rho':15.1,'mu_expected':0.01602, 'criteria':10.0}, # 400 psi and 280 F
+        
+        # case4 is from calculation example at https://petrowiki.spe.org/Gas_viscosity. This is reproduced identically. 
+        'case4':{'T':65.55,'M':20.079,'rho':110.25,'mu_expected':0.01625, 'criteria':0.1}, # 60 F, 0.7 g/cc
     }
 
-    criteria = 1.0 # [%] Acceptable relative error
 
     for case_name, case_dict in cases.items():
         mu=thermodynamics.natural_gas_viscosity_Lee_et_al(
-            P=case_dict['P'],
             T=case_dict['T'],
             M=case_dict['M'],
             rho=case_dict['rho']
@@ -46,7 +49,7 @@ def test_natural_gas_viscosity_Lee_et_al():
         # Calculate relative error
         relative_error=abs(utilities.calculate_relative_deviation(mu,case_dict['mu_expected']))
         
-        assert relative_error<criteria, f'Error in {case_name} is {relative_error}'
+        assert relative_error<case_dict['criteria'], f'Natural gas viscosity calculation failed for {case_name}'
         
 
 
