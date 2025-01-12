@@ -23,4 +23,3 @@ SOFTWARE.
 
 from . import differential_pressure_flowmeters
 
-__all__ = [name for name in dir(differential_pressure_flowmeters) if callable(getattr(differential_pressure_flowmeters, name))]
