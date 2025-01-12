@@ -27,6 +27,7 @@ print(result)
 - **Thermodynamics**: Thermodynamic functions
 - **Fluid Mechanics**: Fluid mechanic functions
 - **Metering**: Metering functions
+- **Unit converters**: Functions to convert between different units of measure
 
 ## License
 
