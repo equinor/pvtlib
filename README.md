@@ -31,11 +31,7 @@ print(result)
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Contributing
-
-Contributions are welcome! Please read the [contributing guidelines](CONTRIBUTING.md) for more details.
+This project is licensed under the MIT License - see the [LICENSE](https://github.com/chagenvik/pvtlib/blob/main/README.md) file for details.
 
 ## Contact
 
