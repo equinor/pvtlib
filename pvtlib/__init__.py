@@ -24,3 +24,4 @@ SOFTWARE.
 from . import metering
 from . import fluid_mechanics
 from . import thermodynamics
+from . import unit_converters

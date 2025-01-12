@@ -22,6 +22,7 @@ SOFTWARE.
 """
 
 from tests.test_metering import *
+from tests.test_thermodynamics import *
 
 if __name__ == '__main__':
     test_calculate_flow_venturi()
@@ -31,10 +32,12 @@ if __name__ == '__main__':
     test_calculate_expansibility_Stewart_V_cone()
     test_V_cone_calculation_1()
     test_V_cone_calculation_2()
+    test_natural_gas_viscosity_Lee_et_al()
     test_calculate_expansibility_orifice()
     test_calculate_C_orifice_ReaderHarrisGallagher()
     test_calculate_flow_orifice()
     test_calculate_flow_orifice_without_C()
     test_calculate_flow_orifice_vs_ISO5167_1_E1()
     test_calculate_flow_orifice_invalid_inputs()
+    
     print('All tests passed')
