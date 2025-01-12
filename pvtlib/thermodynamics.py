@@ -22,7 +22,7 @@ SOFTWARE.
 """
 
 from pvtlib import unit_converters
-import numpy as np
+import math
 
 def energy_rate_balance(h_in, h_out, massflow, vel_in, vel_out):
     '''
@@ -136,7 +136,7 @@ def natural_gas_viscosity_Lee_et_al(P, T, M, rho):
     X = 3.5+(986/T_R)+0.01*M
     Y = 2.4-0.2*X
 
-    mu = K1*np.exp(X*(rho_gpercm3)**Y)
+    mu = K1*math.exp(X*(rho_gpercm3)**Y)
 
     return mu
 
