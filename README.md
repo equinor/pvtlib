@@ -15,10 +15,10 @@ pip install pvtlib
 Here is an example of how to use the library:
 
 ```py
-from pvtlib import metering
+from pvtlib.metering import differential_pressure_flowmeters
 
 # Example usage of the calculate_flow_venturi function
-result = metering.calculate_flow_venturi(D=0.1, d=0.05, dP=200, rho1=1000)
+result = differential_pressure_flowmeters.calculate_flow_venturi(D=0.1, d=0.05, dP=200, rho1=1000)
 print(result)
 ```
 
