@@ -22,9 +22,9 @@ SOFTWARE.
 """
 
 from math import pi
-from numpy import nan
+import numpy as np
 
-def reynolds_number(rho, v, D, mu):
+def reynolds_number(rho: float, v: float, D: float, mu: float) -> float:
     '''
     Calculate Reynolds number for a fluid flow.
     
@@ -46,10 +46,10 @@ def reynolds_number(rho, v, D, mu):
 
     '''
     
-    if mu == 0:
-        Re = nan
-    else:
-        Re = rho * v * D / mu
+    if rho <= 0 or v <= 0 or D <= 0 or mu <= 0:
+        return np.nan
+    
+    Re = rho * v * D / mu
     
     return Re
 
@@ -75,7 +75,7 @@ def superficial_velocity(Q_phase, D):
     A = pi * ((D/2)**2)
     
     if A==0:
-        Us = nan
+        Us = np.nan
     else:
         Us = (Q_phase/3600) / A
 
@@ -113,7 +113,7 @@ def liquid_holdup_from_density(measured_density, liquid_density, gas_density):
         return 0.0
     
     if liquid_density==gas_density:
-        return nan
+        return np.nan
     else:
         return (measured_density-gas_density)/(liquid_density-gas_density)
     
@@ -164,7 +164,7 @@ def critical_velocity_for_uniform_wio_dispersion_horizontal(ST_oil_aq, rho_o, rh
     
 
     if rho_o == 0 or Visc_o == 0:
-        Vc = nan
+        Vc = np.nan
     else:
         Vc = K1 * (G ** 0.325) * (ST_oil_aq ** 0.39) * (((rho_aq - rho_o) ** 0.325) / (rho_o ** 0.283)) * ((D ** 0.366) / (Visc_o ** 0.431))    
     
@@ -207,7 +207,7 @@ def critical_velocity_for_uniform_wio_dispersion_vertical(Betha, ST_oil_aq, rho_
     '''
     
     if rho_o == 0 or Visc_o == 0 or Betha == 100 or Betha<0:
-        Vc = nan
+        Vc = np.nan
     else:
         Vc = K2 * ((Betha ** 0.556) / ((100 - Betha) ** 1.556)) * (ST_oil_aq ** 0.278) * (((rho_aq - rho_o) ** 0.278) / (rho_o ** 0.444)) * ((D / Visc_o) ** 0.111)
     
