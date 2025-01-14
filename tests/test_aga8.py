@@ -2,7 +2,7 @@ from pvtlib import aga8
 import os
 import json
 
-def test_aga8_P_T():
+def test_aga8_PT():
 
     folder_path = r'tests\data\aga8'
     
@@ -51,7 +51,7 @@ def test_aga8_P_T():
     assert failed_tests == [], f'AGA8 P&T calculation, following tests failed: {failed_tests}'
 
 
-def test_aga8_T_rho():
+def test_aga8_rhoT():
     
     folder_path = r'tests\data\aga8'
     
