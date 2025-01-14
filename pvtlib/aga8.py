@@ -31,7 +31,7 @@ class aga8:
         elif self.equation == 'DETAIL':
             self.adapter.calc_density()
 
-    def calculate_from_P_T(self, composition, pressure: float, temperature: float, pressure_unit = 'KPa', temperature_unit = 'K', molar_mass = None):
+    def calculate_from_PT(self, composition, pressure: float, temperature: float, pressure_unit = 'KPa', temperature_unit = 'K', molar_mass = None):
         """
 
         Parameters
@@ -152,11 +152,9 @@ class aga8:
     
 
     
-    def calculate_from_T_and_rho(self, composition, mass_density: float, temperature: float, temperature_unit = 'K', molar_mass = None):
+    def calculate_from_rhoT(self, composition, mass_density: float, temperature: float, temperature_unit = 'K', molar_mass = None):
         '''
-        Calculate speed of sound at a given temperature and mass density (for example used in speed of sound correction in Gas Density Meters)
-        This is a temporary implementation using scipy fsolve. This function (without fsolve) is available in the AGA8 Rust dll file and will be implemented. 
-        This is why the scipy import is inside the function as well, to avoid dependency to scipy using regular calculations. 
+        Calculate gas properties using AGA8 with mass density, temperature and composition as input.
         
         Parameters
         ----------

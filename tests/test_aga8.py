@@ -34,7 +34,7 @@ def test_aga8_P_T():
         #excpected results from test
         test_results = test['output']
         
-        results = adapters[equation].calculate_from_P_T(
+        results = adapters[equation].calculate_from_PT(
                     composition=test['input']['composition'], 
                     pressure=test['input']['pressure_kPa'], #KPa
                     temperature=test['input']['temperature_K'] #K
@@ -84,7 +84,7 @@ def test_aga8_T_rho():
         #excpected results from test
         test_results = test['output']
         
-        results = adapters[equation].calculate_from_T_and_rho(
+        results = adapters[equation].calculate_from_rhoT(
                     composition=test['input']['composition'], 
                     mass_density=test['output']['rho'], #mass density from test data
                     temperature=test['input']['temperature_K'],
