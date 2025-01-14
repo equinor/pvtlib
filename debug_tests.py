@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from tests.test_metering import *
+from tests.test_differential_pressure_flowmeters import *
 from tests.test_thermodynamics import *
 
 if __name__ == '__main__':

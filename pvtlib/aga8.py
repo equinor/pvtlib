@@ -1,0 +1,357 @@
+import pyaga8
+
+class aga8:
+    """ """
+
+    def __init__(self, equation = 'GERG-2008'):
+
+        self.equation = equation.upper()
+
+        if self.equation not in ['GERG-2008', 'DETAIL']:
+            raise Exception('Invalid equation selected. Must be either GERG-2008 or DETAIL')
+        
+        if self.equation == 'GERG-2008':
+            self.adapter = pyaga8.Gerg2008()
+
+        elif self.equation == 'DETAIL':
+            self.adapter = pyaga8.Detail()
+
+    def _get_properties(self):
+        properties = {}
+        for attr in dir(self.adapter):
+            if not callable(getattr(self.adapter, attr)) and not attr.startswith("__"):
+                if attr not in ['pressure', 'temperature']:
+                    properties[attr] = getattr(self.adapter, attr)
+        
+        return properties
+
+    def _calculate_density(self):
+        if self.equation == 'GERG-2008':
+            self.adapter.calc_density(0)
+        elif self.equation == 'DETAIL':
+            self.adapter.calc_density()
+
+    def calculate_from_P_T(self, composition, pressure: float, temperature: float, pressure_unit = 'KPa', temperature_unit = 'K', molar_mass = None):
+        """
+
+        Parameters
+        ----------
+        composition : dict
+            Composition containing component name as key and mole percent or mole fraction as value.
+            
+            C1 : methane
+            N2 : nitrogen
+            CO2 : carbon_dioxide
+            C2 : ethane
+            C3 : propane
+            iC4 : isobutane
+            nC4 : n_butane
+            iC5 : isopentane
+            nC5 : n_pentane
+            nC6 : hexane
+            nC7 : heptane
+            nC8 : octane
+            nC9 : nonane
+            nC10 : decane
+            H2 : hydrogen
+            O2 : oxygen
+            CO : carbon_monoxide
+            H2O : water
+            H2S : hydrogen_sulfide
+            He : helium
+            Ar : argon
+            
+        pressure : float
+            P - Pressure
+
+        temperature : float
+            T - Temperature
+
+        pressure_unit : str
+            Unit of pressure. The default unit is kilopascal (kPa).
+
+        temperature_unit : str
+            Unit of temperature. The default unit is Kelvin (K).
+
+        Returns
+        -------
+        results : TYPE
+            Dictionary with properties from AGA8.
+            
+            '     P - Pressure [kPa]
+            '     T - Temperature [k]
+            '     Z - Compressibility factor [-]
+            '  dPdD - First derivative of pressure with respect to density at constant temperature [kPa/(mol/l)]
+            'd2PdD2 - Second derivative of pressure with respect to density at constant temperature [kPa/(mol/l)^2]
+            'd2PdTD - Second derivative of pressure with respect to temperature and density [kPa/(mol/l)/K]
+            '  dPdT - First derivative of pressure with respect to temperature at constant density (kPa/K)
+            '     U - Internal energy [J/mol]
+            '     H - Enthalpy [J/mol]
+            '     S - Entropy [J/(mol-K)]
+            '    Cv - Isochoric heat capacity [J/(mol-K)]
+            '    Cp - Isobaric heat capacity [J/(mol-K)]
+            '     W - Speed of sound [m/s]
+            '     G - Gibbs energy [J/mol]
+            '    JT - Joule-Thomson coefficient [K/kPa]
+            ' Kappa - Isentropic Exponent [-]
+            '     A - Helmholtz energy [J/mol]
+            '     D - Molar density [mol/l]
+            '    mm - Molar mass [g/mol]
+            '   rho - Mass density [kg/m3]
+            
+            '   gas_composition - Dictionary containing the composition used in the calculations
+
+        """
+
+        #Convert pressure to kPa
+        pressure_kPa = pressure_unit_conversion(
+            pressure_value=pressure,
+            pressure_unit=pressure_unit
+            )
+
+        #Convert temperature to K
+        temperature_K = temperature_unit_conversion(
+            temperature_value=temperature,
+            temperature_unit=temperature_unit
+            )
+
+        results = {}
+
+        #Convert composition to aga8 format
+        Aga8fluid, Aga8fluidDict = to_aga8_composition(composition)
+
+        # #Get Aga8fluid as dictionary. Only used for debug purpose
+        # Aga8fluidDict = {component : getattr(Aga8fluid,component) for component, _ in Aga8fluid._fields_}
+
+        # fluid_sum = sum([getattr(Aga8fluid, field) for field, _ in Aga8fluid._fields_])
+
+        self.adapter.set_composition(Aga8fluid)
+        self.adapter.pressure = pressure_kPa
+        self.adapter.temperature = temperature_K
+
+        self._calculate_density()
+        self.adapter.calc_properties()  # calculate properties
+
+        # get properties
+        results = self._get_properties()
+
+        #Calculate mass density
+        if molar_mass is None:
+            results['rho'] = results['d']*results['mm'] #mol/l * g/mol = g/l = kg/m3
+        else:
+            results['rho'] = results['d']*molar_mass #mol/l * g/mol = g/l = kg/m3
+
+        #Add gas composition to results
+        results['gas_composition'] = Aga8fluidDict
+
+        #Add pressure and temperature to results
+        results['pressure_kPa'] = pressure_kPa
+        results['temperature_K'] = temperature_K
+
+        return results
+    
+
+    
+    def calculate_from_T_and_rho(self, composition, mass_density: float, temperature: float, temperature_unit = 'K', molar_mass = None):
+        '''
+        Calculate speed of sound at a given temperature and mass density (for example used in speed of sound correction in Gas Density Meters)
+        This is a temporary implementation using scipy fsolve. This function (without fsolve) is available in the AGA8 Rust dll file and will be implemented. 
+        This is why the scipy import is inside the function as well, to avoid dependency to scipy using regular calculations. 
+        
+        Parameters
+        ----------
+        gas_composition : TYPE
+            Dictionary with component name as key and mole percent or mole fraction as value.
+        mass_density : float
+            Mass density [kg/m3]
+        temperature : float
+            Temperature. Unit of measure is defined by pressure_unit.
+        temperature_unit : TYPE, optional
+            Unit of measure for temperature. The default is 'K'.
+        molar_mass : float, optional
+            Molar mass can be given as an optional input [kg/kmol]. If this is given, this molar mass will be used to calculate the mass density instead of the AGA8 calculated molar mass. The default is None. In that case the AGA8 calculated molar mass will be used. 
+        
+        Returns
+        -------
+        results : TYPE
+            Dictionary with properties from AGA8. (same as for the calculate method, with pressure added. Pressure unit is given by the pressure_unit input)
+        '''
+        
+        #Convert temperature to K
+        temperature_K = temperature_unit_conversion(
+            temperature_value=temperature,
+            temperature_unit=temperature_unit
+            )
+
+        results = {}
+
+        #Convert composition to aga8 format
+        Aga8fluid, Aga8fluidDict = to_aga8_composition(composition)
+
+        self.adapter.set_composition(Aga8fluid)
+        
+        #Calculate molar mass if the molar mass is not specified
+        if molar_mass is None:
+            self.adapter.calc_molar_mass()
+            molar_mass = self.adapter.mm
+        
+        #Calculate molar density (mol/l)
+        if molar_mass !=0:
+            molar_density = mass_density / molar_mass #kg/m3 / kg/kmol --> kmol/m3 --> mol/l
+        else:
+            #Return blank dictionary of molar mass is 0, to avoid division by zero error
+            return {}
+        
+        self.adapter.d = molar_density
+        self.adapter.temperature = temperature_K
+
+        pressure_kPa = self.adapter.calc_pressure()
+        
+        #Set the pressure obtained from the calculation
+        self.adapter.pressure = pressure_kPa
+        
+        self.adapter.calc_properties()  # calculate properties
+
+        results = self._get_properties()  # get properties
+
+        #Calculate mass density
+        if molar_mass is None:
+            results['rho'] = results['d']*results['mm'] #mol/l * g/mol = g/l = kg/m3
+        else:
+            results['rho'] = results['d']*molar_mass #mol/l * g/mol = g/l = kg/m3
+
+        #Add gas composition to results
+        results['gas_composition'] = Aga8fluidDict
+        
+        #Add pressure and temperature to results
+        results['pressure_kPa'] = pressure_kPa
+        results['temperature_K'] = temperature_K
+
+        return results
+
+def pressure_unit_conversion(pressure_value, pressure_unit = 'KPa'):
+    # Convert inputs to SI units, i.e. kPa
+    if pressure_unit.lower() == 'bara':
+        pressure = pressure_value * 100
+    elif pressure_unit.lower() == 'pa':
+        pressure = pressure_value / 1000
+    elif pressure_unit.lower() == 'psi':
+        pressure = pressure_value * 6.89476
+    elif pressure_unit.lower() == 'psia':
+        pressure = (pressure_value + 14.6959488) * 6.89476
+    elif pressure_unit.lower() == 'psig':
+        pressure = pressure_value * 6.89476 + 101.325
+    elif pressure_unit.lower() == 'barg':
+        pressure = pressure_value * 100 + 101.325
+    elif pressure_unit.lower() == 'mpa':
+        pressure = pressure_value * 1000
+    elif pressure_unit.lower() == 'kpa':
+        pressure = pressure_value
+    else:
+        raise Exception(f'Pressure unit "{pressure_unit}" not supported!')
+    
+    return pressure
+
+
+def temperature_unit_conversion(temperature_value, temperature_unit = 'K'):
+    # Convert inputs to SI units, i.e. Kelvin
+    if temperature_unit.lower() == 'c':
+        temperature = temperature_value + 273.15
+    elif temperature_unit.lower() == 'f':
+        temperature = (temperature_value - 32) * 5 / 9 + 273.15
+    elif temperature_unit.lower() == 'k':
+        temperature = temperature_value
+    else:
+        raise Exception(f'Temperature unit "{temperature_unit}" not supported!')
+
+    return temperature
+
+
+def to_aga8_composition(composition: dict):
+    """
+    """
+
+    # Create AGA8 composition object
+    AGA8_COMPOSITION = pyaga8.Composition()
+
+    aga8_component_list = ['C1', 'N2', 'CO2', 'C2', 'C3', 'iC4', 'nC4', 'iC5', 'nC5', 'nC6', 'nC7', 'nC8', 'nC9', 'nC10', 'H2', 'O2', 'CO', 'H2O', 'H2S', 'He', 'Ar']
+
+    aga8_composition_dict = {component : 0.0 for component in aga8_component_list}
+
+    # Sum of input composition (used for normalization)
+    composition_sum = sum(composition.values())
+
+    # Component normalization and assignment to aga8 list
+    for component, mole_percent in composition.items():
+        mole_fraction_normalized = mole_percent / composition_sum
+
+        comp_name = component.split(sep='-')[0]
+
+        if comp_name[0] == 'C' and comp_name[1].isnumeric():
+
+            Cn = int(comp_name[1:])
+
+            #Components with carbon numbers from C6 to C9 are assigned to the corresponding normal alkane
+            if Cn in [6,7,8,9]:
+                aga8_composition_dict[f'nC{Cn}'] =  mole_fraction_normalized
+            
+            #Components with carbon number equal or greater than 10, is assigned to nC10
+            elif Cn >= 10:
+                aga8_composition_dict['nC10'] =  mole_fraction_normalized
+            
+            #Components with carbon numbers below C6 is assigned to the appropriate AGA8 component. For example C3 or iC4
+            else:
+                aga8_composition_dict[comp_name] = mole_fraction_normalized
+
+        else:
+            if comp_name in list(aga8_composition_dict.keys()):  # if the carbon number is not found, for example for C3, the
+                # function looks for the component in the AGA8 fluid and adds the component
+                aga8_composition_dict[comp_name] = mole_fraction_normalized
+            else:
+                raise Exception(f'Illegal component: {comp_name}')
+
+    for component, mole_fraction in aga8_composition_dict.items():
+        if component=='C1':
+            AGA8_COMPOSITION.methane = mole_fraction
+        elif component=='N2':
+            AGA8_COMPOSITION.nitrogen = mole_fraction
+        elif component=='CO2':
+            AGA8_COMPOSITION.carbon_dioxide = mole_fraction
+        elif component=='C2':
+            AGA8_COMPOSITION.ethane = mole_fraction
+        elif component=='C3':
+            AGA8_COMPOSITION.propane = mole_fraction
+        elif component=='iC4':
+            AGA8_COMPOSITION.isobutane = mole_fraction
+        elif component=='nC4':
+            AGA8_COMPOSITION.n_butane = mole_fraction
+        elif component=='iC5':
+            AGA8_COMPOSITION.isopentane = mole_fraction
+        elif component=='nC5':
+            AGA8_COMPOSITION.n_pentane = mole_fraction
+        elif component=='nC6':
+            AGA8_COMPOSITION.hexane = mole_fraction
+        elif component=='nC7':
+            AGA8_COMPOSITION.heptane = mole_fraction
+        elif component=='nC8':
+            AGA8_COMPOSITION.octane = mole_fraction
+        elif component=='nC9':
+            AGA8_COMPOSITION.nonane = mole_fraction
+        elif component=='nC10':
+            AGA8_COMPOSITION.decane = mole_fraction
+        elif component=='H2':
+            AGA8_COMPOSITION.hydrogen = mole_fraction
+        elif component=='O2':
+            AGA8_COMPOSITION.oxygen = mole_fraction
+        elif component=='CO':
+            AGA8_COMPOSITION.carbon_monoxide = mole_fraction
+        elif component=='H2O':
+            AGA8_COMPOSITION.water = mole_fraction
+        elif component=='H2S':
+            AGA8_COMPOSITION.hydrogen_sulfide = mole_fraction
+        elif component=='He':
+            AGA8_COMPOSITION.helium = mole_fraction
+        elif component=='Ar':
+            AGA8_COMPOSITION.argon = mole_fraction
+
+    return AGA8_COMPOSITION, aga8_composition_dict
