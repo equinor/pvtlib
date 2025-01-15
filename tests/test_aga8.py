@@ -101,3 +101,38 @@ def test_aga8_rhoT():
                 failed_tests.append(f'Property: {key}, {filename}')
     
     assert failed_tests == [], f'AGA8 T&rho calculation, following tests failed: {failed_tests}'
+
+def test_aga8_unit_conversion_N2():
+    # Test that unit converters work properly. Use N2 at 40 bara and 30 C as test case. Use GERG-2008 equation. 
+    # N2 density from NIST webbook of chemistry is used as reference.
+
+    gerg = AGA8('GERG-2008')
+
+    # N2 composition
+    composition = {'N2': 100.0}
+
+    # Test data
+    reference_density = 46.242 # kg/m3
+
+    cases = {
+        'Pa_and_K': {'pressure': 4000000, 'temperature': 293.15, 'pressure_unit': 'Pa', 'temperature_unit': 'K'},
+        'psi_and_F': {'pressure': 580.1509509, 'temperature': 68.0, 'pressure_unit': 'psi', 'temperature_unit': 'F'},
+        'barg_and_C': {'pressure': 38.98675, 'temperature': 20, 'pressure_unit': 'barg', 'temperature_unit': 'C'},
+        'bara_and_F': {'pressure': 40, 'temperature': 68.0, 'pressure_unit': 'bara', 'temperature_unit': 'F'},
+        'psig_and_F': {'pressure': 565.4550021, 'temperature': 68.0, 'pressure_unit': 'psig', 'temperature_unit': 'F'},
+        'Mpa_and_C': {'pressure': 4, 'temperature': 20, 'pressure_unit': 'Mpa', 'temperature_unit': 'C'},
+    }
+
+    for case_name, case_dict in cases.items():
+        results = gerg.calculate_from_PT(
+            composition=composition,
+            pressure=case_dict['pressure'],
+            temperature=case_dict['temperature'],
+            pressure_unit=case_dict['pressure_unit'],
+            temperature_unit=case_dict['temperature_unit']
+        )
+        print(f'''Calculated density: {round(results["rho"],3)}, reference density: {reference_density}''')
+
+        assert abs(round(results['rho'],3) - reference_density) < 1e-6, f'Failed test {case_name}'
+
+
