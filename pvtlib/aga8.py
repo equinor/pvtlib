@@ -1,6 +1,6 @@
 import pyaga8
 
-class aga8:
+class AGA8:
     """
     A class to perform gas property calculations using the AGA8 equation of state.
     equation : str, optional

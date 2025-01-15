@@ -1,4 +1,4 @@
-from pvtlib import aga8
+from pvtlib import AGA8
 import os
 import json
 
@@ -8,8 +8,8 @@ def test_aga8_PT():
     
     #Run AGA8 setup for gerg an detail
     adapters = {
-            'GERG-2008' : aga8('GERG-2008'),
-            'DETAIL' : aga8('DETAIL')
+            'GERG-2008' : AGA8('GERG-2008'),
+            'DETAIL' : AGA8('DETAIL')
             }
     
     tests = {}
@@ -59,8 +59,8 @@ def test_aga8_rhoT():
     
     #Run AGA8 setup for gerg an detail
     adapters = {
-            'GERG-2008' : aga8('GERG-2008'),
-            'DETAIL' : aga8('DETAIL')
+            'GERG-2008' : AGA8('GERG-2008'),
+            'DETAIL' : AGA8('DETAIL')
             }
     
     tests = {}
