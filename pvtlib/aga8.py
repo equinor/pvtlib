@@ -13,7 +13,7 @@ class aga8:
     Methods
     calculate_from_PT(composition, pressure, temperature, pressure_unit='bara', temperature_unit='C', molar_mass=None)
         Calculate gas properties using pressure, temperature, and composition as input.
-    calculate_from_rhoT(composition, mass_density, temperature, temperature_unit='K', molar_mass=None)
+    calculate_from_rhoT(composition, mass_density, temperature, temperature_unit='C', molar_mass=None)
         Calculate gas properties using mass density, temperature, and composition as input.
     """ 
 
