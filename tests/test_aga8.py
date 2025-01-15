@@ -1,6 +1,7 @@
 from pvtlib import AGA8
 import os
 import json
+from pytest import raises
 
 def test_aga8_PT():
 
@@ -103,8 +104,9 @@ def test_aga8_rhoT():
     assert failed_tests == [], f'AGA8 T&rho calculation, following tests failed: {failed_tests}'
 
 def test_aga8_unit_conversion_N2():
-    # Test that unit converters work properly. Use N2 at 40 bara and 30 C as test case. Use GERG-2008 equation. 
+    # Test that unit converters work properly. Use N2 at 40 bara and 20 C as test case. Use GERG-2008 equation. 
     # N2 density from NIST webbook of chemistry is used as reference.
+    # The test validates that the GERG-2008 equation produces identical results as the reference density with different units of pressure and temperature, corresponding to 40 bara and 20 C
 
     gerg = AGA8('GERG-2008')
 
@@ -131,8 +133,5 @@ def test_aga8_unit_conversion_N2():
             pressure_unit=case_dict['pressure_unit'],
             temperature_unit=case_dict['temperature_unit']
         )
-        print(f'''Calculated density: {round(results["rho"],3)}, reference density: {reference_density}''')
 
-        assert abs(round(results['rho'],3) - reference_density) < 1e-6, f'Failed test {case_name}'
-
-
+        assert round(results['rho'],3) == reference_density, f'Failed test {case_name}'
