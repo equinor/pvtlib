@@ -1,7 +1,21 @@
 import pyaga8
 
 class aga8:
-    """ """
+    """
+    A class to perform gas property calculations using the AGA8 equation of state.
+    equation : str, optional
+        The equation of state to use. Must be either 'GERG-2008' or 'DETAIL'. Default is 'GERG-2008'.
+    Attributes
+    equation : str
+        The equation of state being used.
+    adapter : object
+        The adapter object corresponding to the selected equation of state.
+    Methods
+    calculate_from_PT(composition, pressure, temperature, pressure_unit='bara', temperature_unit='C', molar_mass=None)
+        Calculate gas properties using pressure, temperature, and composition as input.
+    calculate_from_rhoT(composition, mass_density, temperature, temperature_unit='K', molar_mass=None)
+        Calculate gas properties using mass density, temperature, and composition as input.
+    """ 
 
     def __init__(self, equation = 'GERG-2008'):
 
@@ -31,8 +45,9 @@ class aga8:
         elif self.equation == 'DETAIL':
             self.adapter.calc_density()
 
-    def calculate_from_PT(self, composition, pressure: float, temperature: float, pressure_unit = 'KPa', temperature_unit = 'K', molar_mass = None):
+    def calculate_from_PT(self, composition, pressure: float, temperature: float, pressure_unit = 'bara', temperature_unit = 'C', molar_mass = None):
         """
+        Calculate gas properties using AGA8 with pressure, temperature and composition as input.
 
         Parameters
         ----------
@@ -68,18 +83,22 @@ class aga8:
             T - Temperature
 
         pressure_unit : str
-            Unit of pressure. The default unit is kilopascal (kPa).
+            Unit of pressure. The default unit is bara.
 
         temperature_unit : str
-            Unit of temperature. The default unit is Kelvin (K).
+            Unit of temperature. The default unit is Celsius (C).
+
+        molar_mass : float, optional
+            Molar mass can be given as an optional input [kg/kmol]. If this is given, this molar mass will be used to calculate the mass density instead of the AGA8 calculated molar mass. 
+            The default is None. In that case the AGA8 calculated molar mass will be used.
 
         Returns
         -------
         results : TYPE
             Dictionary with properties from AGA8.
             
-            '     P - Pressure [kPa]
-            '     T - Temperature [k]
+            '     pressure_kPa - Pressure [kPa]
+            '     temperature_K - Temperature [k]
             '     Z - Compressibility factor [-]
             '  dPdD - First derivative of pressure with respect to density at constant temperature [kPa/(mol/l)]
             'd2PdD2 - Second derivative of pressure with respect to density at constant temperature [kPa/(mol/l)^2]
@@ -104,13 +123,13 @@ class aga8:
         """
 
         #Convert pressure to kPa
-        pressure_kPa = pressure_unit_conversion(
+        pressure_kPa = _pressure_unit_conversion(
             pressure_value=pressure,
             pressure_unit=pressure_unit
             )
 
         #Convert temperature to K
-        temperature_K = temperature_unit_conversion(
+        temperature_K = _temperature_unit_conversion(
             temperature_value=temperature,
             temperature_unit=temperature_unit
             )
@@ -119,11 +138,6 @@ class aga8:
 
         #Convert composition to aga8 format
         Aga8fluid, Aga8fluidDict = to_aga8_composition(composition)
-
-        # #Get Aga8fluid as dictionary. Only used for debug purpose
-        # Aga8fluidDict = {component : getattr(Aga8fluid,component) for component, _ in Aga8fluid._fields_}
-
-        # fluid_sum = sum([getattr(Aga8fluid, field) for field, _ in Aga8fluid._fields_])
 
         self.adapter.set_composition(Aga8fluid)
         self.adapter.pressure = pressure_kPa
@@ -152,7 +166,7 @@ class aga8:
     
 
     
-    def calculate_from_rhoT(self, composition, mass_density: float, temperature: float, temperature_unit = 'K', molar_mass = None):
+    def calculate_from_rhoT(self, composition, mass_density: float, temperature: float, temperature_unit = 'C', molar_mass = None):
         '''
         Calculate gas properties using AGA8 with mass density, temperature and composition as input.
         
@@ -165,7 +179,7 @@ class aga8:
         temperature : float
             Temperature. Unit of measure is defined by pressure_unit.
         temperature_unit : TYPE, optional
-            Unit of measure for temperature. The default is 'K'.
+            Unit of measure for temperature. The default is 'C'.
         molar_mass : float, optional
             Molar mass can be given as an optional input [kg/kmol]. If this is given, this molar mass will be used to calculate the mass density instead of the AGA8 calculated molar mass. The default is None. In that case the AGA8 calculated molar mass will be used. 
         
@@ -176,7 +190,7 @@ class aga8:
         '''
         
         #Convert temperature to K
-        temperature_K = temperature_unit_conversion(
+        temperature_K = _temperature_unit_conversion(
             temperature_value=temperature,
             temperature_unit=temperature_unit
             )
@@ -227,7 +241,27 @@ class aga8:
 
         return results
 
-def pressure_unit_conversion(pressure_value, pressure_unit = 'KPa'):
+def _pressure_unit_conversion(pressure_value, pressure_unit = 'bara'):
+    """
+    Convert a given pressure value to kilopascals (kPa).
+    Parameters:
+    pressure_value (float): The pressure value to be converted.
+    pressure_unit (str): The unit of the pressure value. Supported units are:
+                            'bara'  - Bar absolute (default)
+                            'Pa'    - Pascal
+                            'psi'   - Pounds per square inch
+                            'psia'  - Pounds per square inch absolute
+                            'psig'  - Pounds per square inch gauge
+                            'barg'  - Bar gauge
+                            'MPa'   - Megapascal
+                            'kPa'   - Kilopascal
+    Returns:
+    float: The pressure value converted to kilopascals (kPa).
+    Raises:
+    Exception: If the provided pressure unit is not supported.
+    """
+
+
     # Convert inputs to SI units, i.e. kPa
     if pressure_unit.lower() == 'bara':
         pressure = pressure_value * 100
@@ -251,7 +285,25 @@ def pressure_unit_conversion(pressure_value, pressure_unit = 'KPa'):
     return pressure
 
 
-def temperature_unit_conversion(temperature_value, temperature_unit = 'K'):
+def _temperature_unit_conversion(temperature_value, temperature_unit = 'C'):
+    """
+    Parameters
+    ----------
+    temperature_value : float
+        The temperature value to be converted.
+    temperature_unit : str, optional
+        The unit of the temperature value. Supported units are 'C' for Celsius, 
+        'F' for Fahrenheit, and 'K' for Kelvin. Defaults to 'C' (Celsius).
+    Returns
+    -------
+    float
+        The temperature value converted to Kelvin.
+    Raises
+    ------
+    Exception
+        If the provided temperature unit is not supported.
+    """
+
     # Convert inputs to SI units, i.e. Kelvin
     if temperature_unit.lower() == 'c':
         temperature = temperature_value + 273.15
@@ -267,6 +319,19 @@ def temperature_unit_conversion(temperature_value, temperature_unit = 'K'):
 
 def to_aga8_composition(composition: dict):
     """
+    Convert a composition dictionary to an AGA8 Composition object.
+
+    Parameters
+    ----------
+    composition : dict
+        A dictionary containing the component names as keys and the mole fractions or mole percentages as values.
+
+    Returns
+    -------
+    AGA8_COMPOSITION : pyaga8.Composition
+        An AGA8 Composition object.
+    aga8_composition_dict : dict
+        A dictionary containing the AGA8 component names as keys and the mole fractions as values.
     """
 
     # Create AGA8 composition object

@@ -37,7 +37,9 @@ def test_aga8_PT():
         results = adapters[equation].calculate_from_PT(
                     composition=test['input']['composition'], 
                     pressure=test['input']['pressure_kPa'], #KPa
-                    temperature=test['input']['temperature_K'] #K
+                    temperature=test['input']['temperature_K'], #K
+                    pressure_unit='kPa',
+                    temperature_unit='K'
                     )
         
         results.pop('gas_composition')
@@ -60,7 +62,6 @@ def test_aga8_rhoT():
             'GERG-2008' : aga8('GERG-2008'),
             'DETAIL' : aga8('DETAIL')
             }
-    
     
     tests = {}
     
