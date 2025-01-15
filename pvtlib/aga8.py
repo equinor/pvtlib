@@ -34,8 +34,7 @@ class AGA8:
         properties = {}
         for attr in dir(self.adapter):
             if not callable(getattr(self.adapter, attr)) and not attr.startswith("__"):
-                if attr not in ['pressure', 'temperature']:
-                    properties[attr] = getattr(self.adapter, attr)
+                properties[attr] = getattr(self.adapter, attr)
         
         return properties
 
@@ -97,8 +96,8 @@ class AGA8:
         results : TYPE
             Dictionary with properties from AGA8.
             
-            '     pressure_kPa - Pressure [kPa]
-            '     temperature_K - Temperature [k]
+            '     P - Pressure [kPa]
+            '     T - Temperature [k]
             '     Z - Compressibility factor [-]
             '  dPdD - First derivative of pressure with respect to density at constant temperature [kPa/(mol/l)]
             'd2PdD2 - Second derivative of pressure with respect to density at constant temperature [kPa/(mol/l)^2]
@@ -157,10 +156,6 @@ class AGA8:
 
         #Add gas composition to results
         results['gas_composition'] = Aga8fluidDict
-
-        #Add pressure and temperature to results
-        results['pressure_kPa'] = pressure_kPa
-        results['temperature_K'] = temperature_K
 
         return results
     
@@ -236,8 +231,8 @@ class AGA8:
         results['gas_composition'] = Aga8fluidDict
         
         #Add pressure and temperature to results
-        results['pressure_kPa'] = pressure_kPa
-        results['temperature_K'] = temperature_K
+        results['P'] = pressure_kPa
+        results['T'] = temperature_K
 
         return results
 
