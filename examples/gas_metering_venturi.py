@@ -19,15 +19,22 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+______________________________________________________________________________
+EXAMPLE: Calculate gas flowrate from a venturi meter
+This example calculates flowrates from a venturi meter given the geometry and pressure drop of the venturi. 
+Gas properties are calculated using the GERG-2008 equation of state.
+
 """
 
 from pvtlib.metering import differential_pressure_flowmeters
 from pvtlib import AGA8
 
-# Define the metering device
+# Define the metering geometry and differential pressure
 D = 0.25 # Inlet diameter [m]
 d = 0.20 # Throat diameter [m]
 dP = 300.0 # Venturi differential pressure [mbar]
+
+# Specify pressure, temperature and composition
 P = 50.0 # Pressure [bara]
 T = 40.0 # Temperature [C]
 
