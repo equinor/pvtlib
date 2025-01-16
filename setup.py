@@ -25,7 +25,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='pvtlib',
-    version='1.1.3',
+    version='1.1.4',
     author='Christian Hågenvik',
     author_email='chaagen2013@gmail.com',
     description='A library containing various tools in the categories of thermodynamics, fluid mechanics, metering etc.',
@@ -35,6 +35,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         'numpy',
+        'pyaga8',
     ],
     license='MIT',  # Add this line to specify the license
     classifiers=[
