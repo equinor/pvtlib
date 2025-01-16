@@ -27,6 +27,7 @@ print(result)
 - **Thermodynamics**: Thermodynamic functions
 - **Fluid Mechanics**: Fluid mechanic functions
 - **Metering**: Metering functions
+- **aga8**: Equations for calculating gas properties (GERG-2008 and DETAIL)
 - **Unit converters**: Functions to convert between different units of measure
 
 ## License
