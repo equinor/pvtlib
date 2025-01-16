@@ -35,6 +35,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         'numpy',
+        'pyaga8',
     ],
     license='MIT',  # Add this line to specify the license
     classifiers=[
