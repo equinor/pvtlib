@@ -21,29 +21,33 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from setuptools import setup, find_packages
 
-def parse_requirements(filename):
-    with open(filename, 'r') as file:
-        return file.read().splitlines()
+from pvtlib import fluid_mechanics
 
-setup(
-    name='pvtlib',
-    version='1.2.0',
-    author='Christian Hågenvik',
-    author_email='chaagen2013@gmail.com',
-    description='A library containing various tools in the categories of thermodynamics, fluid mechanics, metering etc.',
-    long_description=open('README.md').read(),
-    long_description_content_type='text/markdown',
-    url='https://github.com/chagenvik/pvtlib',
-    packages=find_packages(),
-    install_requires=parse_requirements('requirements.txt'),
-    license='MIT',
-    classifiers=[
-        'Programming Language :: Python :: 3',
-        'License :: OSI Approved :: MIT License',
-        'Operating System :: OS Independent',
-    ],
-    python_requires='>=3.9',
-    keywords='thermodynamics fluid-mechanics metering aga8',
+surface_tension_oil_water = 0.025 # [N/m]
+oil_density = 750 # [kg/m³]
+water_density = 1000 # [kg/m³]
+oil_viscosity = 0.005 # [Pa.s]
+pipe_diameter = 0.1 # [m]
+
+Vc_hor = fluid_mechanics.critical_velocity_for_uniform_wio_dispersion_horizontal(
+    ST_oil_aq=surface_tension_oil_water, 
+    rho_o=oil_density,
+    rho_aq=water_density, 
+    Visc_o=oil_viscosity, 
+    D=pipe_diameter
 )
+
+print(f"Critical velocity for homogeneous oil water mixture for the given conditions: {Vc_hor:.2f} m/s")
+
+
+Vc_vert = fluid_mechanics.critical_velocity_for_uniform_wio_dispersion_vertical(
+    beta=10.0, 
+    ST_oil_aq=surface_tension_oil_water, 
+    rho_o=oil_density,
+    rho_aq=water_density, 
+    Visc_o=oil_viscosity, 
+    D=pipe_diameter
+)
+
+print(f"Critical velocity for homogeneous oil water mixture in a vertical pipe for the given conditions: {Vc_vert:.2f} m/s")

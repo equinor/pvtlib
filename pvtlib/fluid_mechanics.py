@@ -171,7 +171,7 @@ def critical_velocity_for_uniform_wio_dispersion_horizontal(ST_oil_aq, rho_o, rh
     return  Vc
 
    
-def critical_velocity_for_uniform_wio_dispersion_vertical(Betha, ST_oil_aq, rho_o, rho_aq, Visc_o, D, K2=2910):
+def critical_velocity_for_uniform_wio_dispersion_vertical(beta, ST_oil_aq, rho_o, rho_aq, Visc_o, D, K2=2910):
     '''
     Calculate the critical (minimum) velocity Vc which is required to maintain a homogeneous flow in a vertical, or inclined pipe. 
     The numerical constant K2 depends on the unit system being used and the default K2 corresponds to SI units, which is being used in this function.
@@ -185,7 +185,7 @@ def critical_velocity_for_uniform_wio_dispersion_vertical(Betha, ST_oil_aq, rho_
 
     Parameters
     ----------
-    Betha : float
+    beta : float
         Volumetric water fraction in per cent [vol%].
     ST_oil_aq : float
         Interfacial (surface) tension between oil and water [N/m].
@@ -206,9 +206,9 @@ def critical_velocity_for_uniform_wio_dispersion_vertical(Betha, ST_oil_aq, rho_
         Critical (minimum) velocity Vc which is required to maintain a homogeneous flow in a vertical, or inclined pipe [m/s].
     '''
     
-    if rho_o == 0 or Visc_o == 0 or Betha == 100 or Betha<0:
+    if rho_o == 0 or Visc_o == 0 or beta == 100 or beta<0:
         Vc = np.nan
     else:
-        Vc = K2 * ((Betha ** 0.556) / ((100 - Betha) ** 1.556)) * (ST_oil_aq ** 0.278) * (((rho_aq - rho_o) ** 0.278) / (rho_o ** 0.444)) * ((D / Visc_o) ** 0.111)
+        Vc = K2 * ((beta ** 0.556) / ((100 - beta) ** 1.556)) * (ST_oil_aq ** 0.278) * (((rho_aq - rho_o) ** 0.278) / (rho_o ** 0.444)) * ((D / Visc_o) ** 0.111)
     
     return Vc

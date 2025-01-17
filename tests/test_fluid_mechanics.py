@@ -95,7 +95,7 @@ def test_critical_velocity_for_uniform_wio_dispersion_vertical_1():
     
     
     Vc = fluid_mechanics.critical_velocity_for_uniform_wio_dispersion_vertical(
-        Betha=10.0, 
+        beta=10.0, 
         ST_oil_aq=0.025, 
         rho_o=800,
         rho_aq=1025, 
@@ -116,7 +116,7 @@ def test_critical_velocity_for_uniform_wio_dispersion_vertical_2():
     
     
     Vc = fluid_mechanics.critical_velocity_for_uniform_wio_dispersion_vertical(
-        Betha=1.0, 
+        beta=1.0, 
         ST_oil_aq=0.025, 
         rho_o=800,
         rho_aq=1025, 
@@ -137,7 +137,7 @@ def test_critical_velocity_for_uniform_wio_dispersion_vertical_3():
     
     
     Vc = fluid_mechanics.critical_velocity_for_uniform_wio_dispersion_vertical(
-        Betha=100.0, 
+        beta=100.0, 
         ST_oil_aq=0.0, 
         rho_o=0.0,
         rho_aq=0.0, 
