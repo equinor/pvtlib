@@ -29,7 +29,7 @@ def parse_requirements(filename):
 
 setup(
     name='pvtlib',
-    version='1.1.4',
+    version='1.1.5',
     author='Christian Hågenvik',
     author_email='chaagen2013@gmail.com',
     description='A library containing various tools in the categories of thermodynamics, fluid mechanics, metering etc.',
