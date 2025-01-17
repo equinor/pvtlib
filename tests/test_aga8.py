@@ -28,7 +28,7 @@ from pytest import raises
 
 def test_aga8_PT():
 
-    folder_path = r'tests\data\aga8'
+    folder_path = os.path.join(os.path.dirname(__file__), 'data', 'aga8')
     
     #Run AGA8 setup for gerg an detail
     adapters = {
@@ -79,7 +79,7 @@ def test_aga8_PT():
 
 def test_aga8_rhoT():
     
-    folder_path = r'tests\data\aga8'
+    folder_path = os.path.join(os.path.dirname(__file__), 'data', 'aga8')
     
     #Run AGA8 setup for gerg an detail
     adapters = {
