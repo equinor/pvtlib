@@ -23,6 +23,10 @@ SOFTWARE.
 
 from setuptools import setup, find_packages
 
+def parse_requirements(filename):
+    with open(filename, 'r') as file:
+        return file.read().splitlines()
+
 setup(
     name='pvtlib',
     version='1.1.4',
@@ -33,15 +37,13 @@ setup(
     long_description_content_type='text/markdown',
     url='https://github.com/chagenvik/pvtlib',
     packages=find_packages(),
-    install_requires=[
-        'numpy',
-        'pyaga8',
-    ],
-    license='MIT',  # Add this line to specify the license
+    install_requires=parse_requirements('requirements.txt'),
+    license='MIT',
     classifiers=[
         'Programming Language :: Python :: 3',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
     ],
     python_requires='>=3.9',
+    keywords='thermodynamics fluid-mechanics metering aga8',
 )
