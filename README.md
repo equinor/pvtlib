@@ -27,7 +27,7 @@ print(result)
 - **Thermodynamics**: Thermodynamic functions
 - **Fluid Mechanics**: Fluid mechanic functions
 - **Metering**: Metering functions
-- **aga8**: Equations for calculating gas properties (GERG-2008 and DETAIL)
+- **aga8**: Equations for calculating gas properties (GERG-2008 and DETAIL), using the Rust port (https://crates.io/crates/aga8) of NIST's AGA8 code (https://github.com/usnistgov/AGA8)
 - **Unit converters**: Functions to convert between different units of measure
 
 ## License
