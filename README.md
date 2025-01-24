@@ -32,7 +32,7 @@ print(result)
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](https://github.com/chagenvik/pvtlib/blob/main/LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](https://github.com/equinor/pvtlib/blob/main/LICENSE) file for details.
 
 ## Contact
 

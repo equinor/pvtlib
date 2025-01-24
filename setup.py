@@ -35,7 +35,7 @@ setup(
     description='A library containing various tools in the categories of thermodynamics, fluid mechanics, metering etc.',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
-    url='https://github.com/chagenvik/pvtlib',
+    url='https://github.com/equinor/pvtlib',
     packages=find_packages(),
     install_requires=parse_requirements('requirements.txt'),
     license='MIT',
