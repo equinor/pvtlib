@@ -21,29 +21,5 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from setuptools import setup, find_packages
-
-def parse_requirements(filename):
-    with open(filename, 'r') as file:
-        return file.read().splitlines()
-
-setup(
-    name='pvtlib',
-    version='1.3.0',
-    author='Christian Hågenvik',
-    author_email='chaagen2013@gmail.com',
-    description='A library containing various tools in the categories of thermodynamics, fluid mechanics, metering etc.',
-    long_description=open('README.md').read(),
-    long_description_content_type='text/markdown',
-    url='https://github.com/equinor/pvtlib',
-    packages=find_packages(),
-    install_requires=parse_requirements('requirements.txt'),
-    license='MIT',
-    classifiers=[
-        'Programming Language :: Python :: 3',
-        'License :: OSI Approved :: MIT License',
-        'Operating System :: OS Independent',
-    ],
-    python_requires='>=3.9',
-    keywords='thermodynamics fluid-mechanics metering aga8',
-)
+from . import separators
+from . import valves
