@@ -158,3 +158,75 @@ def test_aga8_unit_conversion_N2():
         )
 
         assert round(results['rho'],3) == reference_density, f'Failed test {case_name}'
+
+
+def test_calculate_from_PH():
+    
+    # Run AGA8 setup for gerg and detail
+    adapters = {
+        'GERG-2008': AGA8('GERG-2008'),
+        'DETAIL': AGA8('DETAIL')
+    }
+    
+    # Pressure in bara, enthalpy in J/mol, temperature in C
+    tests = {
+        'GERG-2008': {
+            'case1': {'composition': {'N2': 10.0, 'C1': 90.0}, 'pressure': 20.0, 'enthalpy': -107.60343095444294, 'expected_temperature': 30.0},
+            'case2': {'composition': {'N2': 10.0, 'C1': 90.0}, 'pressure': 50.0, 'enthalpy': 2270.8317541569654, 'expected_temperature': 100.0},
+            'case3': {'composition': {'N2': 10.0, 'C1': 90.0}, 'pressure': 1.0, 'enthalpy': -1566.8136031983595, 'expected_temperature': -20.0},
+            'case4': {'composition': {'He': 50.0, 'H2': 50.0}, 'pressure': 30.0, 'enthalpy': 161.48333628427775, 'expected_temperature': 30.0},
+        },
+        'DETAIL': {
+            'case1': {'composition': {'N2': 10.0, 'C1': 90.0}, 'pressure': 20.0, 'enthalpy': -107.05632228949071, 'expected_temperature': 30.0},
+            'case2': {'composition': {'N2': 10.0, 'C1': 90.0}, 'pressure': 50.0, 'enthalpy': 2273.8308175641773, 'expected_temperature': 100.0},
+            'case3': {'composition': {'N2': 10.0, 'C1': 90.0}, 'pressure': 1.0, 'enthalpy': -1566.8657354136294, 'expected_temperature': -20.0},
+            'case4': {'composition': {'He': 50.0, 'H2': 50.0}, 'pressure': 30.0, 'enthalpy': 165.0220194976714, 'expected_temperature': 30.0},
+        }
+    }
+
+    for equation, cases in tests.items():
+        for case_name, case_dict in cases.items():
+            results = adapters[equation].calculate_from_PH(
+                composition=case_dict['composition'],
+                pressure=case_dict['pressure'],
+                enthalpy=case_dict['enthalpy'],
+                pressure_unit='bara'
+            )
+
+            assert round(results['temperature'] - 273.15, 5) == case_dict['expected_temperature'], f'Failed test {case_name} with {equation}'
+
+
+def test_calculate_from_PS():
+
+    # Run AGA8 setup for gerg and detail
+    adapters = {
+        'GERG-2008': AGA8('GERG-2008'),
+        'DETAIL': AGA8('DETAIL')
+    }
+
+    # Pressure in bara, entropy in J/(mol*K), temperature in C
+    tests = {
+        'GERG-2008': {
+            'case1': {'composition': {'N2': 10.0, 'C1': 90.0}, 'pressure': 20.0, 'entropy': -22.2091149233982, 'expected_temperature': 30.0},
+            'case2': {'composition': {'N2': 10.0, 'C1': 90.0}, 'pressure': 50.0, 'entropy': -22.570507319380788, 'expected_temperature': 100.0},
+            'case3': {'composition': {'N2': 10.0, 'C1': 90.0}, 'pressure': 1.0, 'entropy': -2.864966907148799, 'expected_temperature': -20.0},
+            'case4': {'composition': {'He': 50.0, 'H2': 50.0}, 'pressure': 30.0, 'entropy': -22.00810645995168, 'expected_temperature': 30.0},
+        },
+        'DETAIL': {
+            'case1': {'composition': {'N2': 10.0, 'C1': 90.0}, 'pressure': 20.0, 'entropy': -22.207489632913457, 'expected_temperature': 30.0},
+            'case2': {'composition': {'N2': 10.0, 'C1': 90.0}, 'pressure': 50.0, 'entropy': -22.56172677087515, 'expected_temperature': 100.0},
+            'case3': {'composition': {'N2': 10.0, 'C1': 90.0}, 'pressure': 1.0, 'entropy': -2.8651449400245146, 'expected_temperature': -20.0},
+            'case4': {'composition': {'He': 50.0, 'H2': 50.0}, 'pressure': 30.0, 'entropy': -21.998995602729746, 'expected_temperature': 30.0},
+        }
+    }
+
+    for equation, cases in tests.items():
+        for case_name, case_dict in cases.items():
+            results = adapters[equation].calculate_from_PS(
+                composition=case_dict['composition'],
+                pressure=case_dict['pressure'],
+                entropy=case_dict['entropy'],
+                pressure_unit='bara'
+            )
+
+            assert round(results['temperature'] - 273.15, 5) == case_dict['expected_temperature'], f'Failed test {case_name} with {equation}'

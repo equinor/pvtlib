@@ -22,6 +22,7 @@ SOFTWARE.
 """
 
 import pyaga8
+from scipy import optimize
 
 class AGA8:
     """
@@ -59,6 +60,9 @@ class AGA8:
             if not callable(getattr(self.adapter, attr)) and not attr.startswith("__"):
                 properties[attr] = getattr(self.adapter, attr)
         
+        properties['pressure_bara'] = properties['pressure']/100
+        properties['temperature_C'] = properties['temperature'] - 273.15
+
         return properties
 
     def _calculate_density(self):
@@ -67,7 +71,7 @@ class AGA8:
         elif self.equation == 'DETAIL':
             self.adapter.calc_density()
 
-    def calculate_from_PT(self, composition, pressure: float, temperature: float, pressure_unit = 'bara', temperature_unit = 'C', molar_mass = None):
+    def calculate_from_PT(self, composition: dict, pressure: float, temperature: float, pressure_unit = 'bara', temperature_unit = 'C', molar_mass = None):
         """
         Calculate gas properties using AGA8 with pressure, temperature and composition as input.
 
@@ -184,18 +188,18 @@ class AGA8:
     
 
     
-    def calculate_from_rhoT(self, composition, mass_density: float, temperature: float, temperature_unit = 'C', molar_mass = None):
+    def calculate_from_rhoT(self, composition: dict, mass_density: float, temperature: float, temperature_unit = 'C', molar_mass = None):
         '''
         Calculate gas properties using AGA8 with mass density, temperature and composition as input.
         
         Parameters
         ----------
-        gas_composition : TYPE
+        gas_composition : dict
             Dictionary with component name as key and mole percent or mole fraction as value.
         mass_density : float
             Mass density [kg/m3]
         temperature : float
-            Temperature. Unit of measure is defined by pressure_unit.
+            Temperature. Unit of measure is defined by temperature_unit.
         temperature_unit : TYPE, optional
             Unit of measure for temperature. The default is 'C'.
         molar_mass : float, optional
@@ -203,8 +207,8 @@ class AGA8:
         
         Returns
         -------
-        results : TYPE
-            Dictionary with properties from AGA8. (same as for the calculate method, with pressure added. Pressure unit is given by the pressure_unit input)
+        results : dict
+            Dictionary with properties from AGA8 (same as for the calculatcalculate_from_PT method)
         '''
         
         #Convert temperature to K
@@ -252,12 +256,84 @@ class AGA8:
 
         #Add gas composition to results
         results['gas_composition'] = Aga8fluidDict
-        
-        #Add pressure and temperature to results
-        results['P'] = pressure_kPa
-        results['T'] = temperature_K
 
         return results
+    
+    
+    def calculate_from_PH(self, composition: dict, pressure: float, enthalpy: float, pressure_unit = 'bara', molar_mass = None):
+        """
+        Calculate gas properties using AGA8 with pressure, enthalpy and composition as input.
+
+        Parameters
+        ----------
+        composition : dict
+            The composition of the gas mixture as a dictionary where keys are component names and values are their mole fractions.
+        pressure : float
+            Pressure. Unit is defined by pressure_unit.
+        enthalpy : float
+            Enthalpy, H [J/mol]
+        pressure_unit : str, optional
+            The unit of the pressure, by default 'bara'.
+        molar_mass : float, optional
+            The molar mass of the gas mixture, by default None. If None, the AGA8 molar mass is used. 
+        Returns
+        -------
+        results : dict
+            Dictionary with properties from AGA8 (same as for the calculatcalculate_from_PT method)
+        """
+
+        temperature_unit = 'C'
+
+        def residual(temperature):
+            results = self.calculate_from_PT(composition, pressure, temperature, pressure_unit, temperature_unit, molar_mass)
+            return results['h'] - enthalpy
+        
+        temperature_guess = 20.0 # Celsius
+
+        temperature_solution = optimize.fsolve(residual, x0=[temperature_guess])
+        
+        results = self.calculate_from_PT(composition, pressure, temperature_solution[0], pressure_unit, temperature_unit, molar_mass)
+
+        return results
+    
+
+    def calculate_from_PS(self, composition: dict, pressure: float, entropy: float, pressure_unit = 'bara', molar_mass = None):
+        """
+        Calculate gas properties using AGA8 with pressure, entropy and composition as input.
+
+        Parameters
+        ----------
+        composition : dict
+            The composition of the gas mixture as a dictionary where keys are component names and values are their mole fractions.
+        pressure : float
+            Pressure. Unit is defined by pressure_unit.
+        entropy : float
+            Entropy, S [J/mol-K]
+        pressure_unit : str, optional
+            The unit of the pressure, by default 'bara'.
+        molar_mass : float, optional
+            The molar mass of the gas mixture, by default None. If None, the AGA8 molar mass is used. 
+        Returns
+        -------
+        results : dict
+            Dictionary with properties from AGA8 (same as for the calculatcalculate_from_PT method)
+        """
+
+        temperature_unit = 'C'
+
+        def residual(temperature):
+            results = self.calculate_from_PT(composition, pressure, temperature, pressure_unit, temperature_unit, molar_mass)
+            return results['s'] - entropy
+        
+        temperature_guess = 20.0
+
+        temperature_solution = optimize.fsolve(residual, x0=[temperature_guess])
+
+        results = self.calculate_from_PT(composition, pressure, temperature_solution[0], pressure_unit, temperature_unit, molar_mass)
+
+        return results
+
+
 
 def _pressure_unit_conversion(pressure_value, pressure_unit = 'bara'):
     """
