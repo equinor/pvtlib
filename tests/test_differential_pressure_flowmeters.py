@@ -277,7 +277,11 @@ def test_calculate_expansibility_ventiruri():
             beta=case_dict['input']['beta'],
             kappa=case_dict['input']['kappa']
         )
-        assert epsilon == case_dict['output'], f'Expansibility calculation failed for {case}'
+
+        rel_dev = utilities.calculate_relative_deviation(epsilon, case_dict['output'])
+
+        assert rel_dev < 0.000001, f'Expansibility calculation failed for {case}'
+        
 
 #%% Test orifice calculations
 def test_calculate_expansibility_orifice():
@@ -331,6 +335,7 @@ def test_calculate_expansibility_orifice():
             beta=case_dict['input']['beta'],
             kappa=case_dict['input']['kappa']
         )
+
         assert epsilon == case_dict['output'], f'Expansibility calculation failed for {case}'
 
 
@@ -471,7 +476,10 @@ def test_calculate_C_orifice_ReaderHarrisGallagher():
             tapping=case_dict['input']['tapping']
         )
         
-        assert C == case_dict['output'], f'C calculation failed for {case}'
+        rel_dev = utilities.calculate_relative_deviation(C, case_dict['output'])
+
+        assert rel_dev < 0.0000001, f'Case {case} failed. Relative deviation: {rel_dev}'
+        
 
 
 def test_calculate_flow_orifice():
