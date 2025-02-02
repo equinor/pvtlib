@@ -209,24 +209,75 @@ def test_calculate_beta_DP_meter():
 
 def test_calculate_expansibility_ventiruri():
     '''
-    Validate calculate_expansibility_venturi function against known values from ISO 5176-4:2022, table A.1
+    The function has been tested on a number of known cases. 
+    Then these test cases have been generated, to cover a wider range of possible inputs.
     '''
 
     cases = {
-        'case1': {'P1': 50, 'dP': 12500, 'kappa': 1.2, 'beta': 0.75, 'expected': 0.7690},
-        'case2': {'P1': 50, 'dP': 3000, 'kappa': 1.4, 'beta': 0.75, 'expected': 0.9489},
-        'case3': {'P1': 100, 'dP': 2000, 'kappa': 1.66, 'beta': 0.3, 'expected': 0.9908},
-        'case4': {'P1': 100, 'dP': 25000, 'kappa': 1.4, 'beta': 0.5623, 'expected': 0.8402}
-    }
+        'case1': {'input': {'P1': 35, 'dP': 100, 'beta': 0.2, 'kappa': 1.1}, 'output': 0.9980467431357704},
+        'case2': {'input': {'P1': 35, 'dP': 100, 'beta': 0.2, 'kappa': 1.7}, 'output': 0.9987356572605486},
+        'case3': {'input': {'P1': 35, 'dP': 100, 'beta': 0.5, 'kappa': 1.1}, 'output': 0.997878316785603},
+        'case4': {'input': {'P1': 35, 'dP': 100, 'beta': 0.5, 'kappa': 1.7}, 'output': 0.9986264901291529},
+        'case5': {'input': {'P1': 35, 'dP': 100, 'beta': 0.8, 'kappa': 1.1}, 'output': 0.9962593507647453},
+        'case6': {'input': {'P1': 35, 'dP': 100, 'beta': 0.8, 'kappa': 1.7}, 'output': 0.99757614836258},
+        'case7': {'input': {'P1': 35, 'dP': 5000, 'beta': 0.2, 'kappa': 1.1}, 'output': 0.899614076737725},
+        'case8': {'input': {'P1': 35, 'dP': 5000, 'beta': 0.2, 'kappa': 1.7}, 'output': 0.9337453194138332},
+        'case9': {'input': {'P1': 35, 'dP': 5000, 'beta': 0.5, 'kappa': 1.1}, 'output': 0.8925476547341207},
+        'case10': {'input': {'P1': 35, 'dP': 5000, 'beta': 0.5, 'kappa': 1.7}, 'output': 0.9287487873782366},
+        'case11': {'input': {'P1': 35, 'dP': 5000, 'beta': 0.8, 'kappa': 1.1}, 'output': 0.8320082913675725},
+        'case12': {'input': {'P1': 35, 'dP': 5000, 'beta': 0.8, 'kappa': 1.7}, 'output': 0.8843729853868121},
+        'case13': {'input': {'P1': 35, 'dP': 30000, 'beta': 0.2, 'kappa': 1.1}, 'output': 0.2457550899567365},
+        'case14': {'input': {'P1': 35, 'dP': 30000, 'beta': 0.2, 'kappa': 1.7}, 'output': 0.39754696667366896},
+        'case15': {'input': {'P1': 35, 'dP': 30000, 'beta': 0.5, 'kappa': 1.1}, 'output': 0.2383530278101653},
+        'case16': {'input': {'P1': 35, 'dP': 30000, 'beta': 0.5, 'kappa': 1.7}, 'output': 0.3864259394370444},
+        'case17': {'input': {'P1': 35, 'dP': 30000, 'beta': 0.8, 'kappa': 1.1}, 'output': 0.1901141720582873},
+        'case18': {'input': {'P1': 35, 'dP': 30000, 'beta': 0.8, 'kappa': 1.7}, 'output': 0.3122336962440261},
+        'case19': {'input': {'P1': 60, 'dP': 100, 'beta': 0.2, 'kappa': 1.1}, 'output': 0.9988608537070035},
+        'case20': {'input': {'P1': 60, 'dP': 100, 'beta': 0.2, 'kappa': 1.7}, 'output': 0.9992627453151632},
+        'case21': {'input': {'P1': 60, 'dP': 100, 'beta': 0.5, 'kappa': 1.1}, 'output': 0.9987624661940732},
+        'case22': {'input': {'P1': 60, 'dP': 100, 'beta': 0.5, 'kappa': 1.7}, 'output': 0.9991990196822598},
+        'case23': {'input': {'P1': 60, 'dP': 100, 'beta': 0.8, 'kappa': 1.1}, 'output': 0.9978156766058164},
+        'case24': {'input': {'P1': 60, 'dP': 100, 'beta': 0.8, 'kappa': 1.7}, 'output': 0.9985854442184993},
+        'case25': {'input': {'P1': 60, 'dP': 5000, 'beta': 0.2, 'kappa': 1.1}, 'output': 0.9421417043773223},
+        'case26': {'input': {'P1': 60, 'dP': 5000, 'beta': 0.2, 'kappa': 1.7}, 'output': 0.9621390386244086},
+        'case27': {'input': {'P1': 60, 'dP': 5000, 'beta': 0.5, 'kappa': 1.1}, 'output': 0.9376897372246114},
+        'case28': {'input': {'P1': 60, 'dP': 5000, 'beta': 0.5, 'kappa': 1.7}, 'output': 0.9591083318071002},
+        'case29': {'input': {'P1': 60, 'dP': 5000, 'beta': 0.8, 'kappa': 1.1}, 'output': 0.8977845030559601},
+        'case30': {'input': {'P1': 60, 'dP': 5000, 'beta': 0.8, 'kappa': 1.7}, 'output': 0.931294133721003},
+        'case31': {'input': {'P1': 60, 'dP': 30000, 'beta': 0.2, 'kappa': 1.1}, 'output': 0.616892178020612},
+        'case32': {'input': {'P1': 60, 'dP': 30000, 'beta': 0.2, 'kappa': 1.7}, 'output': 0.7301388847552639},
+        'case33': {'input': {'P1': 60, 'dP': 30000, 'beta': 0.5, 'kappa': 1.1}, 'output': 0.6030137575054959},
+        'case34': {'input': {'P1': 60, 'dP': 30000, 'beta': 0.5, 'kappa': 1.7}, 'output': 0.7172560230773798},
+        'case35': {'input': {'P1': 60, 'dP': 30000, 'beta': 0.8, 'kappa': 1.1}, 'output': 0.5044791320574509},
+        'case36': {'input': {'P1': 60, 'dP': 30000, 'beta': 0.8, 'kappa': 1.7}, 'output': 0.6202818596436332},
+        'case37': {'input': {'P1': 100, 'dP': 100, 'beta': 0.2, 'kappa': 1.1}, 'output': 0.9993165973477689},
+        'case38': {'input': {'P1': 100, 'dP': 100, 'beta': 0.2, 'kappa': 1.7}, 'output': 0.9995577407004924},
+        'case39': {'input': {'P1': 100, 'dP': 100, 'beta': 0.5, 'kappa': 1.1}, 'output': 0.9992575181802543},
+        'case40': {'input': {'P1': 100, 'dP': 100, 'beta': 0.5, 'kappa': 1.7}, 'output': 0.9995194902698783},
+        'case41': {'input': {'P1': 100, 'dP': 100, 'beta': 0.8, 'kappa': 1.1}, 'output': 0.9986886385188124},
+        'case42': {'input': {'P1': 100, 'dP': 100, 'beta': 0.8, 'kappa': 1.7}, 'output': 0.999151050281699},
+        'case43': {'input': {'P1': 100, 'dP': 5000, 'beta': 0.2, 'kappa': 1.1}, 'output': 0.9655104022448356},
+        'case44': {'input': {'P1': 100, 'dP': 5000, 'beta': 0.2, 'kappa': 1.7}, 'output': 0.9775343631209875},
+        'case45': {'input': {'P1': 100, 'dP': 5000, 'beta': 0.5, 'kappa': 1.1}, 'output': 0.9627260214778817},
+        'case46': {'input': {'P1': 100, 'dP': 5000, 'beta': 0.5, 'kappa': 1.7}, 'output': 0.9756775519117771},
+        'case47': {'input': {'P1': 100, 'dP': 5000, 'beta': 0.8, 'kappa': 1.1}, 'output': 0.9370689604862881},
+        'case48': {'input': {'P1': 100, 'dP': 5000, 'beta': 0.8, 'kappa': 1.7}, 'output': 0.9583073389128812},
+        'case49': {'input': {'P1': 100, 'dP': 30000, 'beta': 0.2, 'kappa': 1.1}, 'output': 0.7817695220879819},
+        'case50': {'input': {'P1': 100, 'dP': 30000, 'beta': 0.2, 'kappa': 1.7}, 'output': 0.8522891928883383},
+        'case51': {'input': {'P1': 100, 'dP': 30000, 'beta': 0.5, 'kappa': 1.1}, 'output': 0.7699181703051371},
+        'case52': {'input': {'P1': 100, 'dP': 30000, 'beta': 0.5, 'kappa': 1.7}, 'output': 0.8429482492407487},
+        'case53': {'input': {'P1': 100, 'dP': 30000, 'beta': 0.8, 'kappa': 1.1}, 'output': 0.677872996111376},
+        'case54': {'input': {'P1': 100, 'dP': 30000, 'beta': 0.8, 'kappa': 1.7}, 'output': 0.7662823502717088},
+        }
 
     for case, case_dict in cases.items():
         epsilon = differential_pressure_flowmeters.calculate_expansibility_venturi(
-            P1=case_dict['P1'],
-            dP=case_dict['dP'],
-            beta=case_dict['beta'],
-            kappa=case_dict['kappa']
+            P1=case_dict['input']['P1'],
+            dP=case_dict['input']['dP'],
+            beta=case_dict['input']['beta'],
+            kappa=case_dict['input']['kappa']
         )
-        assert round(epsilon,4)==case_dict['expected'], f'Expansibility calculation failed for {case}'
+        assert epsilon == case_dict['output'], f'Expansibility calculation failed for {case}'
 
 #%% Test orifice calculations
 def test_calculate_expansibility_orifice():
@@ -285,44 +336,142 @@ def test_calculate_expansibility_orifice():
 
 def test_calculate_C_orifice_ReaderHarrisGallagher():
     '''
-    Validate calculate_C_orifice_ReaderHarrisGallagher function against known values.
+    Validate calculate_C_orifice_ReaderHarrisGallagher function.
+    The function has been tested on a number of known cases. 
+    Then these test cases have been generated, to cover a wider range of possible inputs.
     '''
     cases = {
-        'case1': {'D': 0.1, 'beta': 0.1, 'Re': 5000, 'tapping': 'corner', 'expected': 0.6006},
-        'case2': {'D': 0.1, 'beta': 0.1, 'Re': 100000000, 'tapping': 'corner', 'expected': 0.5964},
-        'case3': {'D': 0.1, 'beta': 0.5, 'Re': 5000, 'tapping': 'corner', 'expected': 0.6276},
-        'case4': {'D': 0.1, 'beta': 0.5, 'Re': 100000000, 'tapping': 'corner', 'expected': 0.6022},
-        'case5': {'D': 0.072, 'beta': 0.1, 'Re': 5000, 'tapping': 'D', 'expected': 0.6003},
-        'case6': {'D': 0.072, 'beta': 0.1, 'Re': 100000000, 'tapping': 'D', 'expected': 0.5961},
-        'case7': {'D': 0.072, 'beta': 0.5, 'Re': 5000, 'tapping': 'D', 'expected': 0.6264},
-        'case8': {'D': 0.072, 'beta': 0.5, 'Re': 100000000, 'tapping': 'D', 'expected': 0.6016},
-        'case9': {'D': 0.05, 'beta': 0.25, 'Re': 5000, 'tapping': 'flange', 'expected': 0.6102},
-        'case10': {'D': 0.05, 'beta': 0.25, 'Re': 100000000, 'tapping': 'flange', 'expected': 0.6013},
-        'case11': {'D': 0.05, 'beta': 0.75, 'Re': 5000, 'tapping': 'flange', 'expected': 0.6732},
-        'case12': {'D': 0.05, 'beta': 0.75, 'Re': 100000000, 'tapping': 'flange', 'expected': 0.6025},
-        'case13': {'D': 0.075, 'beta': 0.17, 'Re': 10000, 'tapping': 'flange', 'expected': 0.6003},
-        'case14': {'D': 0.075, 'beta': 0.17, 'Re': 100000000, 'tapping': 'flange', 'expected': 0.5964},
-        'case15': {'D': 0.075, 'beta': 0.75, 'Re': 10000, 'tapping': 'flange', 'expected': 0.6462},
-        'case16': {'D': 0.075, 'beta': 0.75, 'Re': 100000000, 'tapping': 'flange', 'expected': 0.6000},
-        'case17': {'D': 1, 'beta': 0.1, 'Re': 100000, 'tapping': 'flange', 'expected': 0.5969},
-        'case18': {'D': 1, 'beta': 0.1, 'Re': 100000000, 'tapping': 'flange', 'expected': 0.5963},
-        'case19': {'D': 1, 'beta': 0.75, 'Re': 100000, 'tapping': 'flange', 'expected': 0.6055},
-        'case20': {'D': 1, 'beta': 0.75, 'Re': 100000000, 'tapping': 'flange', 'expected': 0.5905},
-        'case21': {'D': 0.072, 'beta': 0.1, 'Re': 5000, 'tapping': 'D/2', 'expected': 0.6003},
-        'case22': {'D': 0.072, 'beta': 0.1, 'Re': 100000000, 'tapping': 'D/2', 'expected': 0.5961},
-        'case23': {'D': 0.072, 'beta': 0.5, 'Re': 5000, 'tapping': 'D/2', 'expected': 0.6264},
-        'case24': {'D': 0.072, 'beta': 0.5, 'Re': 100000000, 'tapping': 'D/2', 'expected': 0.6016}
-    }
+        'case1': {'input': {'D': 0.03, 'beta': 0.1, 'Re': 1000, 'tapping': 'corner'}, 'output': 0.6210967127147193},
+        'case2': {'input': {'D': 0.03, 'beta': 0.1, 'Re': 1000, 'tapping': 'D'}, 'output': 0.620781324667837},
+        'case3': {'input': {'D': 0.03, 'beta': 0.1, 'Re': 1000, 'tapping': 'D/2'}, 'output': 0.620781324667837},
+        'case4': {'input': {'D': 0.03, 'beta': 0.1, 'Re': 1000, 'tapping': 'flange'}, 'output': 0.6206681362922947},
+        'case5': {'input': {'D': 0.03, 'beta': 0.1, 'Re': 110000000, 'tapping': 'corner'}, 'output': 0.6079414386218523},
+        'case6': {'input': {'D': 0.03, 'beta': 0.1, 'Re': 110000000, 'tapping': 'D'}, 'output': 0.6076268390168605},
+        'case7': {'input': {'D': 0.03, 'beta': 0.1, 'Re': 110000000, 'tapping': 'D/2'}, 'output': 0.6076268390168605},
+        'case8': {'input': {'D': 0.03, 'beta': 0.1, 'Re': 110000000, 'tapping': 'flange'}, 'output': 0.6075136469147502},
+        'case9': {'input': {'D': 0.03, 'beta': 0.5, 'Re': 1000, 'tapping': 'corner'}, 'output': 0.6865943739462489},
+        'case10': {'input': {'D': 0.03, 'beta': 0.5, 'Re': 1000, 'tapping': 'D'}, 'output': 0.684049053085603},
+        'case11': {'input': {'D': 0.03, 'beta': 0.5, 'Re': 1000, 'tapping': 'D/2'}, 'output': 0.684049053085603},
+        'case12': {'input': {'D': 0.03, 'beta': 0.5, 'Re': 1000, 'tapping': 'flange'}, 'output': 0.6834422723627231},
+        'case13': {'input': {'D': 0.03, 'beta': 0.5, 'Re': 110000000, 'tapping': 'corner'}, 'output': 0.6066508732223671},
+        'case14': {'input': {'D': 0.03, 'beta': 0.5, 'Re': 110000000, 'tapping': 'D'}, 'output': 0.6060101840402702},
+        'case15': {'input': {'D': 0.03, 'beta': 0.5, 'Re': 110000000, 'tapping': 'D/2'}, 'output': 0.6060101840402702},
+        'case16': {'input': {'D': 0.03, 'beta': 0.5, 'Re': 110000000, 'tapping': 'flange'}, 'output': 0.605394401081893},
+        'case17': {'input': {'D': 0.03, 'beta': 0.8, 'Re': 1000, 'tapping': 'corner'}, 'output': 0.9022964047296906},
+        'case18': {'input': {'D': 0.03, 'beta': 0.8, 'Re': 1000, 'tapping': 'D'}, 'output': 0.8959768646813352},
+        'case19': {'input': {'D': 0.03, 'beta': 0.8, 'Re': 1000, 'tapping': 'D/2'}, 'output': 0.8959768646813352},
+        'case20': {'input': {'D': 0.03, 'beta': 0.8, 'Re': 1000, 'tapping': 'flange'}, 'output': 0.9013159878271764},
+        'case21': {'input': {'D': 0.03, 'beta': 0.8, 'Re': 110000000, 'tapping': 'corner'}, 'output': 0.5777936160635622},
+        'case22': {'input': {'D': 0.03, 'beta': 0.8, 'Re': 110000000, 'tapping': 'D'}, 'output': 0.6003417537063434},
+        'case23': {'input': {'D': 0.03, 'beta': 0.8, 'Re': 110000000, 'tapping': 'D/2'}, 'output': 0.6003417537063434},
+        'case24': {'input': {'D': 0.03, 'beta': 0.8, 'Re': 110000000, 'tapping': 'flange'}, 'output': 0.6055444338665065},
+        'case25': {'input': {'D': 0.08, 'beta': 0.1, 'Re': 1000, 'tapping': 'corner'}, 'output': 0.6095215946044831},
+        'case26': {'input': {'D': 0.08, 'beta': 0.1, 'Re': 1000, 'tapping': 'D'}, 'output': 0.6092062065576007},
+        'case27': {'input': {'D': 0.08, 'beta': 0.1, 'Re': 1000, 'tapping': 'D/2'}, 'output': 0.6092062065576007},
+        'case28': {'input': {'D': 0.08, 'beta': 0.1, 'Re': 1000, 'tapping': 'flange'}, 'output': 0.6092749894521301},
+        'case29': {'input': {'D': 0.08, 'beta': 0.1, 'Re': 110000000, 'tapping': 'corner'}, 'output': 0.5963663205116161},
+        'case30': {'input': {'D': 0.08, 'beta': 0.1, 'Re': 110000000, 'tapping': 'D'}, 'output': 0.5960517209066243},
+        'case31': {'input': {'D': 0.08, 'beta': 0.1, 'Re': 110000000, 'tapping': 'D/2'}, 'output': 0.5960517209066243},
+        'case32': {'input': {'D': 0.08, 'beta': 0.1, 'Re': 110000000, 'tapping': 'flange'}, 'output': 0.5961203223038438},
+        'case33': {'input': {'D': 0.08, 'beta': 0.5, 'Re': 1000, 'tapping': 'corner'}, 'output': 0.6821424054423119},
+        'case34': {'input': {'D': 0.08, 'beta': 0.5, 'Re': 1000, 'tapping': 'D'}, 'output': 0.679597084581666},
+        'case35': {'input': {'D': 0.08, 'beta': 0.5, 'Re': 1000, 'tapping': 'D/2'}, 'output': 0.679597084581666},
+        'case36': {'input': {'D': 0.08, 'beta': 0.5, 'Re': 1000, 'tapping': 'flange'}, 'output': 0.6799888571052785},
+        'case37': {'input': {'D': 0.08, 'beta': 0.5, 'Re': 110000000, 'tapping': 'corner'}, 'output': 0.6021989047184301},
+        'case38': {'input': {'D': 0.08, 'beta': 0.5, 'Re': 110000000, 'tapping': 'D'}, 'output': 0.6015582155363332},
+        'case39': {'input': {'D': 0.08, 'beta': 0.5, 'Re': 110000000, 'tapping': 'D/2'}, 'output': 0.6015582155363332},
+        'case40': {'input': {'D': 0.08, 'beta': 0.5, 'Re': 110000000, 'tapping': 'flange'}, 'output': 0.6015115467113069},
+        'case41': {'input': {'D': 0.08, 'beta': 0.8, 'Re': 1000, 'tapping': 'corner'}, 'output': 0.903186798430478},
+        'case42': {'input': {'D': 0.08, 'beta': 0.8, 'Re': 1000, 'tapping': 'D'}, 'output': 0.8968672583821226},
+        'case43': {'input': {'D': 0.08, 'beta': 0.8, 'Re': 1000, 'tapping': 'D/2'}, 'output': 0.8968672583821226},
+        'case44': {'input': {'D': 0.08, 'beta': 0.8, 'Re': 1000, 'tapping': 'flange'}, 'output': 0.8963558457105707},
+        'case45': {'input': {'D': 0.08, 'beta': 0.8, 'Re': 110000000, 'tapping': 'corner'}, 'output': 0.5786840097643495},
+        'case46': {'input': {'D': 0.08, 'beta': 0.8, 'Re': 110000000, 'tapping': 'D'}, 'output': 0.6012321474071307},
+        'case47': {'input': {'D': 0.08, 'beta': 0.8, 'Re': 110000000, 'tapping': 'D/2'}, 'output': 0.6012321474071307},
+        'case48': {'input': {'D': 0.08, 'beta': 0.8, 'Re': 110000000, 'tapping': 'flange'}, 'output': 0.5940754690490321},
+        'case49': {'input': {'D': 0.12, 'beta': 0.1, 'Re': 1000, 'tapping': 'corner'}, 'output': 0.6095215946044831},
+        'case50': {'input': {'D': 0.12, 'beta': 0.1, 'Re': 1000, 'tapping': 'D'}, 'output': 0.6092062065576007},
+        'case51': {'input': {'D': 0.12, 'beta': 0.1, 'Re': 1000, 'tapping': 'D/2'}, 'output': 0.6092062065576007},
+        'case52': {'input': {'D': 0.12, 'beta': 0.1, 'Re': 1000, 'tapping': 'flange'}, 'output': 0.6093349742318511},
+        'case53': {'input': {'D': 0.12, 'beta': 0.1, 'Re': 110000000, 'tapping': 'corner'}, 'output': 0.5963663205116161},
+        'case54': {'input': {'D': 0.12, 'beta': 0.1, 'Re': 110000000, 'tapping': 'D'}, 'output': 0.5960517209066243},
+        'case55': {'input': {'D': 0.12, 'beta': 0.1, 'Re': 110000000, 'tapping': 'D/2'}, 'output': 0.5960517209066243},
+        'case56': {'input': {'D': 0.12, 'beta': 0.1, 'Re': 110000000, 'tapping': 'flange'}, 'output': 0.5961801538457855},
+        'case57': {'input': {'D': 0.12, 'beta': 0.5, 'Re': 1000, 'tapping': 'corner'}, 'output': 0.6821424054423119},
+        'case58': {'input': {'D': 0.12, 'beta': 0.5, 'Re': 1000, 'tapping': 'D'}, 'output': 0.679597084581666},
+        'case59': {'input': {'D': 0.12, 'beta': 0.5, 'Re': 1000, 'tapping': 'D/2'}, 'output': 0.679597084581666},
+        'case60': {'input': {'D': 0.12, 'beta': 0.5, 'Re': 1000, 'tapping': 'flange'}, 'output': 0.6804190839724089},
+        'case61': {'input': {'D': 0.12, 'beta': 0.5, 'Re': 110000000, 'tapping': 'corner'}, 'output': 0.6021989047184301},
+        'case62': {'input': {'D': 0.12, 'beta': 0.5, 'Re': 110000000, 'tapping': 'D'}, 'output': 0.6015582155363332},
+        'case63': {'input': {'D': 0.12, 'beta': 0.5, 'Re': 110000000, 'tapping': 'D/2'}, 'output': 0.6015582155363332},
+        'case64': {'input': {'D': 0.12, 'beta': 0.5, 'Re': 110000000, 'tapping': 'flange'}, 'output': 0.6015715985124956},
+        'case65': {'input': {'D': 0.12, 'beta': 0.8, 'Re': 1000, 'tapping': 'corner'}, 'output': 0.903186798430478},
+        'case66': {'input': {'D': 0.12, 'beta': 0.8, 'Re': 1000, 'tapping': 'D'}, 'output': 0.8968672583821226},
+        'case67': {'input': {'D': 0.12, 'beta': 0.8, 'Re': 1000, 'tapping': 'D/2'}, 'output': 0.8968672583821226},
+        'case68': {'input': {'D': 0.12, 'beta': 0.8, 'Re': 1000, 'tapping': 'flange'}, 'output': 0.8969362419379183},
+        'case69': {'input': {'D': 0.12, 'beta': 0.8, 'Re': 110000000, 'tapping': 'corner'}, 'output': 0.5786840097643495},
+        'case70': {'input': {'D': 0.12, 'beta': 0.8, 'Re': 110000000, 'tapping': 'D'}, 'output': 0.6012321474071307},
+        'case71': {'input': {'D': 0.12, 'beta': 0.8, 'Re': 110000000, 'tapping': 'D/2'}, 'output': 0.6012321474071307},
+        'case72': {'input': {'D': 0.12, 'beta': 0.8, 'Re': 110000000, 'tapping': 'flange'}, 'output': 0.58904528207898},
+        'case73': {'input': {'D': 0.5, 'beta': 0.1, 'Re': 1000, 'tapping': 'corner'}, 'output': 0.6095215946044831},
+        'case74': {'input': {'D': 0.5, 'beta': 0.1, 'Re': 1000, 'tapping': 'D'}, 'output': 0.6092062065576007},
+        'case75': {'input': {'D': 0.5, 'beta': 0.1, 'Re': 1000, 'tapping': 'D/2'}, 'output': 0.6092062065576007},
+        'case76': {'input': {'D': 0.5, 'beta': 0.1, 'Re': 1000, 'tapping': 'flange'}, 'output': 0.6094594201422464},
+        'case77': {'input': {'D': 0.5, 'beta': 0.1, 'Re': 110000000, 'tapping': 'corner'}, 'output': 0.5963663205116161},
+        'case78': {'input': {'D': 0.5, 'beta': 0.1, 'Re': 110000000, 'tapping': 'D'}, 'output': 0.5960517209066243},
+        'case79': {'input': {'D': 0.5, 'beta': 0.1, 'Re': 110000000, 'tapping': 'D/2'}, 'output': 0.5960517209066243},
+        'case80': {'input': {'D': 0.5, 'beta': 0.1, 'Re': 110000000, 'tapping': 'flange'}, 'output': 0.5963042369168906},
+        'case81': {'input': {'D': 0.5, 'beta': 0.5, 'Re': 1000, 'tapping': 'corner'}, 'output': 0.6821424054423119},
+        'case82': {'input': {'D': 0.5, 'beta': 0.5, 'Re': 1000, 'tapping': 'D'}, 'output': 0.679597084581666},
+        'case83': {'input': {'D': 0.5, 'beta': 0.5, 'Re': 1000, 'tapping': 'D/2'}, 'output': 0.679597084581666},
+        'case84': {'input': {'D': 0.5, 'beta': 0.5, 'Re': 1000, 'tapping': 'flange'}, 'output': 0.6814392890350428},
+        'case85': {'input': {'D': 0.5, 'beta': 0.5, 'Re': 110000000, 'tapping': 'corner'}, 'output': 0.6021989047184301},
+        'case86': {'input': {'D': 0.5, 'beta': 0.5, 'Re': 110000000, 'tapping': 'D'}, 'output': 0.6015582155363332},
+        'case87': {'input': {'D': 0.5, 'beta': 0.5, 'Re': 110000000, 'tapping': 'D/2'}, 'output': 0.6015582155363332},
+        'case88': {'input': {'D': 0.5, 'beta': 0.5, 'Re': 110000000, 'tapping': 'flange'}, 'output': 0.6017152961053875},
+        'case89': {'input': {'D': 0.5, 'beta': 0.8, 'Re': 1000, 'tapping': 'corner'}, 'output': 0.903186798430478},
+        'case90': {'input': {'D': 0.5, 'beta': 0.8, 'Re': 1000, 'tapping': 'D'}, 'output': 0.8968672583821226},
+        'case91': {'input': {'D': 0.5, 'beta': 0.8, 'Re': 1000, 'tapping': 'D/2'}, 'output': 0.8968672583821226},
+        'case92': {'input': {'D': 0.5, 'beta': 0.8, 'Re': 1000, 'tapping': 'flange'}, 'output': 0.9003151541289556},
+        'case93': {'input': {'D': 0.5, 'beta': 0.8, 'Re': 110000000, 'tapping': 'corner'}, 'output': 0.5786840097643495},
+        'case94': {'input': {'D': 0.5, 'beta': 0.8, 'Re': 110000000, 'tapping': 'D'}, 'output': 0.6012321474071307},
+        'case95': {'input': {'D': 0.5, 'beta': 0.8, 'Re': 110000000, 'tapping': 'D/2'}, 'output': 0.6012321474071307},
+        'case96': {'input': {'D': 0.5, 'beta': 0.8, 'Re': 110000000, 'tapping': 'flange'}, 'output': 0.5791393500582181},
+        'case97': {'input': {'D': 1.5, 'beta': 0.1, 'Re': 1000, 'tapping': 'corner'}, 'output': 0.6095215946044831},
+        'case98': {'input': {'D': 1.5, 'beta': 0.1, 'Re': 1000, 'tapping': 'D'}, 'output': 0.6092062065576007},
+        'case99': {'input': {'D': 1.5, 'beta': 0.1, 'Re': 1000, 'tapping': 'D/2'}, 'output': 0.6092062065576007},
+        'case100': {'input': {'D': 1.5, 'beta': 0.1, 'Re': 1000, 'tapping': 'flange'}, 'output': 0.6094969278344043},
+        'case101': {'input': {'D': 1.5, 'beta': 0.1, 'Re': 110000000, 'tapping': 'corner'}, 'output': 0.5963663205116161},
+        'case102': {'input': {'D': 1.5, 'beta': 0.1, 'Re': 110000000, 'tapping': 'D'}, 'output': 0.5960517209066243},
+        'case103': {'input': {'D': 1.5, 'beta': 0.1, 'Re': 110000000, 'tapping': 'D/2'}, 'output': 0.5960517209066243},
+        'case104': {'input': {'D': 1.5, 'beta': 0.1, 'Re': 110000000, 'tapping': 'flange'}, 'output': 0.5963416773970021},
+        'case105': {'input': {'D': 1.5, 'beta': 0.5, 'Re': 1000, 'tapping': 'corner'}, 'output': 0.6821424054423119},
+        'case106': {'input': {'D': 1.5, 'beta': 0.5, 'Re': 1000, 'tapping': 'D'}, 'output': 0.679597084581666},
+        'case107': {'input': {'D': 1.5, 'beta': 0.5, 'Re': 1000, 'tapping': 'D/2'}, 'output': 0.679597084581666},
+        'case108': {'input': {'D': 1.5, 'beta': 0.5, 'Re': 1000, 'tapping': 'flange'}, 'output': 0.6818394792626169},
+        'case109': {'input': {'D': 1.5, 'beta': 0.5, 'Re': 110000000, 'tapping': 'corner'}, 'output': 0.6021989047184301},
+        'case110': {'input': {'D': 1.5, 'beta': 0.5, 'Re': 110000000, 'tapping': 'D'}, 'output': 0.6015582155363332},
+        'case111': {'input': {'D': 1.5, 'beta': 0.5, 'Re': 110000000, 'tapping': 'D/2'}, 'output': 0.6015582155363332},
+        'case112': {'input': {'D': 1.5, 'beta': 0.5, 'Re': 110000000, 'tapping': 'flange'}, 'output': 0.6019531228229874},
+        'case113': {'input': {'D': 1.5, 'beta': 0.8, 'Re': 1000, 'tapping': 'corner'}, 'output': 0.903186798430478},
+        'case114': {'input': {'D': 1.5, 'beta': 0.8, 'Re': 1000, 'tapping': 'D'}, 'output': 0.8968672583821226},
+        'case115': {'input': {'D': 1.5, 'beta': 0.8, 'Re': 1000, 'tapping': 'D/2'}, 'output': 0.8968672583821226},
+        'case116': {'input': {'D': 1.5, 'beta': 0.8, 'Re': 1000, 'tapping': 'flange'}, 'output': 0.9019166312342929},
+        'case117': {'input': {'D': 1.5, 'beta': 0.8, 'Re': 110000000, 'tapping': 'corner'}, 'output': 0.5786840097643495},
+        'case118': {'input': {'D': 1.5, 'beta': 0.8, 'Re': 110000000, 'tapping': 'D'}, 'output': 0.6012321474071307},
+        'case119': {'input': {'D': 1.5, 'beta': 0.8, 'Re': 110000000, 'tapping': 'D/2'}, 'output': 0.6012321474071307},
+        'case120': {'input': {'D': 1.5, 'beta': 0.8, 'Re': 110000000, 'tapping': 'flange'}, 'output': 0.578279953742449},
+        }
 
     for case, case_dict in cases.items():
         C = differential_pressure_flowmeters.calculate_C_orifice_ReaderHarrisGallagher(
-            D=case_dict['D'],
-            beta=case_dict['beta'],
-            Re=case_dict['Re'],
-            tapping=case_dict['tapping']
+            D=case_dict['input']['D'],
+            beta=case_dict['input']['beta'],
+            Re=case_dict['input']['Re'],
+            tapping=case_dict['input']['tapping']
         )
         
-        assert round(C,4)==case_dict['expected'], f'C calculation failed for {case}'
+        assert C == case_dict['output'], f'C calculation failed for {case}'
 
 
 def test_calculate_flow_orifice():
@@ -415,21 +564,21 @@ def test_calculate_flow_orifice_without_C():
         assert reldev < criteria, f'Volume flow from orifice calculation failed for {case}'
 
 
-def test_calculate_flow_orifice_vs_ISO5167_1_E1():
-    # Test orifice calculation against ISO 5167-1:2022, Annex E, E.1 Meter setup
+def test_calculate_flow_orifice_complete():
+    # Test orifice calculation for a single case, including calculation of beta, epsilon, C and flowrates
 
     data={
-        'D': 0.19368, # m
-        'd': 0.09684, # m
-        'dP': 257.6, # mbar
-        'rho1': 13.93,
-        'mu': 1.1145e-05,
-        'C': 0.6026,
-        'kappa': 1.308,
-        'VolFlow': 1000.0,
-        'MassFlow': 13928.4,
-        'Re': 2282000.0,
-        'Velocity': 9.43,
+        'D': 0.3, # m
+        'd': 0.1, # m
+        'dP': 280.0, # mbar
+        'rho1': 15.0,
+        'mu': 1.12e-05,
+        'C': 0.599031,
+        'kappa': 1.2,
+        'VolFlow': 1037.019349,
+        'MassFlow': 15555.29024,
+        'Re': 1637368.6064174655,
+        'Velocity': 4.075229,
         'P1': 20.0, # bar
     }
 
@@ -452,7 +601,7 @@ def test_calculate_flow_orifice_vs_ISO5167_1_E1():
         tapping='flange'
     )
     
-    assert round(C, 4) == data['C'], 'Discharge coefficient calculation failed'
+    assert round(C,6) == data['C'], 'Discharge coefficient calculation failed'
 
     # Calculate orifice flow, without any C provided
     res = differential_pressure_flowmeters.calculate_flow_orifice(
@@ -464,21 +613,17 @@ def test_calculate_flow_orifice_vs_ISO5167_1_E1():
         epsilon=epsilon,
         tapping='flange'
     )
+    
+    print(res)
 
     # Check that calculated C is equal to the actual C
-    assert round(res['C'], 4) == data['C'], 'Discharge coefficient calculation failed'
+    assert round(res['C'],6) == data['C'], 'Discharge coefficient calculation failed'
 
-    criteria = 0.02 # [%] Allowable deviation
+    assert round(res['MassFlow'],6) == data['MassFlow'], 'Mass flow from orifice calculation failed'
 
-    # Check that calculated mass flow, volume flow and velocity are within the criteria
-    reldev = abs(utilities.calculate_relative_deviation(res['MassFlow'], data['MassFlow']))
-    assert reldev < criteria, 'Mass flow from orifice calculation failed'
+    assert round(res['VolFlow'],6) == data['VolFlow'], 'Volume flow from orifice calculation failed'
 
-    reldev = abs(utilities.calculate_relative_deviation(res['VolFlow'], data['VolFlow']))
-    assert reldev < criteria, 'Volume flow from orifice calculation failed'
-
-    reldev = abs(utilities.calculate_relative_deviation(res['Velocity'], data['Velocity']))
-    assert reldev < criteria, 'Velocity from orifice calculation failed'
+    assert round(res['Velocity'],6) == data['Velocity'], 'Velocity from orifice calculation failed'
 
 
 def test_calculate_flow_orifice_invalid_inputs():
