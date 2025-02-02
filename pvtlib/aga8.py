@@ -26,7 +26,7 @@ from scipy import optimize
 
 class AGA8:
     """
-    A class to perform gas property calculations using the AGA8 equation of state.
+    A class to perform gas property calculations using the AGA8 equations of state, DETAIL [1]_ and GERG-2008 [2]_.
     equation : str, optional
         The equation of state to use. Must be either 'GERG-2008' or 'DETAIL'. Default is 'GERG-2008'.
     Attributes
@@ -39,6 +39,11 @@ class AGA8:
         Calculate gas properties using pressure, temperature, and composition as input.
     calculate_from_rhoT(composition, mass_density, temperature, temperature_unit='C', molar_mass=None)
         Calculate gas properties using mass density, temperature, and composition as input.
+    
+    References
+    ----------
+    .. [1] AGA Report No. 8 Part 1 Third Edition, Thermodynamic Properties of Natural Gas and Related Gases - DETAIL and GROSS Equations of State, 2017
+    .. [2] AGA Report No. 8 Part 2 First Edition, Thermodynamic Properties of Natural Gas and Related Gases - Gerg-2008 Equation of State, 2017
     """ 
 
     def __init__(self, equation = 'GERG-2008'):
