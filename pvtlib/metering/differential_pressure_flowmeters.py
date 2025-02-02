@@ -29,7 +29,7 @@ from pvtlib.fluid_mechanics import reynolds_number, superficial_velocity
 def _calculate_flow_DP_meter(C, D, d, epsilon, dP, rho1):
     """
     Calculate the mass flow rate through a differential pressure (DP) meter.
-    This formula is given as "Formula (1)" in ISO 5167 part 2 and 4 (2022 edition),
+    This formula is given as "Formula (1)" in ISO 5167 part 2 [1]_ and 4 [2]_ (2022 edition),
     and is valid for orifice plates and Venturi tubes.
 
     Parameters
@@ -54,6 +54,11 @@ def _calculate_flow_DP_meter(C, D, d, epsilon, dP, rho1):
         - 'MassFlow': Mass flow rate [kg/h].
         - 'VolFlow': Volume flow rate [m3/h].
         - 'Velocity': Flow velocity [m/s].
+    
+    References
+    ----------
+    .. [1] ISO 5167-2:2022, Measurement of fluid flow by means of pressure differential devices inserted in circular cross-section conduits running full -- Part 2: Orifice plates.
+    .. [2] ISO 5167-4:2022, Measurement of fluid flow by means of pressure differential devices inserted in circular cross-section conduits running full -- Part 4: Venturi tubes.
     """
     
     results = {}
@@ -78,14 +83,10 @@ def _calculate_flow_DP_meter(C, D, d, epsilon, dP, rho1):
 #%% Venturi equations
 def calculate_flow_venturi(D, d, dP, rho1, C=None, epsilon=None, check_input=False):
     '''
-    Calculate the flow rate using a Venturi meter.
-    Calculations performed according to ISO 5167-4:2022.
+    Calculate the flow rates (mass flow, volume flow, and velocity) through a Venturi meter.
+    Calculations performed according to ISO 5167-4:2022 [1_]. 
 
-    If discharge coefficient is not provided, the function uses the value of 0.984 given in ISO 5167-4:2022, 
-    which is valid for an "as cast" convergent section Classical Venturi tube at the following conditions:
-        - 100 mm ≤ D ≤ 800 mm
-        - 0.3 ≤ β ≤ 0.75
-        - 2 × 10^5 ≤ ReD ≤ 2 × 10^6
+    If discharge coefficient is not provided, the function uses the value of 0.984 given in ISO 5167-4:2022 for "as cast" Venturi tubes. 
 
     Parameters
     ----------
@@ -119,6 +120,10 @@ def calculate_flow_venturi(D, d, dP, rho1, C=None, epsilon=None, check_input=Fal
     ------
     Exception
         If any of the input parameters are invalid (negative or zero where not allowed).
+    
+    References
+    ----------
+    .. [1] ISO 5167-4:2022, Measurement of fluid flow by means of pressure differential devices inserted in circular cross-section conduits running full -- Part 4: Venturi tubes.
     '''
     
     # Dictionary containing all results from calculations
@@ -177,7 +182,7 @@ def calculate_flow_venturi(D, d, dP, rho1, C=None, epsilon=None, check_input=Fal
 
 def calculate_expansibility_venturi(P1, dP, beta, kappa):
     '''
-    Calculate the expansibility factor for a Venturi meter.
+    Calculate the expansibility factor for a Venturi meter [1]_.
 
     Parameters
     ----------
@@ -194,6 +199,10 @@ def calculate_expansibility_venturi(P1, dP, beta, kappa):
     -------
     epsilon : float
         Expansibility factor. [-]
+    
+    References
+    ----------
+    .. [1] ISO 5167-4:2022, Measurement of fluid flow by means of pressure differential devices inserted in circular cross-section conduits running full -- Part 4: Venturi tubes.
     '''
 
     # Calculate pressure ratio
@@ -213,6 +222,7 @@ def calculate_expansibility_venturi(P1, dP, beta, kappa):
 def calculate_beta_DP_meter(D, d):
     '''
     Calculate the diameter ratio (beta) for a traditional DP based meter, such as venturi and orifice plates.
+    Calculation according to ISO 5167:2022 (part 1,2,4) [1]_.
 
     Parameters
     ----------
@@ -231,14 +241,12 @@ def calculate_beta_DP_meter(D, d):
     
     Notes
     -----
-    From ISO 5167-1:2022:
-    In ISO 5167-2 and ISO 5167-3 the diameter ratio is the ratio of the diameter of the throat of the
-    primary device to the internal diameter of the measuring pipe upstream of the primary device.
-    In ISO 5167-4, where the primary device has a cylindrical section upstream, having the same
-    diameter as that of the pipe, the diameter ratio is the ratio of the throat diameter to the diameter of this cylindrical
-    section at the plane of the upstream pressure tappings.
+    This function cannot be used for cone meters, as the diameter ratio is defined differently (see calculate_beta_V_cone).  
 
-    This function cannot be used for cone meters, as the diameter ratio is defined differently (see calculate_beta_V_cone).    '''
+    References
+    ----------
+    .. [1] ISO 5167-1:2022, Measurement of fluid flow by means of pressure differential devices inserted in circular cross-section conduits running full -- Part 1: General principles and requirements.
+    '''
     
     if D<=0.0:
         raise Exception('ERROR: Negative diameter input. Diameter (D) must be a float greater than zero')
@@ -253,7 +261,7 @@ def calculate_beta_DP_meter(D, d):
 def calculate_flow_V_cone(D, beta, dP, rho1, C = None, epsilon = None, check_input=False):
     '''
     Calculate mass flowrate and volume flowrate of a V-cone meter. 
-    Calculations performed according to NS-EN ISO 5167-5:2022. 
+    Calculations performed according to NS-EN ISO 5167-5:2022 [1]_. 
 
     Parameters
     ----------
@@ -270,10 +278,6 @@ def calculate_flow_V_cone(D, beta, dP, rho1, C = None, epsilon = None, check_inp
     C : float, optional
         Discharge coefficient. 
         If no value of C is provided, the function uses the value of 0.82 given in NS-EN ISO 5167-5:2022.
-        Under the following conditions, the value of the discharge coefficient, C, for an uncalibrated meter is C=0.82
-            - 50 mm ≤ D ≤ 500 mm
-            - 0,45 ≤ β ≤ 0,75
-            - 8 × 10^4 ≤ ReD ≤ 1,2 × 10^7
     epsilon : float, optional
         expansibility factor (ε) is a coefficient used to take into account the compressibility of the fluid. 
         If no expansibility is provided, the function will use 1.0. 
@@ -290,7 +294,10 @@ def calculate_flow_V_cone(D, beta, dP, rho1, C = None, epsilon = None, check_inp
         - 'Velocity': Flow velocity [m/s].
         - 'C': Discharge coefficient used.
         - 'epsilon': Expansion factor used.
-        
+
+    References
+    ----------
+    .. [1] NS-EN ISO 5167-5:2022, Measurement of fluid flow by means of pressure differential devices inserted in circular cross-section conduits running full -- Part 5: Cone meters.
     '''
     
     # Dictionary containing all results from calculations
@@ -350,8 +357,8 @@ def calculate_flow_V_cone(D, beta, dP, rho1, C = None, epsilon = None, check_inp
 def calculate_expansibility_Stewart_V_cone(beta , P1, dP, k, check_input=False):
     '''
     Calculates the expansibility factor for a cone flow meter
-    based on the geometry of the cone meter, measured differential pressures of the orifice,
-    and the isentropic exponent of the fluid. 
+    based on the geometry of the cone meter, measured differential pressures of the V-cone meter
+    and the isentropic exponent of the fluid [1]_.
 
     Parameters
     ----------
@@ -368,14 +375,16 @@ def calculate_expansibility_Stewart_V_cone(beta , P1, dP, k, check_input=False):
     Returns
     -------
     expansibility : float
-        Expansibility factor (1 for incompressible fluids, less than 1 for
-        real fluids), [-]
+        Expansibility factor (1 for incompressible fluids, less than 1 for real fluids) [-]
 
     Notes
     -----
     This formula was determined for the range of P2/P1 >= 0.75; the only gas
     used to determine the formula is air.
 
+    References
+    ----------
+    .. [1] Stewart, D., M. Reader-Harris, and R. Peters. Derivation of an expansibility factor for the V-Cone meter. in Flow Measurement International Conference, Peebles, Scotland, UK. 2001.
     '''
     
     dP_Pa = dP*100 # Convert mbar to Pa
@@ -400,8 +409,7 @@ def calculate_expansibility_Stewart_V_cone(beta , P1, dP, k, check_input=False):
 
 def calculate_beta_V_cone(D, dc):
     '''
-    Calculates V-cone beta according to NS-EN ISO 5167-5:2022
-    Figure 1 in NS-EN ISO 5167-5:2022 illustrates the locations of D and dc in the cone meter, and how beta changes with dc. 
+    Calculates V-cone beta according to ISO 5167-5:2022 [1]_.
 
     beta edge: maximum circumference of the cone
 
@@ -409,32 +417,36 @@ def calculate_beta_V_cone(D, dc):
     ----------
     D : float
         The diameter of the pipe at the beta edge, D. 
-        Assumes that the diameter of the pipe at the upstream tapping, DTAP, is equal to the diameter of the pipe at the beta edge, D. 
-        In easier terms, its the inlet diameter. 
+        Assumes that the diameter of the pipe at the upstream tapping is equal to the diameter of the pipe at the beta edge, D. 
+        In easier terms, its the inlet inner diameter. 
         
     dc : float
         dc is the diameter of the cone in the plane of the beta edge [m]. 
-        In easier terms, its the diameter of the cone. 
+        In easier terms, its the outer diameter of the cone. 
 
     Returns
     -------
     beta : float
         V-cone beta.
 
+    References
+    ----------
+    .. [1] ISO 5167-5:2022, Measurement of fluid flow by means of pressure differential devices inserted in circular cross-section conduits running full -- Part 5: Cone meters.
     '''
     
     if D<=0.0:
         raise Exception('ERROR: Negative diameter input. Diameter (D) must be a float greater than zero')
 
     beta = sqrt(1-((dc**2)/(D**2)))
-    
+
     return beta
 
 
 #%% Orifice equations
 def calculate_flow_orifice(D, d, dP, rho1, mu=None, C=None, epsilon=None, tapping='corner', check_input=False):
     """
-    Calculate the flow rate through an orifice plate.
+    Calculate the flow rate through an orifice plate according to ISO 5167-2:2022 [1]_.
+
     Parameters
     ----------
     D : float
@@ -469,6 +481,10 @@ def calculate_flow_orifice(D, d, dP, rho1, mu=None, C=None, epsilon=None, tappin
     ------
     Exception
         If `check_input` is True and any of the input parameters are invalid, or if the iterative calculation for the discharge coefficient does not converge.
+
+    References
+    ----------
+    .. [1] ISO 5167-2:2022, Measurement of fluid flow by means of pressure differential devices inserted in circular cross-section conduits running full -- Part 2: Orifice plates.
     """
     
     # Define a dictionary that is returned if the function is called with check_input=False and the input parameters are invalid
@@ -577,7 +593,7 @@ def calculate_flow_orifice(D, d, dP, rho1, mu=None, C=None, epsilon=None, tappin
 
 def calculate_expansibility_orifice(P1, dP, beta, kappa):
     '''
-    Calculate the expansibility factor for an orifice meter according to ISO 5167-2:2022 (formula 5). 
+    Calculate the expansibility factor for an orifice meter according to ISO 5167-2:2022 [1]_[2]_. 
     The calculation is valid under the criterias given by the standard.
 
     Parameters
@@ -595,6 +611,11 @@ def calculate_expansibility_orifice(P1, dP, beta, kappa):
     -------
     epsilon : float
         Expansibility factor. [-]
+    
+    References
+    ----------
+    .. [1] Reader-Harris, M. The equation for the expansibility factor for orifice plates. in Proceedings of the FLOMEKO. 1998.
+    .. [2] ISO 5167-2:2022, Measurement of fluid flow by means of pressure differential devices inserted in circular cross-section conduits running full -- Part 2: Orifice plates.
     '''
 
     # Calculate pressure ratio
@@ -616,8 +637,8 @@ def calculate_expansibility_orifice(P1, dP, beta, kappa):
 
 def calculate_C_orifice_ReaderHarrisGallagher(D, beta, Re, tapping='corner', check_input=False):
     """
-    Calculate the discharge coefficient (C) for an orifice plate using the Reader-Harris/Gallagher equation.
-    Perform calculations according to ISO 5167-2:2022.
+    Calculate the discharge coefficient (C) for an orifice plate using the Reader-Harris/Gallagher equation [1]_.
+    Calculations performed according to ISO 5167-2:2022 [2]_.
     
     Parameters
     ----------
@@ -643,6 +664,11 @@ def calculate_C_orifice_ReaderHarrisGallagher(D, beta, Re, tapping='corner', che
     -----
     The function converts the pipe diameter to millimeters as required by the Reader-Harris/Gallagher equation.
     The equation includes an additional term for pipe diameters less than 71.12 mm as specified by ISO 5167-1:2022.
+
+    References
+    ----------
+    .. [1] Reader-Harris, M. and J. Sattary. The orifice plate discharge coefficient equation-the equation for ISO 5167-1. in Proceedings of the 14th North Sea Flow Measurement Workshop, Peebles, UK. 1996.
+    .. [2] ISO 5167-2:2022, Measurement of fluid flow by means of pressure differential devices inserted in circular cross-section conduits running full -- Part 2: Orifice plates.
     """
 
 
