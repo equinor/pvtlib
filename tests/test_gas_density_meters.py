@@ -98,3 +98,32 @@ def test_GDM_SOScorr_highdens_example_from_manual():
     VOS_factor = Dvos / rho
     
     assert (VOS_factor-1.0026)<0.0001, 'GDM speed of sound high density example from 7812 manual failed'
+
+def test_GDM_Q():
+
+    Q = gas_density_meters.GDM_Q(
+        dP=200.0,
+        rho=15.0, 
+        K=0.6
+        )
+    
+    assert round(Q,5) == 2.19089, 'Error in GDM Q'
+
+def test_gas_density_from_SOS_and_IE():
+    rho = gas_density_meters.gas_density_from_SOS_and_IE(
+        SOS=432.04937, 
+        IE=1.4, 
+        P_bara=20.0
+        )
+    
+    assert round(rho,5) == 15.0, 'Error in gas density from SOS and IE'
+
+def test_gas_SOS_from_density_and_IE():
+    
+    SOS = gas_density_meters.gas_SOS_from_density_and_IE(
+        rho=15.0, 
+        IE=1.4,
+        P_bara=20.0
+    )
+    
+    assert round(SOS,5) == 432.04938, 'Error in gas SOS from density and IE'
