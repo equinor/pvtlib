@@ -231,23 +231,56 @@ def test_calculate_expansibility_ventiruri():
 #%% Test orifice calculations
 def test_calculate_expansibility_orifice():
     '''
-    Validate calculate_expansibility_orifice function against known values from ISO 5176-2:2022, table A.12
+    The function has been tested on a number of known cases. 
+    Then these test cases have been generated, to cover a wider range of possible inputs.
     '''
     cases = {
-        'case1': {'P1': 50, 'dP': 12500, 'beta': 0.1, 'kappa': 1.2, 'expected': 0.9252},
-        'case2': {'P1': 50, 'dP': 12500, 'beta': 0.75, 'kappa': 1.2, 'expected': 0.8881},
-        'case3': {'P1': 50, 'dP': 1000, 'beta': 0.1, 'kappa': 1.2, 'expected': 0.9941},
-        'case4': {'P1': 50, 'dP': 1000, 'beta': 0.75, 'kappa': 1.2, 'expected': 0.9912}
-    }
+        'case1': {'input': {'P1': 20, 'dP': 100, 'beta': 0.1, 'kappa': 1.1}, 'output': 0.9984040657578193},
+        'case2': {'input': {'P1': 20, 'dP': 100, 'beta': 0.1, 'kappa': 1.4}, 'output': 0.9987454397117774},
+        'case3': {'input': {'P1': 20, 'dP': 100, 'beta': 0.8, 'kappa': 1.1}, 'output': 0.9972180680579906},
+        'case4': {'input': {'P1': 20, 'dP': 100, 'beta': 0.8, 'kappa': 1.4}, 'output': 0.9978131296097676},
+        'case5': {'input': {'P1': 20, 'dP': 3000, 'beta': 0.1, 'kappa': 1.1}, 'output': 0.9517871627245567},
+        'case6': {'input': {'P1': 20, 'dP': 3000, 'beta': 0.1, 'kappa': 1.4}, 'output': 0.9615274461268208},
+        'case7': {'input': {'P1': 20, 'dP': 3000, 'beta': 0.8, 'kappa': 1.1}, 'output': 0.9159584220411359},
+        'case8': {'input': {'P1': 20, 'dP': 3000, 'beta': 0.8, 'kappa': 1.4}, 'output': 0.9329370699107097},
+        'case9': {'input': {'P1': 20, 'dP': 14000, 'beta': 0.1, 'kappa': 1.1}, 'output': 0.7664626550316556},
+        'case10': {'input': {'P1': 20, 'dP': 14000, 'beta': 0.1, 'kappa': 1.4}, 'output': 0.7975180039814262},
+        'case11': {'input': {'P1': 20, 'dP': 14000, 'beta': 0.8, 'kappa': 1.1}, 'output': 0.5929124255572498},
+        'case12': {'input': {'P1': 20, 'dP': 14000, 'beta': 0.8, 'kappa': 1.4}, 'output': 0.6470461517034853},
+        'case13': {'input': {'P1': 60, 'dP': 100, 'beta': 0.1, 'kappa': 1.1}, 'output': 0.9994681026995755},
+        'case14': {'input': {'P1': 60, 'dP': 100, 'beta': 0.1, 'kappa': 1.4}, 'output': 0.9995820128016891},
+        'case15': {'input': {'P1': 60, 'dP': 100, 'beta': 0.8, 'kappa': 1.1}, 'output': 0.9990728301637933},
+        'case16': {'input': {'P1': 60, 'dP': 100, 'beta': 0.8, 'kappa': 1.4}, 'output': 0.999271391071387},
+        'case17': {'input': {'P1': 60, 'dP': 3000, 'beta': 0.1, 'kappa': 1.1}, 'output': 0.9840073503994683},
+        'case18': {'input': {'P1': 60, 'dP': 3000, 'beta': 0.1, 'kappa': 1.4}, 'output': 0.987371848182185},
+        'case19': {'input': {'P1': 60, 'dP': 3000, 'beta': 0.8, 'kappa': 1.1}, 'output': 0.9721226216060829},
+        'case20': {'input': {'P1': 60, 'dP': 3000, 'beta': 0.8, 'kappa': 1.4}, 'output': 0.9779874019981433},
+        'case21': {'input': {'P1': 60, 'dP': 14000, 'beta': 0.1, 'kappa': 1.1}, 'output': 0.9246737100688646},
+        'case22': {'input': {'P1': 60, 'dP': 14000, 'beta': 0.1, 'kappa': 1.4}, 'output': 0.9393197783617834},
+        'case23': {'input': {'P1': 60, 'dP': 14000, 'beta': 0.8, 'kappa': 1.1}, 'output': 0.8686959609650706},
+        'case24': {'input': {'P1': 60, 'dP': 14000, 'beta': 0.8, 'kappa': 1.4}, 'output': 0.8942260637299853},
+        'case25': {'input': {'P1': 100, 'dP': 100, 'beta': 0.1, 'kappa': 1.1}, 'output': 0.9996808712992595},
+        'case26': {'input': {'P1': 100, 'dP': 100, 'beta': 0.1, 'kappa': 1.4}, 'output': 0.9997492315876291},
+        'case27': {'input': {'P1': 100, 'dP': 100, 'beta': 0.8, 'kappa': 1.1}, 'output': 0.9994437149709947},
+        'case28': {'input': {'P1': 100, 'dP': 100, 'beta': 0.8, 'kappa': 1.4}, 'output': 0.9995628763153372},
+        'case29': {'input': {'P1': 100, 'dP': 3000, 'beta': 0.1, 'kappa': 1.1}, 'output': 0.9904133749301968},
+        'case30': {'input': {'P1': 100, 'dP': 3000, 'beta': 0.1, 'kappa': 1.4}, 'output': 0.9924453638873472},
+        'case31': {'input': {'P1': 100, 'dP': 3000, 'beta': 0.8, 'kappa': 1.1}, 'output': 0.9832891996469033},
+        'case32': {'input': {'P1': 100, 'dP': 3000, 'beta': 0.8, 'kappa': 1.4}, 'output': 0.9868312346733482},
+        'case33': {'input': {'P1': 100, 'dP': 14000, 'beta': 0.1, 'kappa': 1.1}, 'output': 0.955024077468818},
+        'case34': {'input': {'P1': 100, 'dP': 14000, 'beta': 0.1, 'kappa': 1.4}, 'output': 0.9641495502198686},
+        'case35': {'input': {'P1': 100, 'dP': 14000, 'beta': 0.8, 'kappa': 1.1}, 'output': 0.9216008077250957},
+        'case36': {'input': {'P1': 100, 'dP': 14000, 'beta': 0.8, 'kappa': 1.4}, 'output': 0.9375077564333294},
+        }
 
     for case, case_dict in cases.items():
         epsilon = differential_pressure_flowmeters.calculate_expansibility_orifice(
-            P1=case_dict['P1'],
-            dP=case_dict['dP'],
-            beta=case_dict['beta'],
-            kappa=case_dict['kappa']
+            P1=case_dict['input']['P1'],
+            dP=case_dict['input']['dP'],
+            beta=case_dict['input']['beta'],
+            kappa=case_dict['input']['kappa']
         )
-        assert round(epsilon, 4) == case_dict['expected'], f'Expansibility calculation failed for {case}'
+        assert epsilon == case_dict['output'], f'Expansibility calculation failed for {case}'
 
 
 def test_calculate_C_orifice_ReaderHarrisGallagher():
