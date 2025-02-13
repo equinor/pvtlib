@@ -29,6 +29,7 @@ def level_from_differential_pressure(dP, rho1, rho2, h, g=9.80665, check_input=F
     The calculation assumes that the fluid with density rho1 is above the fluid with density rho2
     and that the differential pressure measurement is positive, 
     meaning that the pressure at the lower tapping is higher than at the upper tapping for static fluids. 
+    The differential pressure is measured between the top tapping and bottom tapping. Level is measured above the bottom tapping. 
 
     Parameters
     ----------
@@ -48,7 +49,7 @@ def level_from_differential_pressure(dP, rho1, rho2, h, g=9.80665, check_input=F
     Returns
     -------
     h2 : float
-        Level of fluid 2 [m].
+        Level of fluid 2 above bottom tapping [m].
     """
 
     # Check that dP is positive
