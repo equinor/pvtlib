@@ -213,7 +213,7 @@ def critical_velocity_for_uniform_wio_dispersion_vertical(beta, ST_oil_aq, rho_o
     .. [1] NFOGM, Handbook of Water Fraction Metering. Revision 2 ed. 2004
     '''
     
-    if rho_o == 0 or Visc_o == 0 or beta == 100 or beta<0:
+    if rho_o == 0 or Visc_o == 0 or beta >= 100 or beta<0:
         Vc = np.nan
     else:
         Vc = K2 * ((beta ** 0.556) / ((100 - beta) ** 1.556)) * (ST_oil_aq ** 0.278) * (((rho_aq - rho_o) ** 0.278) / (rho_o ** 0.444)) * ((D / Visc_o) ** 0.111)
