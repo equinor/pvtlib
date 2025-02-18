@@ -147,7 +147,7 @@ def test_critical_velocity_for_uniform_wio_dispersion_vertical_3():
     
     assert np.isnan(Vc), f'Critical velocity for homogeneous oil water mixture in a vertical pipe failed'    
 
-def test_critical_velocity_for_uniform_wio_dispersion_vertical_1():
+def test_critical_velocity_for_uniform_wio_dispersion_vertical_4():
     '''
     Test calculation of critical (minimum) velocity for maintaining homogeneous oil water mixture in a vertical pipe. 
     Test is based on example from NFOGM Handbook of Water Fraction Metering Revision 2, December 2004, Appendix A
