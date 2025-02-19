@@ -25,4 +25,5 @@ from .metering import differential_pressure_flowmeters, gas_density_meters
 from . import fluid_mechanics
 from . import thermodynamics
 from . import unit_converters
+from . import utilities
 from .aga8 import AGA8
