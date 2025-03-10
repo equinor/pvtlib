@@ -223,6 +223,7 @@ def critical_velocity_for_uniform_wio_dispersion_vertical(beta, ST_oil_aq, rho_o
 '''
 Equations for convering between volume percent and mass percent in a two-phase system and for correcting a mixed density for the presence of a contaminant
 The following calculations assumes a mixture of two immiscible liquids with a known density for each phase. If used for a fluid flow scenario, it also assumes no slip between the phases. 
+i.e.    rho_mix = rho_A * alpha_A + rho_B * alpha_B
 These equations are typically useful in "oil-in-water" and "water-in-oil" systems. 
 
 Nomenclature:
@@ -312,12 +313,12 @@ def dominant_phase_corrected_density(measured_total_density, ContaminantVolP, Co
         Measured total density, i.e. density including both dominant and contaminant phase [kg/m3]
     ContaminantVolP : float
         Volume percentage, contaminant phase [%]
-    ContaminantPhase_EOS_density : TYPE
+    ContaminantPhase_EOS_density : float
         Calculated denstiy from equation of state, contaminant phase [kg/m3]
 
     Returns
     -------
-    Density_dominant_corr : TYPE
+    Density_dominant_corr : float
         Estimated density of the dominant phase, based on measured density, corrected for contaminant phase [kg/m3]
 
     '''
@@ -332,3 +333,41 @@ def dominant_phase_corrected_density(measured_total_density, ContaminantVolP, Co
                     1 - Contaminant_alpha)
     
     return Density_dominant_corr
+
+
+def contaminant_volume_percent_from_mixed_density(measured_total_density, DominantPhase_EOS_density, ContaminantPhase_EOS_density):
+    '''
+    Calculate the fraction of contaminant phase in a two-phase system, based on a measured total density and the densities of the two phases.
+    The EOS density can be calculated from an equation of state, or from another source, as long as it represents the density of the dominant and contaminant phases.
+
+    Example of usage: What is the water fraction if the measured density is 850 kg/m3, the oil density is 800 kg/m3 and the water density is 1000 kg/m3?
+    
+    Parameters
+    ----------
+    measured_total_density : float
+        Measured total density, i.e. density including both dominant and contaminant phase [kg/m3]
+    DominantPhase_EOS_density : float
+        Calculated denstiy from equation of state, dominant phase [kg/m3]
+    ContaminantPhase_EOS_density : float
+        Calculated denstiy from equation of state, contaminant phase [kg/m3]
+
+    Returns
+    -------
+    ContaminantVolP : float
+        Volume percentage, contaminant phase [%]
+    '''
+    
+    # Check for division by zero error, in which the function will return nan
+    if DominantPhase_EOS_density == ContaminantPhase_EOS_density:
+        ContaminantVolP = np.nan
+    else:
+        Contaminant_alpha = (measured_total_density - DominantPhase_EOS_density) / (ContaminantPhase_EOS_density - DominantPhase_EOS_density)
+        ContaminantVolP = Contaminant_alpha * 100
+    
+    #Check that contaminant volume percentage is within physical limits (0-100 %)
+    if ContaminantVolP <= 0:
+        ContaminantVolP = 0
+    elif ContaminantVolP >= 100:
+        ContaminantVolP = 100
+
+    return ContaminantVolP
