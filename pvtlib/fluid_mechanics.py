@@ -219,3 +219,116 @@ def critical_velocity_for_uniform_wio_dispersion_vertical(beta, ST_oil_aq, rho_o
         Vc = K2 * ((beta ** 0.556) / ((100 - beta) ** 1.556)) * (ST_oil_aq ** 0.278) * (((rho_aq - rho_o) ** 0.278) / (rho_o ** 0.444)) * ((D / Visc_o) ** 0.111)
     
     return Vc
+
+'''
+Equations for convering between volume percent and mass percent in a two-phase system and for correcting a mixed density for the presence of a contaminant
+The following calculations assumes a mixture of two immiscible liquids with a known density for each phase. If used for a fluid flow scenario, it also assumes no slip between the phases. 
+These equations are typically useful in "oil-in-water" and "water-in-oil" systems. 
+
+Nomenclature:
+    Dominant phase - The continuous phase, e.g for normal operation the oil phase is the Dominant phase (continous phase) in an oil metering station.
+    Contaminant phase - The disperse phase, e.g for normal operation any water present in an oil metering station is the Contaminant(disperse phase) in that oil metering station. 
+'''
+
+def volume_percent_to_mass_percent(ContaminantVolP, DominantPhase_EOS_density, ContaminantPhase_EOS_density):
+    '''
+    Convert from volume percentage to mass percentage
+    The EOS density can be calculated from an equation of state, or from another source, as long as it represents the density of the dominant and contaminant phases.
+    
+    Parameters
+    ----------
+    ContaminantVolP : float
+        Volume percentage, contaminant phase [%]
+    DominantPhase_EOS_density : float
+        Calculated denstiy from equation of state, dominant phase [kg/m3]
+    ContaminantPhase_EOS_density : float
+        Calculated denstiy from equation of state, contaminant phase [kg/m3]
+        
+    Returns
+    -------
+    ContaminantMassP: float
+        Mass percentage, contaminant phase [%]
+        
+    '''
+
+    Contaminant_alpha = ContaminantVolP / 100
+    
+    # Check for division by zero error, in which the function will return nan
+    if ContaminantPhase_EOS_density == 0.0 or DominantPhase_EOS_density == 0.0:
+        Contaminant_omega = np.nan
+    else:
+        Contaminant_omega = (Contaminant_alpha * ContaminantPhase_EOS_density) / (((1 - Contaminant_alpha) * DominantPhase_EOS_density) +
+                    (Contaminant_alpha * ContaminantPhase_EOS_density))
+    ContaminantMassP = Contaminant_omega * 100
+    
+    return ContaminantMassP
+
+
+def mass_percent_to_volume_percent(ContaminantMassP, DominantPhase_EOS_density, ContaminantPhase_EOS_density):
+    '''
+    Convert from mass percentage to volume percentage
+    The EOS density can be calculated from an equation of state, or from another source, as long as it represents the density of the dominant and contaminant phases.
+    
+    Parameters
+    ----------
+    ContaminantMassP : float
+        Mass percentage, contaminant phase [%]
+    DominantPhase_EOS_density : float
+        Calculated denstiy from equation of state, dominant phase [kg/m3]
+    ContaminantPhase_EOS_density : kg/m3
+        Calculated denstiy from equation of state, contaminant phase [kg/m3]
+
+    Returns
+    -------
+    ContaminantVolP: float
+        Volume percentage, contaminant phase [%]
+
+    '''
+    
+    # Check for division by zero error, in which the function will return nan
+    if ContaminantPhase_EOS_density == 0.0 or DominantPhase_EOS_density == 0.0:
+        ContaminantVolP =np.nan
+    else:
+        Contaminant_omega = ContaminantMassP / 100
+        Contaminant_alpha = Contaminant_omega / ContaminantPhase_EOS_density / (
+                    Contaminant_omega / ContaminantPhase_EOS_density +
+                    (1 - Contaminant_omega) / DominantPhase_EOS_density)
+        ContaminantVolP = Contaminant_alpha * 100
+    
+    return ContaminantVolP
+
+
+def dominant_phase_corrected_density(measured_total_density, ContaminantVolP, ContaminantPhase_EOS_density):    
+    '''
+    Use measured total density (for example from a coriolis meter) to estimate a "measured" density of the dominant phase corrected for contamination, 
+    i.e. the density with the contaminant phase removed.
+    The EOS density can be calculated from an equation of state, or from another source, as long as it represents the density of the dominant and contaminant phases.
+
+    Example of usage: What is the density of the oil phase if the measured density is 800 kg/m3 and the water fraction is 1vol%?
+    
+    Parameters
+    ----------
+    measured_total_density : float
+        Measured total density, i.e. density including both dominant and contaminant phase [kg/m3]
+    ContaminantVolP : float
+        Volume percentage, contaminant phase [%]
+    ContaminantPhase_EOS_density : TYPE
+        Calculated denstiy from equation of state, contaminant phase [kg/m3]
+
+    Returns
+    -------
+    Density_dominant_corr : TYPE
+        Estimated density of the dominant phase, based on measured density, corrected for contaminant phase [kg/m3]
+
+    '''
+    
+    Contaminant_alpha = ContaminantVolP / 100
+
+    # Check for division by zero error, in which the function will return nan
+    if (1 - Contaminant_alpha) == 0:
+        Density_dominant_corr = np.nan
+    else:
+        Density_dominant_corr = (measured_total_density - ContaminantPhase_EOS_density * Contaminant_alpha) / (
+                    1 - Contaminant_alpha)
+    
+    return Density_dominant_corr
