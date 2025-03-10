@@ -361,3 +361,92 @@ def test_volume_percent_to_mass_percent_invalid_density():
     )
     
     assert np.isnan(ContaminantMassP), f'Volume to mass percentage conversion failed'
+
+def test_contaminant_volume_percent_from_mixed_density_1():
+    '''
+    Test calculation of contaminant volume percent from mixed density.
+    Example: Measured density is 850 kg/m3, Dominant phase density is 800 kg/m3, Contaminant phase density is 1000 kg/m3.
+    '''
+    
+    ContaminantVolP = fluid_mechanics.contaminant_volume_percent_from_mixed_density(
+        measured_total_density=850,
+        DominantPhase_EOS_density=800,
+        ContaminantPhase_EOS_density=1000
+    )
+    
+    assert round(ContaminantVolP, 2) == 25.0, f'Contaminant volume percent calculation failed'
+
+
+def test_contaminant_volume_percent_from_mixed_density_2():
+    '''
+    Test calculation of contaminant volume percent from mixed density.
+    Example: Measured density is 900 kg/m3, Dominant phase density is 800 kg/m3, Contaminant phase density is 1000 kg/m3.
+    '''
+    
+    ContaminantVolP = fluid_mechanics.contaminant_volume_percent_from_mixed_density(
+        measured_total_density=900,
+        DominantPhase_EOS_density=800,
+        ContaminantPhase_EOS_density=1000
+    )
+    
+    assert round(ContaminantVolP, 2) == 50.0, f'Contaminant volume percent calculation failed'
+
+
+def test_contaminant_volume_percent_from_mixed_density_all_zeros():
+    '''
+    Test calculation of contaminant volume percent from mixed density when all parameters are zero.
+    Should return nan.
+    '''
+    
+    ContaminantVolP = fluid_mechanics.contaminant_volume_percent_from_mixed_density(
+        measured_total_density=0,
+        DominantPhase_EOS_density=0,
+        ContaminantPhase_EOS_density=0
+    )
+    
+    assert np.isnan(ContaminantVolP), f'Contaminant volume percent calculation failed'
+
+
+def test_contaminant_volume_percent_from_mixed_density_invalid_density():
+    '''
+    Test calculation of contaminant volume percent from mixed density when densities are equal.
+    Should return nan.
+    '''
+    
+    ContaminantVolP = fluid_mechanics.contaminant_volume_percent_from_mixed_density(
+        measured_total_density=800,
+        DominantPhase_EOS_density=800,
+        ContaminantPhase_EOS_density=800
+    )
+    
+    assert np.isnan(ContaminantVolP), f'Contaminant volume percent calculation failed'
+
+
+def test_contaminant_volume_percent_from_mixed_density_measured_density_greater():
+    '''
+    Test calculation of contaminant volume percent from mixed density when measured density is greater than dominant phase density.
+    Should return 100.
+    '''
+    
+    ContaminantVolP = fluid_mechanics.contaminant_volume_percent_from_mixed_density(
+        measured_total_density=1050,
+        DominantPhase_EOS_density=800,
+        ContaminantPhase_EOS_density=1000
+    )
+    
+    assert ContaminantVolP == 100, f'Contaminant volume percent calculation failed'
+
+
+def test_contaminant_volume_percent_from_mixed_density_measured_density_lower():
+    '''
+    Test calculation of contaminant volume percent from mixed density when measured density is lower than contaminant phase density.
+    Should return 0.
+    '''
+    
+    ContaminantVolP = fluid_mechanics.contaminant_volume_percent_from_mixed_density(
+        measured_total_density=750,
+        DominantPhase_EOS_density=800,
+        ContaminantPhase_EOS_density=1000
+    )
+    
+    assert ContaminantVolP == 0, f'Contaminant volume percent calculation failed'
