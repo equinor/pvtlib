@@ -66,7 +66,7 @@ def level_from_differential_pressure(dP, rho1, rho2, h, g=9.80665, check_input=F
         else:
             return np.nan
 
-    dP_Pa = dP * 100 # Convert to mbar
+    dP_Pa = dP * 100 # Convert to Pa
 
     # Check if rho1 is less than rho2
     if rho1 >= rho2:
