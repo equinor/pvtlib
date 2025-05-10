@@ -23,6 +23,46 @@ SOFTWARE.
 
 import numpy as np
 
+def linear_interpolation(x, x_values, y_values):
+    '''
+    Perform linear interpolation to estimate the value of a dependent variable y for a given independent variable x, based on a set of given x and y values.
+
+    If x is below lowest value in x_values the function returns the lowest value in y_values
+    If x is above the highest value in x_values the function returns the highest value in y_values
+    The calibration arrays must be sorted from lowest to highest x values (flow/Reynolds)
+
+    This function can for example be used for a calibration curve, where x could be the flow or Reynolds number and y could be the corresponding calibration error or discharge coefficient. 
+    
+    Parameters:
+    -----------
+    x : float
+        The independent variable value for which the dependent variable needs to be estimated.
+    x_values : list
+        A list of float values representing the x values of the data set used for interpolation.
+    y_values : list
+        A list of float values representing the y values of the data set used for interpolation.
+        
+    Returns:
+    --------
+    y : float
+        The estimated value of the dependent variable y for the given independent variable x.
+    '''
+    
+    if x < x_values[0]:
+        y = y_values[0]
+    elif x > x_values[-1]:
+        y =  y_values[-1]
+    else:
+        for i in range(len(x_values) - 1):
+            if x_values[i] <= x <= x_values[i + 1]:
+                x1, x2 = x_values[i], x_values[i + 1]
+                y1, y2 = y_values[i], y_values[i + 1]
+                m = (y2 - y1) / (x2 - x1)
+                y = m * (x - x1) + y1
+            
+    return y
+
+
 #%% Deviation calculations (Equations for calculating relative deviation between two properties)
 def relative_difference(prop_A, prop_B):
     '''
