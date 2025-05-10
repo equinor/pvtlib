@@ -1,0 +1,35 @@
+
+
+# This example demonstrates how to use the `interpolate` function to retrieve the corresponding calibration error for a given flowrate, for a given calibration curve.
+
+from pvtlib.utilities import linear_interpolation
+import matplotlib.pyplot as plt
+
+# Calibration data. NB: X-values (typically Reynolds number or flowrate, must be sorted by increasing value)
+volume_flowrate = [100, 300, 900, 1400, 1900, 2500, 3100] # m3/h
+# The order of the calibration errors must correspond to the volme flowrates given
+calibration_error = [-0.09, -0.05, 0.1, 0.15, 0.16, 0.14, 0.05] # % of reading
+
+# Indicated volume flowrate
+Q_ind = 2791 #m3/h
+
+error = linear_interpolation(Q_ind, volume_flowrate, calibration_error)
+
+# Plot the calibration curve
+plt.figure(figsize=(8, 6))
+plt.plot(volume_flowrate, calibration_error, marker='o', linestyle='-', color='b', label='Calibration Curve')
+
+plt.plot(Q_ind, error, marker='X', color='r', markersize=10, label='Interpolated point')
+
+plt.title('Calibration Curve')
+plt.xlabel('Volume Flowrate (m³/h)')
+plt.ylabel('Calibration Error (% of reading)')
+plt.grid(True)
+plt.legend()
+plt.show()
+
+print(f"At {Q_ind} m³/h flowrate, the interpolated calibration error is {error:.2f} %")
+
+
+
+

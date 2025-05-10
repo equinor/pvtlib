@@ -13,6 +13,8 @@ keyring==25.6.0
 markdown-it-py==3.0.0
 mdurl==0.1.2
 more-itertools==10.5.0
+setuptools==68.2.2
+wheel==0.41.3
 nh3==0.2.20
 numpy>=1.26.2
 packaging==24.2
