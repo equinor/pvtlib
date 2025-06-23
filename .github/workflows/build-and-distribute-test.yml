@@ -36,3 +36,11 @@ jobs:
       run: |
         python -m pip install --upgrade twine
         twine check dist/*
+
+    - name: Publish package to GitHub Packages
+      env:
+        TWINE_USERNAME: ${{ github.actor }}
+        TWINE_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        python -m pip install --upgrade twine
+        twine check --repository-url https://upload.github.com/equinor/pvtlib dist/*
