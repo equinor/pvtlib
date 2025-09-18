@@ -234,7 +234,6 @@ def test_calculate_from_PS():
 
 def test_nan_inputs():
     # Test that nan inputs are handled correctly
-    import math
     from math import isnan, nan
 
     # Test calculate_from_PT with nan pressure
