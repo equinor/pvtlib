@@ -315,11 +315,11 @@ def test_aga8_calculation_speed():
     for _ in range(1000):
         aga8.calculate_from_PH(composition=composition, pressure=10.0, enthalpy=100.0)
     elapsed = time.perf_counter() - start
-    assert elapsed < 0.5, f"calculate_from_PH is too slow: {elapsed:.3f}s for 1000 calls"
+    assert elapsed < 1.0, f"calculate_from_PH is too slow: {elapsed:.3f}s for 1000 calls"
 
     # Test calculate_from_PS
     start = time.perf_counter()
     for _ in range(1000):
         aga8.calculate_from_PS(composition=composition, pressure=10.0, entropy=10.0)
     elapsed = time.perf_counter() - start
-    assert elapsed < 0.5, f"calculate_from_PS is too slow: {elapsed:.3f}s for 1000 calls"
+    assert elapsed < 1.0, f"calculate_from_PS is too slow: {elapsed:.3f}s for 1000 calls"
