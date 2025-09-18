@@ -336,9 +336,8 @@ class AGA8:
         temperature_guess = 20.0 # Celsius
 
         temperature_solution = optimize.fsolve(residual, x0=[temperature_guess])
-        
-        results = self.calculate_from_PT(composition, pressure, temperature_solution[0], pressure_unit, temperature_unit, molar_mass)
-
+        temperature_scalar = float(temperature_solution[0])
+        results = self.calculate_from_PT(composition, pressure, temperature_scalar, pressure_unit, temperature_unit, molar_mass)
         return results
     
 
@@ -389,9 +388,8 @@ class AGA8:
         temperature_guess = 20.0
 
         temperature_solution = optimize.fsolve(residual, x0=[temperature_guess])
-
-        results = self.calculate_from_PT(composition, pressure, temperature_solution[0], pressure_unit, temperature_unit, molar_mass)
-
+        temperature_scalar = float(temperature_solution[0])
+        results = self.calculate_from_PT(composition, pressure, temperature_scalar, pressure_unit, temperature_unit, molar_mass)
         return results
 
 
