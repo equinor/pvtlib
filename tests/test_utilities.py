@@ -47,6 +47,60 @@ def test_linear_interpolation():
         result = linear_interpolation(x, X, Y)
         assert round(result, 10) == expected, f"Test {key} failed: expected {expected}, got {result}"
 
+def test_linear_interpolation_invalid_inputs():
+    # Test when x is nan, should return nan
+    X = [100, 300, 900, 1400, 1900, 2500, 3100]
+    Y = [-0.09, -0.05, 0.1, 0.15, 0.16, 0.14, 0.05]
+    result = linear_interpolation(np.nan, X, Y)
+    assert np.isnan(result), "Expected nan when x is nan"
+
+    # Test when x_values and y_values are not the same length, should raise ValueError
+    X_short = [100, 300, 900]
+    Y_long = [-0.09, -0.05, 0.1, 0.15]
+    try:
+        linear_interpolation(200, X_short, Y_long)
+        assert False, "Expected ValueError when x_values and y_values have different lengths"
+    except ValueError as e:
+        assert str(e) == "x_values and y_values must have the same length."
+
+def test_linear_interpolation_xvalues_not_sorted():
+    # Test when x_values are not in ascending order, should raise ValueError
+    X_unsorted = [100, 900, 300, 1400]
+    Y = [-0.09, 0.1, -0.05, 0.15]
+    try:
+        linear_interpolation(200, X_unsorted, Y)
+        assert False, "Expected ValueError when x_values are not sorted in ascending order"
+    except ValueError as e:
+        assert str(e) == "x_values must be sorted in ascending order."
+
+def test_linear_interpolation_on_exact_points():
+    # Test interpolation when x matches exactly an x_value
+    X = [100, 300, 900]
+    Y = [1.0, 2.0, 3.0]
+    assert linear_interpolation(100, X, Y) == 1.0
+    assert linear_interpolation(300, X, Y) == 2.0
+    assert linear_interpolation(900, X, Y) == 3.0
+
+def test_linear_interpolation_out_of_bounds():
+    # Test interpolation when x is below and above the range
+    X = [10, 20, 30]
+    Y = [100, 200, 300]
+    assert linear_interpolation(5, X, Y) == 100
+    assert linear_interpolation(35, X, Y) == 300
+
+def test_relative_difference_zero():
+    # Test zero
+    assert np.isnan(relative_difference(0, 0))
+
+def test_calculate_deviation_negative():
+    # Test negative values
+    assert calculate_deviation(-10, -5) == -5
+    assert calculate_deviation(-5, -10) == 5
+
+def test_calculate_relative_deviation_negative():
+    # Test negative reference value
+    assert calculate_relative_deviation(10, -5) == -300.0
+    assert calculate_relative_deviation(-10, 5) == -300.0
 
 def test_relative_difference():
     assert round(relative_difference(10, 5),10)== 66.6666666667
