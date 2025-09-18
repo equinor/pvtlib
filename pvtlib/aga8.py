@@ -25,6 +25,7 @@ The code is based upon the python library pyaga8, which is again based upon the 
 
 import pyaga8
 from scipy import optimize
+from math import nan, isnan
 
 class AGA8:
     """
@@ -171,16 +172,26 @@ class AGA8:
 
         #Convert composition to aga8 format
         Aga8fluid, Aga8fluidDict = to_aga8_composition(composition)
+        
+        # Check if any input is nan, including composition values. In case any values are nan, return a dictionary with all properties as nan
+        if (
+            isnan(pressure_kPa)
+            or isnan(temperature_K)
+            or any(isnan(v) for v in composition.values())
+        ):
+                    # get properties
+            results = {key: nan for key in self._get_properties().keys()}
+        else:
+            self.adapter.set_composition(Aga8fluid)
+            self.adapter.pressure = pressure_kPa
+            self.adapter.temperature = temperature_K
 
-        self.adapter.set_composition(Aga8fluid)
-        self.adapter.pressure = pressure_kPa
-        self.adapter.temperature = temperature_K
+            self._calculate_density()
+            self.adapter.calc_properties()  # calculate properties
 
-        self._calculate_density()
-        self.adapter.calc_properties()  # calculate properties
+            # get properties
+            results = self._get_properties()
 
-        # get properties
-        results = self._get_properties()
 
         #Calculate mass density
         if molar_mass is None:
