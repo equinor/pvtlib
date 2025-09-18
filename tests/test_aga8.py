@@ -230,3 +230,96 @@ def test_calculate_from_PS():
             )
 
             assert round(results['temperature'] - 273.15, 5) == case_dict['expected_temperature'], f'Failed test {case_name} with {equation}'
+
+
+def test_nan_inputs():
+    # Test that nan inputs are handled correctly
+    from math import isnan, nan
+
+    # Test calculate_from_PT with nan pressure
+    aga8 = AGA8('GERG-2008')
+    composition = {'N2': 10.0, 'C1': 90.0}
+    result = aga8.calculate_from_PT(composition=composition, pressure=nan, temperature=20.0)
+    assert all(isnan(v) for k, v in result.items() if k != 'gas_composition')
+
+    # Test calculate_from_PT with nan temperature
+    result = aga8.calculate_from_PT(composition=composition, pressure=10.0, temperature=nan)
+    assert all(isnan(v) for k, v in result.items() if k != 'gas_composition')
+
+    # Test calculate_from_PT with nan in composition
+    result = aga8.calculate_from_PT(composition={'N2': nan, 'C1': 90.0}, pressure=10.0, temperature=20.0)
+    assert all(isnan(v) for k, v in result.items() if k != 'gas_composition')
+
+    # Test calculate_from_rhoT with nan mass_density
+    result = aga8.calculate_from_rhoT(composition=composition, mass_density=nan, temperature=20.0)
+    assert all(isnan(v) for k, v in result.items() if k != 'gas_composition')
+
+    # Test calculate_from_rhoT with nan temperature
+    result = aga8.calculate_from_rhoT(composition=composition, mass_density=1.0, temperature=nan)
+    assert all(isnan(v) for k, v in result.items() if k != 'gas_composition')
+
+    # Test calculate_from_rhoT with nan in composition
+    result = aga8.calculate_from_rhoT(composition={'N2': nan, 'C1': 90.0}, mass_density=1.0, temperature=20.0)
+    assert all(isnan(v) for k, v in result.items() if k != 'gas_composition')
+
+    # Test calculate_from_PH with nan pressure
+    result = aga8.calculate_from_PH(composition=composition, pressure=nan, enthalpy=100.0)
+    assert all(isnan(v) for k, v in result.items() if k != 'gas_composition')
+
+    # Test calculate_from_PH with nan enthalpy
+    result = aga8.calculate_from_PH(composition=composition, pressure=10.0, enthalpy=nan)
+    assert all(isnan(v) for k, v in result.items() if k != 'gas_composition')
+
+    # Test calculate_from_PH with nan in composition
+    result = aga8.calculate_from_PH(composition={'N2': nan, 'C1': 90.0}, pressure=10.0, enthalpy=100.0)
+    assert all(isnan(v) for k, v in result.items() if k != 'gas_composition')
+
+    # Test calculate_from_PS with nan pressure
+    result = aga8.calculate_from_PS(composition=composition, pressure=nan, entropy=10.0)
+    assert all(isnan(v) for k, v in result.items() if k != 'gas_composition')
+
+    # Test calculate_from_PS with nan entropy
+    result = aga8.calculate_from_PS(composition=composition, pressure=10.0, entropy=nan)
+    assert all(isnan(v) for k, v in result.items() if k != 'gas_composition')
+
+    # Test calculate_from_PS with nan in composition
+    result = aga8.calculate_from_PS(composition={'N2': nan, 'C1': 90.0}, pressure=10.0, entropy=10.0)
+    assert all(isnan(v) for k, v in result.items() if k != 'gas_composition')
+
+
+def test_aga8_calculation_speed():
+    """
+    Test the calculation speed of the main AGA8 calculation functions.
+    1000 calculations should be performed within 0.1 second.
+    """
+    import time
+    aga8 = AGA8('GERG-2008')
+    composition = {'N2': 10.0, 'C1': 90.0}
+
+    # Test calculate_from_PT
+    start = time.perf_counter()
+    for _ in range(1000):
+        aga8.calculate_from_PT(composition=composition, pressure=10.0, temperature=300.0)
+    elapsed = time.perf_counter() - start
+    assert elapsed < 0.1, f"calculate_from_PT is too slow: {elapsed:.3f}s for 1000 calls"
+
+    # Test calculate_from_rhoT
+    start = time.perf_counter()
+    for _ in range(1000):
+        aga8.calculate_from_rhoT(composition=composition, mass_density=1.0, temperature=300.0)
+    elapsed = time.perf_counter() - start
+    assert elapsed < 0.1, f"calculate_from_rhoT is too slow: {elapsed:.3f}s for 1000 calls"
+
+    # Test calculate_from_PH
+    start = time.perf_counter()
+    for _ in range(1000):
+        aga8.calculate_from_PH(composition=composition, pressure=10.0, enthalpy=100.0)
+    elapsed = time.perf_counter() - start
+    assert elapsed < 1.0, f"calculate_from_PH is too slow: {elapsed:.3f}s for 1000 calls"
+
+    # Test calculate_from_PS
+    start = time.perf_counter()
+    for _ in range(1000):
+        aga8.calculate_from_PS(composition=composition, pressure=10.0, entropy=10.0)
+    elapsed = time.perf_counter() - start
+    assert elapsed < 1.0, f"calculate_from_PS is too slow: {elapsed:.3f}s for 1000 calls"
