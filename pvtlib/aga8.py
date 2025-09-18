@@ -228,7 +228,6 @@ class AGA8:
         results : dict
             Dictionary with properties from AGA8 (same as for the calculatcalculate_from_PT method)
         '''
-        
         #Convert temperature to K
         temperature_K = _temperature_unit_conversion(
             temperature_value=temperature,
@@ -239,6 +238,18 @@ class AGA8:
 
         #Convert composition to aga8 format
         Aga8fluid, Aga8fluidDict = to_aga8_composition(composition)
+
+        # Check if any input is nan, including composition values and mass_density
+        if (
+            isnan(mass_density)
+            or isnan(temperature_K)
+            or any(isnan(v) for v in composition.values())
+        ):
+            # get properties
+            results = {key: nan for key in self._get_properties().keys()}
+            # Add gas composition to results
+            results['gas_composition'] = Aga8fluidDict
+            return results
 
         self.adapter.set_composition(Aga8fluid)
         
@@ -302,6 +313,22 @@ class AGA8:
 
         temperature_unit = 'C'
 
+        # Check if any input is nan, including composition values, pressure, or enthalpy
+        pressure_kPa = _pressure_unit_conversion(
+            pressure_value=pressure,
+            pressure_unit=pressure_unit
+        )
+        if (
+            isnan(pressure_kPa)
+            or isnan(enthalpy)
+            or any(isnan(v) for v in composition.values())
+        ):
+            # get properties
+            Aga8fluid, Aga8fluidDict = to_aga8_composition(composition)
+            results = {key: nan for key in self._get_properties().keys()}
+            results['gas_composition'] = Aga8fluidDict
+            return results
+
         def residual(temperature):
             results = self.calculate_from_PT(composition, pressure, temperature, pressure_unit, temperature_unit, molar_mass)
             return results['h'] - enthalpy
@@ -338,6 +365,22 @@ class AGA8:
         """
 
         temperature_unit = 'C'
+
+        # Check if any input is nan, including composition values, pressure, or entropy
+        pressure_kPa = _pressure_unit_conversion(
+            pressure_value=pressure,
+            pressure_unit=pressure_unit
+        )
+        if (
+            isnan(pressure_kPa)
+            or isnan(entropy)
+            or any(isnan(v) for v in composition.values())
+        ):
+            # get properties
+            Aga8fluid, Aga8fluidDict = to_aga8_composition(composition)
+            results = {key: nan for key in self._get_properties().keys()}
+            results['gas_composition'] = Aga8fluidDict
+            return results
 
         def residual(temperature):
             results = self.calculate_from_PT(composition, pressure, temperature, pressure_unit, temperature_unit, molar_mass)
