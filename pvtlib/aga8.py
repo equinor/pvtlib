@@ -182,9 +182,10 @@ class AGA8:
                     # get properties
             results = {key: nan for key in self._get_properties().keys()}
         else:
+
             self.adapter.set_composition(Aga8fluid)
             self.adapter.pressure = pressure_kPa
-            self.adapter.temperature = temperature_K
+            self.adapter.temperature = float(temperature_K)
 
             self._calculate_density()
             self.adapter.calc_properties()  # calculate properties
