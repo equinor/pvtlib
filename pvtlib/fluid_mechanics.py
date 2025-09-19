@@ -82,6 +82,38 @@ def superficial_velocity(Q_phase, D):
     return Us
    
 
+def lockhart_martinelli_parameter(mass_flow_rate_liquid, mass_flow_rate_gas, density_liquid, density_gas):
+    '''
+    Calculate the Lockhart-Martinelli parameter X.
+
+    Note: The units for mass flow rates and densities must be consistent between phases,
+    but do not need to be SI units (e.g., both in kg/h and both in kg/m3 are valid).
+
+    Parameters
+    ----------
+    mass_flow_rate_liquid : float
+        Mass flow rate of liquid phase [kg/h or kg/s].
+    mass_flow_rate_gas : float
+        Mass flow rate of gas phase [kg/h or kg/s].
+    density_liquid : float
+        Density of liquid phase [kg/m3].
+    density_gas : float
+        Density of gas phase [kg/m3].
+
+    Returns
+    -------
+    X : float
+        Lockhart-Martinelli parameter [-].
+    '''
+
+    if mass_flow_rate_gas <= 0 or density_gas <= 0 or density_liquid <= 0:
+        return np.nan
+
+    X = (mass_flow_rate_liquid / mass_flow_rate_gas) * ((density_gas / density_liquid) ** 0.5)
+
+    return X
+
+
 def liquid_holdup_from_density(measured_density, liquid_density, gas_density):
     '''
     Based on a measured mix density and liquid and gas densities, calculate liquid hold-up.

@@ -450,3 +450,108 @@ def test_contaminant_volume_percent_from_mixed_density_measured_density_lower():
     )
     
     assert ContaminantVolP == 0, f'Contaminant volume percent calculation failed'
+
+def test_lockhart_martinelli_parameter_typical():
+    """
+    Test Lockhart-Martinelli parameter with typical values.
+    """
+    X = fluid_mechanics.lockhart_martinelli_parameter(
+        mass_flow_rate_liquid=100,
+        mass_flow_rate_gas=50,
+        density_liquid=900,
+        density_gas=100
+    )
+    expected = (100 / 50) * ((100 / 900) ** 0.5)
+    assert np.isclose(X, expected), f"Lockhart-Martinelli parameter calculation failed: {X} != {expected}"
+
+def test_lockhart_martinelli_parameter_equal_mass_flow_and_density():
+    """
+    Test Lockhart-Martinelli parameter when mass flow rates and densities are equal.
+    Should return 1.0.
+    """
+    X = fluid_mechanics.lockhart_martinelli_parameter(
+        mass_flow_rate_liquid=10,
+        mass_flow_rate_gas=10,
+        density_liquid=1000,
+        density_gas=1000
+    )
+    assert X == 1.0, f"Lockhart-Martinelli parameter should be 1.0, got {X}"
+
+def test_lockhart_martinelli_parameter_zero_gas_flow():
+    """
+    Test Lockhart-Martinelli parameter when gas mass flow rate is zero.
+    Should return nan.
+    """
+    X = fluid_mechanics.lockhart_martinelli_parameter(
+        mass_flow_rate_liquid=10,
+        mass_flow_rate_gas=0,
+        density_liquid=1000,
+        density_gas=100
+    )
+    assert np.isnan(X), "Lockhart-Martinelli parameter should be nan for zero gas flow"
+
+def test_lockhart_martinelli_parameter_zero_gas_density():
+    """
+    Test Lockhart-Martinelli parameter when gas density is zero.
+    Should return nan.
+    """
+    X = fluid_mechanics.lockhart_martinelli_parameter(
+        mass_flow_rate_liquid=10,
+        mass_flow_rate_gas=5,
+        density_liquid=1000,
+        density_gas=0
+    )
+    assert np.isnan(X), "Lockhart-Martinelli parameter should be nan for zero gas density"
+
+def test_lockhart_martinelli_parameter_zero_liquid_density():
+    """
+    Test Lockhart-Martinelli parameter when liquid density is zero.
+    Should return nan.
+    """
+    X = fluid_mechanics.lockhart_martinelli_parameter(
+        mass_flow_rate_liquid=10,
+        mass_flow_rate_gas=5,
+        density_liquid=0,
+        density_gas=100
+    )
+    assert np.isnan(X), "Lockhart-Martinelli parameter should be nan for zero liquid density"
+
+def test_lockhart_martinelli_parameter_negative_values():
+    """
+    Test Lockhart-Martinelli parameter with negative values for mass flow or density.
+    Should return nan.
+    """
+    X1 = fluid_mechanics.lockhart_martinelli_parameter(
+        mass_flow_rate_liquid=10,
+        mass_flow_rate_gas=-5,
+        density_liquid=1000,
+        density_gas=100
+    )
+    X2 = fluid_mechanics.lockhart_martinelli_parameter(
+        mass_flow_rate_liquid=10,
+        mass_flow_rate_gas=5,
+        density_liquid=-1000,
+        density_gas=100
+    )
+    X3 = fluid_mechanics.lockhart_martinelli_parameter(
+        mass_flow_rate_liquid=10,
+        mass_flow_rate_gas=5,
+        density_liquid=1000,
+        density_gas=-100
+    )
+    assert np.isnan(X1), "Lockhart-Martinelli parameter should be nan for negative gas flow"
+    assert np.isnan(X2), "Lockhart-Martinelli parameter should be nan for negative liquid density"
+    assert np.isnan(X3), "Lockhart-Martinelli parameter should be nan for negative gas density"
+
+def test_lockhart_martinelli_parameter_liquid_flow_zero():
+    """
+    Test Lockhart-Martinelli parameter when liquid mass flow rate is zero.
+    Should return zero.
+    """
+    X = fluid_mechanics.lockhart_martinelli_parameter(
+        mass_flow_rate_liquid=0,
+        mass_flow_rate_gas=10,
+        density_liquid=1000,
+        density_gas=100
+    )
+    assert X == 0.0, f"Lockhart-Martinelli parameter should be 0.0 when liquid flow is zero, got {X}"
