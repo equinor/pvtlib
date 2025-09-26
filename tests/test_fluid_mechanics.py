@@ -25,6 +25,51 @@ from pvtlib import fluid_mechanics
 import numpy as np
 
 
+def test_mixture_density_homogeneous_cases():
+    """
+    Test mixture_density_homogeneous function with multiple cases.
+    """
+    cases = [
+        # (volume_fractions, densities, expected)
+        {"volume_fractions": [0.5, 0.5], "densities": [1000, 800], "expected": 900.0},
+        {"volume_fractions": [1, 0], "densities": [1000, 800], "expected": 1000.0},
+        {"volume_fractions": [0, 1], "densities": [1000, 800], "expected": 800.0},
+        {"volume_fractions": [2, 1], "densities": [900, 600], "expected": 800.0},
+        {"volume_fractions": [0.2, 0.8], "densities": [1000, 800], "expected": 840.0},
+        {"volume_fractions": [0, 0], "densities": [1000, 800], "expected": np.nan},
+        {"volume_fractions": [1, 1], "densities": [0, 800], "expected": np.nan},
+        {"volume_fractions": [1, 1], "densities": [1000, -800], "expected": np.nan},
+        {"volume_fractions": [-1, 2], "densities": [1000, 800], "expected": np.nan},
+        {"volume_fractions": [1, 1], "densities": [np.nan, 800], "expected": np.nan},
+        {"volume_fractions": [1, 1], "densities": [1000, np.nan], "expected": np.nan},
+        {"volume_fractions": [1, 1, 1], "densities": [1000, 800, 600], "expected": 800.0},
+        {"volume_fractions": [0, 0, 0], "densities": [1000, 800, 600], "expected": np.nan},
+        {"volume_fractions": [0, 1, 1], "densities": [np.nan, 800, 600], "expected": 700.0},
+    ]
+    for case in cases:
+        try:
+            result = fluid_mechanics.mixture_density_homogeneous(case["volume_fractions"], case["densities"])
+        except ValueError:
+            # If ValueError is expected (e.g., mismatched lengths), expected must be ValueError
+            assert case.get("expected") == ValueError, f"mixture_density_homogeneous failed for {case}"
+            continue
+        if isinstance(case["expected"], float) and np.isnan(case["expected"]):
+            assert np.isnan(result), f"mixture_density_homogeneous failed for {case}: {result} != {case['expected']}"
+        else:
+            assert np.isclose(result, case["expected"]), f"mixture_density_homogeneous failed for {case}: {result} != {case['expected']}"
+
+
+def test_mixture_density_homogeneous_shape_mismatch():
+    """
+    Test mixture_density_homogeneous raises ValueError for mismatched input lengths.
+    """
+    try:
+        fluid_mechanics.mixture_density_homogeneous([1, 2], [1000])
+    except ValueError:
+        pass
+    else:
+        assert False, "mixture_density_homogeneous should raise ValueError for mismatched input lengths"
+
 def test_GMF_to_GVF_cases():
     """
     Test GMF_to_GVF function with multiple cases.
