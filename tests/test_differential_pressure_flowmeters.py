@@ -660,3 +660,144 @@ def test_calculate_flow_orifice_invalid_inputs():
         # Check that all results are np.nan
         for key in ['MassFlow', 'VolFlow', 'Velocity', 'C', 'epsilon', 'Re']:
             assert np.isnan(res[key])==True, f'Expected np.nan for {key} but got {res[key]} for case {case_name}'
+
+def test_calculate_flow_venturi_homogeneous_wetgas():
+    """
+    Test the calculate_flow_venturi_homogeneous_wetgas function for a variety of cases.
+    Checks output structure, value ranges, and edge cases.
+    Expected results are included for regression testing.
+    """
+    cases = [
+        # More liquid, less gas
+        {
+            "D": 0.2, "d": 0.1, "dP": 500, "rho_g": 20.0, "rho_l": 900.0, "GMF": 0.5,
+            "expected": {
+                "MixtureDensity": 460.0,
+                "LockhartMartinelli": 0.333,
+                "OverRead": 1.056,
+            }
+        },
+        # Typical wet gas case
+        {
+            "D": 0.2, "d": 0.1, "dP": 1000, "rho_g": 10.0, "rho_l": 800.0, "GMF": 0.9,
+            "expected": {
+                "MixtureDensity": 86.0,
+                "LockhartMartinelli": 0.107,
+                "OverRead": 1.012,
+            }
+        },
+        # Nearly all gas
+        {
+            "D": 0.2, "d": 0.1, "dP": 2000, "rho_g": 15.0, "rho_l": 850.0, "GMF": 0.99,
+            "expected": {
+                "MixtureDensity": 23.5,
+                "LockhartMartinelli": 0.034,
+                "OverRead": 1.003,
+            }
+        },
+        # Nearly all liquid
+        {
+            "D": 0.2, "d": 0.1, "dP": 2000, "rho_g": 15.0, "rho_l": 850.0, "GMF": 0.01,
+            "expected": {
+                "MixtureDensity": 841.5,
+                "LockhartMartinelli": 1.000,
+                "OverRead": 1.180,
+            }
+        },
+        # Pure gas (should reduce to normal venturi)
+        {
+            "D": 0.2, "d": 0.1, "dP": 1000, "rho_g": 10.0, "rho_l": 800.0, "GMF": 1.0,
+            "expected": {
+                "MixtureDensity": 10.0,
+                "LockhartMartinelli": 0.0,
+                "OverRead": 1.0,
+            }
+        },
+        # Pure liquid (should reduce to normal venturi)
+        {
+            "D": 0.2, "d": 0.1, "dP": 1000, "rho_g": 10.0, "rho_l": 800.0, "GMF": 0.0,
+            "expected": {
+                "MixtureDensity": 800.0,
+                "LockhartMartinelli": 1.0,
+                "OverRead": 1.180,
+            }
+        },
+        # Large pipe, high dP
+        {
+            "D": 0.5, "d": 0.3, "dP": 5000, "rho_g": 8.0, "rho_l": 950.0, "GMF": 0.7,
+            "expected": {
+                "MixtureDensity": 295.4,
+                "LockhartMartinelli": 0.185,
+                "OverRead": 1.023,
+            }
+        },
+        # Small pipe, low dP
+        {
+            "D": 0.05, "d": 0.025, "dP": 50, "rho_g": 25.0, "rho_l": 1000.0, "GMF": 0.8,
+            "expected": {
+                "MixtureDensity": 220.0,
+                "LockhartMartinelli": 0.112,
+                "OverRead": 1.013,
+            }
+        },
+    ]
+
+    for i, case in enumerate(cases):
+        results = differential_pressure_flowmeters.calculate_flow_venturi_homogeneous_wetgas(
+            D=case["D"], d=case["d"], dP=case["dP"], rho_g=case["rho_g"], rho_l=case["rho_l"], GMF=case["GMF"]
+        )
+        # Check output keys
+        expected_keys = [
+            "MassFlow_indicated",
+            "MassFlow_corrected",
+            "OverRead",
+            "MixtureDensity",
+            "LockhartMartinelli",
+            "GMF",
+            "C",
+            "epsilon",
+        ]
+        for key in expected_keys:
+            assert key in results, f"Case {i}: Missing key '{key}' in results"
+
+        # Check value types and ranges
+        assert results["MassFlow_indicated"] > 0, f"Case {i}: MassFlow_indicated not positive"
+        assert results["MassFlow_corrected"] > 0, f"Case {i}: MassFlow_corrected not positive"
+        assert results["OverRead"] >= 1, f"Case {i}: OverRead < 1"
+        assert 0 <= results["GMF"] <= 1, f"Case {i}: GMF out of bounds"
+        assert results["MixtureDensity"] > 0, f"Case {i}: MixtureDensity not positive"
+        assert results["C"] > 0, f"Case {i}: C not positive"
+        assert results["epsilon"] > 0, f"Case {i}: epsilon not positive"
+
+        # OverRead should be greater than or equal to 1 (since wet gas over-reads)
+        assert results["MassFlow_corrected"] <= results["MassFlow_indicated"], f"Case {i}: MassFlow_corrected > MassFlow_indicated"
+
+        # Test with check_input=True (should not raise for valid input)
+        results2 = differential_pressure_flowmeters.calculate_flow_venturi_homogeneous_wetgas(
+            D=case["D"], d=case["d"], dP=case["dP"], rho_g=case["rho_g"], rho_l=case["rho_l"], GMF=case["GMF"], check_input=True
+        )
+        assert np.isclose(results2["MassFlow_indicated"], results["MassFlow_indicated"]), f"Case {i}: check_input MassFlow mismatch"
+
+        # Regression: check expected values (rounded for floating point tolerance)
+        exp = case["expected"]
+        assert np.isclose(results["MixtureDensity"], exp["MixtureDensity"], rtol=1e-3), f"Case {i}: MixtureDensity mismatch"
+        assert np.isclose(results["LockhartMartinelli"], exp["LockhartMartinelli"], rtol=1e-2), f"Case {i}: LockhartMartinelli mismatch"
+        assert np.isclose(results["OverRead"], exp["OverRead"], rtol=1e-2), f"Case {i}: OverRead mismatch"
+
+    # Special checks for pure gas and pure liquid
+    # Pure gas
+    res_gas = differential_pressure_flowmeters.calculate_flow_venturi_homogeneous_wetgas(
+        D=0.2, d=0.1, dP=1000, rho_g=10.0, rho_l=800.0, GMF=1.0
+    )
+    assert np.isclose(res_gas["MixtureDensity"], 10.0)
+    assert np.isclose(res_gas["LockhartMartinelli"], 0)
+    assert np.isclose(res_gas["OverRead"], 1.0)
+    assert np.isclose(res_gas["MassFlow_indicated"], res_gas["MassFlow_corrected"])
+
+    # Pure liquid
+    res_liq = differential_pressure_flowmeters.calculate_flow_venturi_homogeneous_wetgas(
+        D=0.2, d=0.1, dP=1000, rho_g=10.0, rho_l=800.0, GMF=0.0
+    )
+    assert np.isclose(res_liq["MixtureDensity"], 800.0)
+    assert res_liq["OverRead"] >= 1
+
