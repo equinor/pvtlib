@@ -80,7 +80,63 @@ def superficial_velocity(Q_phase, D):
         Us = (Q_phase/3600) / A
 
     return Us
-   
+
+
+def GMF_to_GVF(GMF, rho_gas, rho_liquid):
+    '''
+    Convert from gas mass fraction (GMF) to gas volume fraction (GVF).
+    
+    Parameters
+    ----------
+    GMF : float
+        Gas mass fraction [-].
+    rho_gas : float
+        Gas density [kg/m3].
+    rho_liquid : float
+        Liquid density [kg/m3].
+    
+    Returns
+    -------
+    GVF : float
+        Gas volume fraction [-].
+    '''
+    if GMF < 0 or GMF > 1 or rho_gas <= 0 or rho_liquid <= 0:
+        return np.nan
+    if GMF == 0:
+        return 0.0
+    
+    GVF = 1 / (1 + ((1 - GMF) / GMF) * (rho_gas / rho_liquid))
+
+    return GVF
+
+
+def GVF_to_GMF(GVF, rho_gas, rho_liquid):
+    '''
+    Convert from gas volume fraction (GVF) to gas mass fraction (GMF).
+
+    Parameters
+    ----------
+    GVF : float
+        Gas volume fraction [-].
+    rho_gas : float
+        Gas density [kg/m3].
+    rho_liquid : float
+        Liquid density [kg/m3].
+
+    Returns
+    -------
+    GMF : float
+        Gas mass fraction [-].
+    '''
+    if GVF < 0 or GVF > 1 or rho_gas <= 0 or rho_liquid <= 0:
+        return np.nan
+    if GVF == 0:
+        return 0.0
+
+    GMF = 1 / (1 + ((1 - GVF) / GVF) * (rho_liquid / rho_gas))
+
+    return GMF
+
 
 def lockhart_martinelli_parameter(mass_flow_rate_liquid, mass_flow_rate_gas, density_liquid, density_gas):
     '''

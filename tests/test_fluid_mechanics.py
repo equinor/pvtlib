@@ -24,6 +24,53 @@ SOFTWARE.
 from pvtlib import fluid_mechanics
 import numpy as np
 
+
+def test_GMF_to_GVF_cases():
+    """
+    Test GMF_to_GVF function with multiple cases.
+    """
+    cases = [
+        # (GMF, rho_gas, rho_liquid, expected_GVF)
+        {"GMF": 0.5, "rho_gas": 100, "rho_liquid": 1000, "expected": 0.9090909090909091},
+        {"GMF": 0.1, "rho_gas": 50, "rho_liquid": 900, "expected": 0.6666666666666666},
+        {"GMF": 0.9, "rho_gas": 10, "rho_liquid": 1000, "expected": 0.998890122087},
+        {"GMF": 1.0, "rho_gas": 100, "rho_liquid": 1000, "expected": 1.0},
+        {"GMF": 0.0, "rho_gas": 100, "rho_liquid": 1000, "expected": 0.0},
+        {"GMF": -0.1, "rho_gas": 100, "rho_liquid": 1000, "expected": np.nan},
+        {"GMF": 0.5, "rho_gas": 0, "rho_liquid": 1000, "expected": np.nan},
+        {"GMF": 0.5, "rho_gas": 100, "rho_liquid": 0, "expected": np.nan},
+    ]
+    for case in cases:
+        result = fluid_mechanics.GMF_to_GVF(case["GMF"], case["rho_gas"], case["rho_liquid"])
+        if np.isnan(case["expected"]):
+            assert np.isnan(result), f"GMF_to_GVF failed for {case}"
+        else:
+            assert np.isclose(result, case["expected"]), f"GMF_to_GVF failed for {case}: {result} != {case['expected']}"
+
+
+def test_GVF_to_GMF_cases():
+    """
+    Test GVF_to_GMF function with multiple cases.
+    """
+    cases = [
+        # (GVF, rho_gas, rho_liquid, expected_GMF)
+        {"GVF": 0.5, "rho_gas": 100, "rho_liquid": 1000, "expected": 0.09090909090909091},
+        {"GVF": 0.1, "rho_gas": 50, "rho_liquid": 900, "expected": 0.006134969325153374},
+        {"GVF": 0.9, "rho_gas": 10, "rho_liquid": 1000, "expected": 0.08256880733944957},
+        {"GVF": 1.0, "rho_gas": 100, "rho_liquid": 1000, "expected": 1.0},
+        {"GVF": 0.0, "rho_gas": 100, "rho_liquid": 1000, "expected": 0.0},
+        {"GVF": -0.1, "rho_gas": 100, "rho_liquid": 1000, "expected": np.nan},
+        {"GVF": 0.5, "rho_gas": 0, "rho_liquid": 1000, "expected": np.nan},
+        {"GVF": 0.5, "rho_gas": 100, "rho_liquid": 0, "expected": np.nan},
+    ]
+    for case in cases:
+        result = fluid_mechanics.GVF_to_GMF(case["GVF"], case["rho_gas"], case["rho_liquid"])
+        if np.isnan(case["expected"]):
+            assert np.isnan(result), f"GVF_to_GMF failed for {case}"
+        else:
+            assert np.isclose(result, case["expected"]), f"GVF_to_GMF failed for {case}: {result} != {case['expected']}"
+
+
 #%% Test equations for evaluating homogeneous mixtures of oil and water in horizontal and vertical pipes (used in water-cut measurements)
 def test_critical_velocity_for_uniform_wio_dispersion_horizontal_1():
     '''
