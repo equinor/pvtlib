@@ -24,7 +24,7 @@ SOFTWARE.
 import numpy as np
 from math import sqrt, pi, e
 
-from pvtlib.fluid_mechanics import reynolds_number, superficial_velocity
+from pvtlib.fluid_mechanics import reynolds_number as _reynolds_number, superficial_velocity as _superficial_velocity, lockhart_martinelli_parameter as _lockhart_martinelli_parameter
 
 def _calculate_flow_DP_meter(C, D, d, epsilon, dP, rho1):
     """
@@ -75,7 +75,7 @@ def _calculate_flow_DP_meter(C, D, d, epsilon, dP, rho1):
     results['VolFlow'] = results['MassFlow']/rho1 # m3/h
 
     # Calculate velocity in m/s
-    results['Velocity'] = superficial_velocity(results['VolFlow'], D) # m/s
+    results['Velocity'] = _superficial_velocity(results['VolFlow'], D) # m/s
 
     return results
 
@@ -531,7 +531,7 @@ def calculate_flow_orifice(D, d, dP, rho1, mu=None, C=None, epsilon=None, tappin
             )
         
         # Calculate Reynolds number
-        results['Re'] = reynolds_number(rho=rho1, v=results['Velocity'], D=D, mu=mu)
+        results['Re'] = _reynolds_number(rho=rho1, v=results['Velocity'], D=D, mu=mu)
         
         return results
 
@@ -559,7 +559,7 @@ def calculate_flow_orifice(D, d, dP, rho1, mu=None, C=None, epsilon=None, tappin
             )
 
             # Calculate Reynolds number
-            Re = reynolds_number(rho=rho1, v=results['Velocity'], D=D, mu=mu)
+            Re = _reynolds_number(rho=rho1, v=results['Velocity'], D=D, mu=mu)
 
             # Calculate beta
             beta = calculate_beta_DP_meter(D=D, d=d)
@@ -717,3 +717,144 @@ def calculate_C_orifice_ReaderHarrisGallagher(D, beta, Re, tapping='corner', che
         - 0.031*(M2-0.8*M2**1.1)*beta**1.3 + additional_term
 
     return C
+
+
+def wetgas_venturi_homogeneous_correction(mass_flow_rate_liq, mass_flow_rate_gas, rho_liq, rho_gas):
+
+    # Calculate gas mass fraction
+    GMF = mass_flow_rate_gas / (mass_flow_rate_liq + mass_flow_rate_gas)
+
+    
+
+    # to be continued...
+
+    C_Hom = (rho_gas/rho_liq)**0.5+(rho_liq/rho_gas)**0.5
+
+
+def calculate_flow_venturi_homogeneous_wetgas(
+    D, d, dP, rho_g, rho_l, GMF, C=None, epsilon=None, check_input=False
+):
+    """
+    Calculate the corrected gas mass flow rate for a Venturi meter in wet-gas conditions
+    using the homogeneous correction model.
+
+    Parameters
+    ----------
+    D : float
+        Pipe diameter [m]
+    d : float
+        Throat diameter [m]
+    dP : float
+        Differential pressure [mbar]
+    rho_g : float
+        Gas density [kg/m3]
+    rho_l : float
+        Liquid density [kg/m3]
+    GMF : float
+        Gas mass fraction (by mass, 0 < GMF <= 1)
+    C : float, optional
+        Discharge coefficient (default 0.984)
+    epsilon : float, optional
+        Expansion factor (default 1.0)
+    check_input : bool, optional
+        If True, checks input validity
+
+    Returns
+    -------
+    results : dict
+        Dictionary containing:
+        - 'MassFlow_indicated': Uncorrected gas mass flow [kg/h]
+        - 'MassFlow_corrected': Corrected gas mass flow [kg/h]
+        - 'OverRead': Over-read factor (OR)
+        - 'MixtureDensity': Homogeneous mixture density [kg/m3]
+        - 'LockhartMartinelli': Lockhart-Martinelli parameter X
+        - 'GMF': Gas mass fraction used
+        - 'C': Discharge coefficient used
+        - 'epsilon': Expansion factor used
+        - 'iterations': Number of iterations to convergence
+    """
+    # Input checks
+    if check_input:
+        if D <= 0.0 or d <= 0.0 or dP <= 0.0 or rho_g <= 0.0 or rho_l <= 0.0 or not (0 < GMF <= 1):
+            raise Exception("Invalid input parameters for wet-gas Venturi calculation.")
+
+    # Defaults
+    C_used = C if C is not None else 0.984
+    epsilon_used = epsilon if epsilon is not None else 1.0
+
+    # Step 1: Calculate initial gas mass flow using gas density only
+    venturi_results_gas = calculate_flow_venturi(
+        D=D,
+        d=d,
+        dP=dP,
+        rho1=rho_g,
+        C=C_used,
+        epsilon=epsilon_used,
+        check_input=check_input
+    )
+    
+    MassFlow_gas_initial = venturi_results_gas['MassFlow']
+
+    # Iteration parameters
+    max_iterations = 100
+    tolerance = 1e-6
+    MassFlow_corrected = MassFlow_gas_initial
+    
+    for iteration in range(max_iterations):
+        # Step 2: Calculate total mass flow from corrected gas mass flow
+        MassFlow_total = MassFlow_corrected / GMF
+        
+        # Step 3: Calculate individual phase mass flow rates
+        mass_flow_rate_gas = MassFlow_corrected
+        mass_flow_rate_liquid = MassFlow_total - MassFlow_corrected
+        
+        # Step 4: Calculate Lockhart-Martinelli parameter
+        X = _lockhart_martinelli_parameter(
+            mass_flow_rate_liquid=mass_flow_rate_liquid,
+            mass_flow_rate_gas=mass_flow_rate_gas,
+            density_liquid=rho_l,
+            density_gas=rho_g
+        )
+        
+        # Step 5: Calculate homogeneous correction factor and over-read
+        C_hom = (rho_g / rho_l) ** 0.5 + (rho_l / rho_g) ** 0.5
+        OR = (1 + C_hom * X + X ** 2) ** 0.5
+        
+        # Step 6: Calculate new corrected mass flow
+        MassFlow_corrected_new = MassFlow_gas_initial / OR
+        
+        # Check for convergence
+        relative_error = abs(MassFlow_corrected_new - MassFlow_corrected) / MassFlow_corrected
+        if relative_error < tolerance:
+            MassFlow_corrected = MassFlow_corrected_new
+            break
+            
+        MassFlow_corrected = MassFlow_corrected_new
+    
+    else:
+        # If we reach here, iterations didn't converge
+        if check_input:
+            raise Exception(f"Wet-gas Venturi calculation did not converge after {max_iterations} iterations")
+    
+    # Final calculations
+    MassFlow_total_final = MassFlow_corrected / GMF
+    mass_flow_rate_liquid_final = MassFlow_total_final - MassFlow_corrected
+    rho_hom = rho_l * (mass_flow_rate_liquid_final / MassFlow_total_final) + rho_g * (MassFlow_corrected / MassFlow_total_final)
+
+    results = {
+        "MassFlow_indicated": MassFlow_gas_initial,
+        "MassFlow_corrected": MassFlow_corrected,
+        "OverRead": OR,
+        "MixtureDensity": rho_hom,
+        "LockhartMartinelli": X,
+        "GMF": GMF,
+        "C": C_used,
+        "epsilon": epsilon_used,
+        "iterations": iteration + 1,
+    }
+    return results
+
+
+
+
+
