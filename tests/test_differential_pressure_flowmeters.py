@@ -801,3 +801,44 @@ def test_calculate_flow_venturi_homogeneous_wetgas():
     assert np.isclose(res_liq["MixtureDensity"], 800.0)
     assert res_liq["OverRead"] >= 1
 
+
+def test_gas_densiometric_Froude_number_cases():
+    """
+    Test _gas_densiometric_Froude_number for a variety of various wet-gas cases.
+    """
+    cases = {
+        1: {'massflow_gas': 7.5, 'D': 0.2, 'rho_g': 50, 'rho_l': 800.0, 'Frg_expected': 0.8801288463948925},
+        2: {'massflow_gas': 5.5, 'D': 0.3, 'rho_g': 50, 'rho_l': 800.0, 'Frg_expected': 0.2342176039238587},
+        3: {'massflow_gas': 6.5, 'D': 0.4, 'rho_g': 50, 'rho_l': 1000.0, 'Frg_expected': 0.1198097573116477},
+        4: {'massflow_gas': 7.0, 'D': 0.1, 'rho_g': 60, 'rho_l': 850.0, 'Frg_expected': 4.133181569369208},
+        5: {'massflow_gas': 4.5, 'D': 0.1, 'rho_g': 55, 'rho_l': 600.0, 'Frg_expected': 3.341246623081836},
+        6: {'massflow_gas': 8.0, 'D': 0.15, 'rho_g': 70, 'rho_l': 950.0, 'Frg_expected': 1.5036511757580975},
+        7: {'massflow_gas': 3.0, 'D': 0.05, 'rho_g': 40, 'rho_l': 800.0, 'Frg_expected': 12.512240026690062},
+        8: {'massflow_gas': 9.5, 'D': 0.12, 'rho_g': 65, 'rho_l': 1000.0, 'Frg_expected': 3.140390257409154},
+        9: {'massflow_gas': 5.5, 'D': 0.1, 'rho_g': 75, 'rho_l': 800.0, 'Frg_expected': 3.0320661323698928},
+        10: {'massflow_gas': 6.0, 'D': 0.1, 'rho_g': 45, 'rho_l': 700.0, 'Frg_expected': 4.492622816820113},
+    }
+
+    for i, case in cases.items():
+        Frg = differential_pressure_flowmeters._gas_densiometric_Froude_number(
+            massflow_gas=case['massflow_gas'],
+            D=case['D'],
+            rho_g=case['rho_g'],
+            rho_l=case['rho_l']
+        )
+        assert np.isclose(Frg, case['Frg_expected'], rtol=1e-8), f"Case {i}: Froude number mismatch: got {Frg}, expected {case['Frg_expected']}"
+
+def test_gas_densiometric_Froude_number_invalid_inputs():
+    """
+    Test _gas_densiometric_Froude_number for invalid input handling.
+    """
+    # D <= 0
+    assert np.isnan(differential_pressure_flowmeters._gas_densiometric_Froude_number(1, 0, 10, 100))
+    # rho_g <= 0
+    assert np.isnan(differential_pressure_flowmeters._gas_densiometric_Froude_number(1, 0.1, 0, 100))
+    # rho_l <= 0
+    assert np.isnan(differential_pressure_flowmeters._gas_densiometric_Froude_number(1, 0.1, 10, 0))
+    # massflow_gas < 0
+    assert np.isnan(differential_pressure_flowmeters._gas_densiometric_Froude_number(-1, 0.1, 10, 100))
+    # rho_l - rho_g == 0
+    assert np.isnan(differential_pressure_flowmeters._gas_densiometric_Froude_number(1, 0.1, 100, 100))

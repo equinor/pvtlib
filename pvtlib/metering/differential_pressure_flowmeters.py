@@ -738,6 +738,8 @@ def calculate_flow_venturi_homogeneous_wetgas(
     Calculate the corrected gas mass flow rate for a Venturi meter in wet-gas conditions
     using the homogeneous correction model.
 
+    NOTE: This function has not been validated yet. Use with caution.
+
     Parameters
     ----------
     D : float
@@ -853,6 +855,36 @@ def calculate_flow_venturi_homogeneous_wetgas(
         "iterations": iteration + 1,
     }
     return results
+
+
+def _gas_densiometric_Froude_number(massflow_gas, D, rho_g, rho_l):
+    """
+    Calculate the gas densiometric Froude number (Frg) for wet-gas flow in a venturi.
+
+    Parameters
+    ----------
+    massflow_gas : float
+        Gas mass flow rate [kg/s]
+    D : float
+        Upstream inner pipe diameter [m]
+    rho_g : float
+        Gas density [kg/m3]
+    rho_l : float
+        Liquid density [kg/m3]
+    
+    Returns
+    -------
+    Frg : float
+        Gas densiometric Froude number (Frg) [-]
+    """
+
+    if D <= 0.0 or rho_g <= 0.0 or rho_l <= 0.0 or massflow_gas < 0.0 or (rho_l - rho_g) == 0.0:
+        return np.nan
+
+    Fr_gas = (4*massflow_gas/(rho_g*pi*D**2*sqrt(9.81*D))) * sqrt(rho_g/(rho_l - rho_g))
+
+    return Fr_gas
+
 
 
 
