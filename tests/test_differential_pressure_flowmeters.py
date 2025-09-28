@@ -842,3 +842,30 @@ def test_gas_densiometric_Froude_number_invalid_inputs():
     assert np.isnan(differential_pressure_flowmeters._gas_densiometric_Froude_number(-1, 0.1, 10, 100))
     # rho_l - rho_g == 0
     assert np.isnan(differential_pressure_flowmeters._gas_densiometric_Froude_number(1, 0.1, 100, 100))
+
+
+def test_calculate_C_wetgas_venturi_ReaderHarrisGraham():
+    """
+    Test the calculate_C_wetgas_venturi_ReaderHarrisGraham function.
+    """
+
+    cases= [
+        {'X': 0.2, 'Fr_gas': 17.0, 'expected': 0.980210688650774},
+        {'X': 0.1, 'Fr_gas': 12.0, 'expected': 0.9745900212488465},
+        {'X': 0.2, 'Fr_gas': 8.0, 'expected': 0.9689641818685499},
+        {'X': 0.3, 'Fr_gas': 5.0, 'expected': 0.9639415237437939},
+        {'X': 0.05, 'Fr_gas': 3.0, 'expected': 0.9601492206915199}
+    ]
+
+    for i, case in enumerate(cases):
+        C = differential_pressure_flowmeters.calculate_C_wetgas_venturi_ReaderHarrisGraham(case["Fr_gas"], case["X"])
+        assert np.isclose(C, case["expected"], rtol=1e-6), f"Case {i+1}: got {C}, expected {case['expected']}"
+
+def test_calculate_C_wetgas_venturi_ReaderHarrisGraham_invalid_inputs():
+    """
+    Test the calculate_C_wetgas_venturi_ReaderHarrisGraham function for invalid input handling.
+    """
+    # X < 0
+    assert np.isnan(differential_pressure_flowmeters.calculate_C_wetgas_venturi_ReaderHarrisGraham(10, -0.1))
+    # Fr_gas < 0
+    assert np.isnan(differential_pressure_flowmeters.calculate_C_wetgas_venturi_ReaderHarrisGraham(-5, 0.5))

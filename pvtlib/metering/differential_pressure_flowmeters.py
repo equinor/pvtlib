@@ -886,7 +886,32 @@ def _gas_densiometric_Froude_number(massflow_gas, D, rho_g, rho_l):
     return Fr_gas
 
 
+def calculate_C_wetgas_venturi_ReaderHarrisGraham(Fr_gas_th, X):
+    """
+    Calculate the discharge coefficient correction for wet-gas Venturi flow meters using the Reader-Harris/Graham correlation [1_].
 
+    Parameters
+    ----------
+    Fr_gas_th : float
+        Gas densiometric Froude number (Frg) [-]
+    X : float
+        Lockhart-Martinelli parameter [-]
 
+    Returns
+    -------
+    C_wet : float
+        Wet gas discharge coefficient [-]
 
+    References
+    ----------
+    .. [1] Reader-Harris, M. and Graham, E. An improved model for venturi-tube overreading in wet gas, North Sea Flow Measurement Workshop, 2009.
+
+    """
+
+    if Fr_gas_th < 0.0 or X < 0.0:
+        return np.nan
+
+    C_wet = 1-0.0463*np.exp(-0.05*Fr_gas_th)*min(1,sqrt(X/0.016))
+
+    return C_wet
 
