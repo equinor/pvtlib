@@ -869,3 +869,29 @@ def test_calculate_C_wetgas_venturi_ReaderHarrisGraham_invalid_inputs():
     assert np.isnan(differential_pressure_flowmeters.calculate_C_wetgas_venturi_ReaderHarrisGraham(10, -0.1))
     # Fr_gas < 0
     assert np.isnan(differential_pressure_flowmeters.calculate_C_wetgas_venturi_ReaderHarrisGraham(-5, 0.5))
+
+
+def test_calculate_flow_wetgas_venturi_ReaderHarrisGraham():
+
+    cases = {
+        'case01' : {
+            'input': {'D': 0.1, 'd': 0.06, 'P1':60.0, 'dP': 500, 'rho_g':50.0, 'rho_l': 800.0, 'GMF': 0.6666666666667},
+            'expected': {'MassFlow_indicated': 0.022360679774997897, 'MassFlow_corrected': 0.02213857464463459, 'OverRead': 1.01009}
+        }
+    }
+
+    for case_name, case in cases.items():
+        res = differential_pressure_flowmeters.calculate_flow_wetgas_venturi_ReaderHarrisGraham(
+            D=case['input']['D'],
+            d=case['input']['d'],
+            P1=case['input']['P1'],
+            dP=case['input']['dP'],
+            rho_g=case['input']['rho_g'],
+            rho_l=case['input']['rho_l'],
+            GMF=case['input']['GMF'],
+            kappa=1.3,
+            check_input=False
+        )
+
+        for key in case['expected']:
+            assert np.isclose(res[key], case['expected'][key], rtol=1e-5), f"Case {case_name}: {key} mismatch: got {res[key]}, expected {case['expected'][key]}"

@@ -915,3 +915,73 @@ def calculate_C_wetgas_venturi_ReaderHarrisGraham(Fr_gas_th, X):
 
     return C_wet
 
+
+def calculate_flow_wetgas_venturi_ReaderHarrisGraham(
+    D, d, P1, dP, rho_g, rho_l, GMF, H=1, epsilon=None, kappa=None, check_input=False):
+    """
+    Calculate flowrates for a Venturi meter in wet-gas conditions using the Reader-Harris/Graham correlation, described by ISO/TR 11583:2012 [1_].
+    
+    """
+
+    beta = calculate_beta_DP_meter(D=D, d=d)
+
+    # Calculate expansibility for gas
+    if epsilon is None:
+        epsilon_used = calculate_expansibility_venturi(
+            P1=P1,
+            dP=dP,
+            beta=beta,
+            kappa=kappa
+        )
+    else:
+        epsilon_used = epsilon
+
+    # Initial calculation of gas flowrates using gas density only
+    venturi_results_gas = calculate_flow_venturi(
+        D=D,
+        d=d,
+        dP=dP,
+        rho1=rho_g,
+        C=1.0,
+        epsilon=epsilon_used,
+        check_input=check_input
+    )
+
+    MassFlow_gas_initial = venturi_results_gas['MassFlow'] # kg/h
+    MassFlow_liq_initial = (MassFlow_gas_initial*(1-GMF))/GMF # kg/h
+
+    # Calculate Lockhart-Martinelli parameter
+    X = _lockhart_martinelli_parameter(
+        mass_flow_rate_liquid=MassFlow_liq_initial/3600, # Convert to kg/s
+        mass_flow_rate_gas=MassFlow_gas_initial/3600, # Convert to kg/s
+        density_liquid=rho_l,
+        density_gas=rho_g
+    )
+
+    # Calculate gas densiometric Froude number
+    Fr_gas = _gas_densiometric_Froude_number(
+        massflow_gas=MassFlow_gas_initial/3600, # Convert to kg/s
+        D=D,
+        rho_g=rho_g,
+        rho_l=rho_l
+    )
+
+    Fr_gas_th = Fr_gas / beta**2.5
+
+    # Calculate wet-gas discharge coefficient
+    C_wet = calculate_C_wetgas_venturi_ReaderHarrisGraham(
+        Fr_gas_th=Fr_gas_th,
+        X=X
+    )
+
+    # Calculate n
+    n = max(0.583 - 0.18*beta**2 -0.578*np.exp(-0.8*Fr_gas/H), 0.392 - 0.18*beta**2)
+
+    # Calculate Chisholm coefficient
+    C_Ch = (rho_l/rho_g)**n + (rho_g/rho_l)**n
+
+    # Calculate over-read
+    OR = sqrt(1 + C_Ch*X + X**2)
+
+    # Calculate corrected gas mass flow using the over-read factor and wet-gas discharge coefficient
+    MassFlow_gas_corrected = (MassFlow_gas_initial / OR) * C_wet
