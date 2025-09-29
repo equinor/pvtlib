@@ -10,6 +10,8 @@ You can install the library using `pip`:
 pip install pvtlib
 ```
 
+NOTE: The library currently do not support numpy >= 2
+
 ## Usage
 
 Here is an example of how to use the library:
