@@ -24,7 +24,12 @@ SOFTWARE.
 import numpy as np
 from math import sqrt, pi, e
 
-from pvtlib.fluid_mechanics import reynolds_number as _reynolds_number, superficial_velocity as _superficial_velocity, lockhart_martinelli_parameter as _lockhart_martinelli_parameter
+from pvtlib.fluid_mechanics import (
+    reynolds_number as _reynolds_number,
+    superficial_velocity as _superficial_velocity,
+    lockhart_martinelli_parameter as _lockhart_martinelli_parameter,
+    GVF_to_GMF as _GVF_to_GMF
+)
 
 def _calculate_flow_DP_meter(C, D, d, epsilon, dP, rho1):
     """
@@ -779,10 +784,22 @@ def calculate_C_wetgas_venturi_ReaderHarrisGraham(Fr_gas_th, X):
 
 
 def calculate_flow_wetgas_venturi_ReaderHarrisGraham(
-    D, d, P1, dP, rho_g, rho_l, GMF, H=1, epsilon=None, kappa=None, check_input=False):
+    D, d, P1, dP, rho_g, rho_l, GMF=None, GVF=None, H=1, epsilon=None, kappa=None, check_input=False):
     """
-    Calculate flowrates for a Venturi meter in wet-gas conditions using the Reader-Harris/Graham correlation, described by ISO/TR 11583:2012 [1_].
-    
+    Calculate flowrates for a standard venturi meter in wet-gas conditions using the Reader-Harris/Graham correlation [1_], described in ISO/TR 11583:2012 [2_].
+    The function accepts either gas mass fraction (GMF) or gas volume fraction (GVF) as input. If both are provided, GMF is used.
+    The function accepts either expansibility (epsilon) or isentropic exponent (kappa) as input. If both are provided, epsilon is used.
+
+    H is a dimensionless parameter which is a function of the surface tension of the liquid. 
+    H equals 1 for hydrocarbon liquids, 1.35 for water. 
+
+    Valid for the following conditions:
+    0.4 ≤ β ≤ 0.75 
+    0 < X ≤ 0.3 
+    3 < Fr_gas,th 
+    0.02 < rho_g/rho_l
+    D ≥ 50 mm 
+
     Parameters
     ----------
     D : float
@@ -800,7 +817,7 @@ def calculate_flow_wetgas_venturi_ReaderHarrisGraham(
     GMF : float
         Gas mass fraction (by mass, 0 < GMF <= 1)
     H : float, optional
-        Height parameter (default 1)
+        Height parameter (default 1, which is used for hydrocarbon liquids)
     epsilon : float, optional
         Expansion factor
     kappa : float, optional
@@ -828,8 +845,64 @@ def calculate_flow_wetgas_venturi_ReaderHarrisGraham(
 
     References
     ----------
-    .. [1] ISO/TR 11583:2012, Measurement of wet gas flow by means of pressure differential devices inserted in circular cross-section conduits.
+    .. [1] Reader-Harris, M. and E. Graham, An improved model for Venturi-tube over reading in wet gas. North Sea Flow Measurement Workshop, 2009 
+    .. [2] ISO/TR 11583:2012, Measurement of wet gas flow by means of pressure differential devices inserted in circular cross-section conduits.
+    
     """
+
+    # Define results dictionary with NaN values for consistent return structure
+    results = {
+        "MassFlow_gas_initial": np.nan,
+        "MassFlow_gas_corrected": np.nan,
+        "MassFlow_liq": np.nan,
+        "MassFlow_tot": np.nan,
+        "VolFlow_gas": np.nan,
+        "VolFlow_liq": np.nan,
+        "VolFlow_tot": np.nan,
+        "OverRead": np.nan,
+        "C_wet": np.nan,
+        "LockhartMartinelli": np.nan,
+        "Fr_gas": np.nan,
+        "Fr_gas_th": np.nan,
+        "n": np.nan,
+        "C_Ch": np.nan,
+        "epsilon": np.nan,
+        "iterations": np.nan,
+    }
+
+    # Input validation and GMF/GVF handling
+    if check_input:
+        if D <= 0.0:
+            raise Exception("Pipe diameter D must be greater than zero.")
+        if d <= 0.0:
+            raise Exception("Throat diameter d must be greater than zero.")
+        if P1 <= 0.0:
+            raise Exception("Upstream pressure P1 must be greater than zero.")
+        if dP < 0.0:
+            raise Exception("Differential pressure dP must be non-negative.")
+        if rho_g <= 0.0:
+            raise Exception("Gas density rho_g must be greater than zero.")
+        if rho_l <= 0.0:
+            raise Exception("Liquid density rho_l must be greater than zero.")
+        if GMF is None and GVF is None:
+            raise Exception("Either GMF or GVF must be provided.")
+        if GMF is not None and not (0 < GMF <= 1):
+            raise Exception("GMF must be in the range (0, 1].")
+        if GVF is not None and not (0 < GVF <= 1):
+            raise Exception("GVF must be in the range (0, 1].")
+    else:
+        if D <= 0.0 or d <= 0.0 or P1 <= 0.0 or dP < 0.0 or rho_g <= 0.0 or rho_l <= 0.0:
+            return results
+        if GMF is None and GVF is None:
+            return results
+        if GMF is not None and not (0 < GMF <= 1):
+            return results
+        if GVF is not None and not (0 < GVF <= 1):
+            return results
+
+    # Convert GVF to GMF if needed
+    if GMF is None:
+        GMF = _GVF_to_GMF(GVF=GVF, rho_g=rho_g, rho_l=rho_l)
 
     beta = calculate_beta_DP_meter(D=D, d=d)
 
@@ -941,6 +1014,8 @@ def calculate_flow_wetgas_venturi_ReaderHarrisGraham(
         # If we reach here, iterations didn't converge
         if check_input:
             raise Exception(f"Wet-gas Venturi calculation did not converge after {max_iterations} iterations")
+        else:
+            return results
 
     # Final total and liquid mass flow calculation
     MassFlow_tot_final = MassFlow_gas_corrected / GMF
@@ -951,7 +1026,8 @@ def calculate_flow_wetgas_venturi_ReaderHarrisGraham(
     VolFlow_liq = MassFlow_liq_final / rho_l # m3/h
     VolFlow_tot = VolFlow_gas + VolFlow_liq # m3/h Assuming no volume change on mixing and homogeneous flow
 
-    results = {
+    # Update results dictionary with calculated values
+    results.update({
         "MassFlow_gas_initial": MassFlow_gas_initial,
         "MassFlow_gas_corrected": MassFlow_gas_corrected,
         "MassFlow_liq": MassFlow_liq_final,
@@ -968,7 +1044,7 @@ def calculate_flow_wetgas_venturi_ReaderHarrisGraham(
         "C_Ch": C_Ch,
         "epsilon": epsilon_used,
         "iterations": iteration + 1,
-    }
+    })
 
     return results
 
