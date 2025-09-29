@@ -921,6 +921,52 @@ def calculate_flow_wetgas_venturi_ReaderHarrisGraham(
     """
     Calculate flowrates for a Venturi meter in wet-gas conditions using the Reader-Harris/Graham correlation, described by ISO/TR 11583:2012 [1_].
     
+    Parameters
+    ----------
+    D : float
+        Pipe diameter [m]
+    d : float
+        Throat diameter [m]
+    P1 : float
+        Upstream pressure [bara]
+    dP : float
+        Differential pressure [mbar]
+    rho_g : float
+        Gas density [kg/m3]
+    rho_l : float
+        Liquid density [kg/m3]
+    GMF : float
+        Gas mass fraction (by mass, 0 < GMF <= 1)
+    H : float, optional
+        Height parameter (default 1)
+    epsilon : float, optional
+        Expansion factor
+    kappa : float, optional
+        Isentropic exponent (required if epsilon is not provided)
+    check_input : bool, optional
+        If True, checks input validity
+
+    Returns
+    -------
+    results : dict
+        Dictionary containing:
+        - 'MassFlow_gas_initial': Initial uncorrected gas mass flow [kg/h]
+        - 'MassFlow_gas_corrected': Final corrected gas mass flow [kg/h]
+        - 'MassFlow_liq': Liquid mass flow [kg/h]
+        - 'OverRead': Final over-read factor (OR)
+        - 'C_wet': Final wet-gas discharge coefficient
+        - 'LockhartMartinelli': Final Lockhart-Martinelli parameter X
+        - 'Fr_gas': Final gas densiometric Froude number
+        - 'Fr_gas_th': Final throat gas densiometric Froude number
+        - 'n': Final n parameter
+        - 'C_Ch': Final Chisholm coefficient
+        - 'GMF': Gas mass fraction used
+        - 'epsilon': Expansion factor used
+        - 'iterations': Number of iterations to convergence
+
+    References
+    ----------
+    .. [1] ISO/TR 11583:2012, Measurement of wet gas flow by means of pressure differential devices inserted in circular cross-section conduits.
     """
 
     beta = calculate_beta_DP_meter(D=D, d=d)
@@ -975,7 +1021,7 @@ def calculate_flow_wetgas_venturi_ReaderHarrisGraham(
     )
 
     # Calculate n
-    n = max(0.583 - 0.18*beta**2 -0.578*np.exp(-0.8*Fr_gas/H), 0.392 - 0.18*beta**2)
+    n = max(0.583 - 0.18*beta**2 - 0.578*np.exp(-0.8*Fr_gas/H), 0.392 - 0.18*beta**2)
 
     # Calculate Chisholm coefficient
     C_Ch = (rho_l/rho_g)**n + (rho_g/rho_l)**n
@@ -985,3 +1031,74 @@ def calculate_flow_wetgas_venturi_ReaderHarrisGraham(
 
     # Calculate corrected gas mass flow using the over-read factor and wet-gas discharge coefficient
     MassFlow_gas_corrected = (MassFlow_gas_initial / OR) * C_wet
+
+    # Iteration parameters
+    max_iterations = 100
+    tolerance = 1e-10 # Tolerance is set to match number of iterations provided in the ISO. 
+    MassFlow_gas_corrected_new = MassFlow_gas_corrected
+    
+    for iteration in range(max_iterations):
+
+        # Calculate gas densiometric Froude number
+        Fr_gas = _gas_densiometric_Froude_number(
+            massflow_gas=MassFlow_gas_corrected_new / 3600,  # Convert to kg/s
+            D=D,
+            rho_g=rho_g,
+            rho_l=rho_l
+        )
+
+        Fr_gas_th = Fr_gas / beta**2.5
+
+        # Calculate wet-gas discharge coefficient
+        C_wet = calculate_C_wetgas_venturi_ReaderHarrisGraham(
+            Fr_gas_th=Fr_gas_th,
+            X=X
+        )
+
+        # Calculate n
+        n = max(0.583 - 0.18*beta**2 - 0.578*np.exp(-0.8*Fr_gas/H), 0.392 - 0.18*beta**2)
+
+        # Calculate Chisholm coefficient
+        C_Ch = (rho_l/rho_g)**n + (rho_g/rho_l)**n
+
+        # Calculate over-read
+        OR = sqrt(1 + C_Ch*X + X**2)
+
+        # Calculate new corrected gas mass flow
+        MassFlow_gas_corrected_new = (MassFlow_gas_initial / OR) * C_wet
+
+        # Check for convergence
+        relative_error = abs(MassFlow_gas_corrected_new - MassFlow_gas_corrected) / MassFlow_gas_corrected
+        if relative_error < tolerance:
+            MassFlow_gas_corrected = MassFlow_gas_corrected_new
+            break
+            
+        MassFlow_gas_corrected = MassFlow_gas_corrected_new
+    
+    else:
+        # If we reach here, iterations didn't converge
+        if check_input:
+            raise Exception(f"Wet-gas Venturi calculation did not converge after {max_iterations} iterations")
+
+    # Final total and liquid mass flow calculation
+    MassFlow_tot_final = MassFlow_gas_corrected / GMF
+    MassFlow_liq_final = MassFlow_tot_final*(1-GMF)
+
+
+    results = {
+        "MassFlow_gas_initial": MassFlow_gas_initial,
+        "MassFlow_gas_corrected": MassFlow_gas_corrected,
+        "MassFlow_liq": MassFlow_liq_final,
+        "MassFlow_tot": MassFlow_tot_final,
+        "OverRead": OR,
+        "C_wet": C_wet,
+        "LockhartMartinelli": X,
+        "Fr_gas": Fr_gas,
+        "Fr_gas_th": Fr_gas_th,
+        "n": n,
+        "C_Ch": C_Ch,
+        "epsilon": epsilon_used,
+        "iterations": iteration + 1,
+    }
+
+    return results
