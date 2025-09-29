@@ -29,11 +29,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 venturi = {
-    'D': 0.2,          # m, inlet inner diameter
-    'd': 0.1,          # m, throat inner diameter
+    'D': 0.09,         # m, inlet inner diameter
+    'd': 0.09*0.6,     # m, throat inner diameter (beta = 0.6)
     'P1' : 45.0,       # bara, static pressure at inlet
-    'DP' : 600.0,      # mbar, differential pressure
-    'rho_g' : 30.0,    # kg/m3, gas density
+    'DP' : 140.0,      # mbar, differential pressure
+    'rho_g' : 18.0,    # kg/m3, gas density
     'rho_l' : 750.0,   # kg/m3, liquid density
     'H' : 1.0,         # Dimensionless fluid parameter (1 for hydrocarbon liquids, 1.35 for water)
     'kappa' : 1.3,     # isentropic exponent
@@ -57,6 +57,7 @@ for gvf in GVF:
         H=venturi['H'],
         kappa=venturi['kappa']
     )
+    
     res['GVF'] = gvf
     results[idx] = res
     idx += 1
