@@ -787,6 +787,11 @@ def calculate_flow_wetgas_venturi_ReaderHarrisGraham(
     D, d, P1, dP, rho_g, rho_l, GMF=None, GVF=None, H=1, epsilon=None, kappa=None, check_input=False):
     """
     Calculate flowrates for a standard venturi meter in wet-gas conditions using the Reader-Harris/Graham correlation [1_], described in ISO/TR 11583:2012 [2_].
+    
+    The function uses an iterative approach to solve for the corrected gas mass flow rate. It calculates initial flow rates, 
+    then iteratively updates the Lockhart-Martinelli parameter, Froude numbers, discharge coefficient, and over-read factor 
+    until convergence is achieved.
+    
     The function accepts either gas mass fraction (GMF) or gas volume fraction (GVF) as input. If both are provided, GMF is used.
     The function accepts either expansibility (epsilon) or isentropic exponent (kappa) as input. If both are provided, epsilon is used.
 
@@ -814,16 +819,19 @@ def calculate_flow_wetgas_venturi_ReaderHarrisGraham(
         Gas density [kg/m3]
     rho_l : float
         Liquid density [kg/m3]
-    GMF : float
-        Gas mass fraction (by mass, 0 < GMF <= 1)
+    GMF : float, optional
+        Gas mass fraction (by mass, 0 < GMF <= 1). Either GMF or GVF must be provided.
+    GVF : float, optional
+        Gas volume fraction (by volume, 0 < GVF <= 1). Either GMF or GVF must be provided.
     H : float, optional
-        Height parameter (default 1, which is used for hydrocarbon liquids)
+        Dimensionless fluid parameter (default 1, which is used for hydrocarbon liquids, 1.35 for water)
     epsilon : float, optional
-        Expansion factor
+        Expansion factor. If not provided, calculated from kappa.
     kappa : float, optional
         Isentropic exponent (required if epsilon is not provided)
     check_input : bool, optional
-        If True, checks input validity
+        If True, checks input validity and raises exceptions for invalid inputs.
+        If False, returns NaN results for invalid inputs.
 
     Returns
     -------
@@ -831,17 +839,28 @@ def calculate_flow_wetgas_venturi_ReaderHarrisGraham(
         Dictionary containing:
         - 'MassFlow_gas_initial': Initial uncorrected gas mass flow [kg/h]
         - 'MassFlow_gas_corrected': Final corrected gas mass flow [kg/h]
-        - 'MassFlow_liq': Liquid mass flow [kg/h]
-        - 'OverRead': Final over-read factor (OR)
-        - 'C_wet': Final wet-gas discharge coefficient
-        - 'LockhartMartinelli': Final Lockhart-Martinelli parameter X
-        - 'Fr_gas': Final gas densiometric Froude number
-        - 'Fr_gas_th': Final throat gas densiometric Froude number
-        - 'n': Final n parameter
-        - 'C_Ch': Final Chisholm coefficient
-        - 'GMF': Gas mass fraction used
-        - 'epsilon': Expansion factor used
-        - 'iterations': Number of iterations to convergence
+        - 'MassFlow_liq': Final liquid mass flow [kg/h]
+        - 'MassFlow_tot': Final total mass flow [kg/h]
+        - 'VolFlow_gas': Final gas volume flow [m3/h]
+        - 'VolFlow_liq': Final liquid volume flow [m3/h]
+        - 'VolFlow_tot': Final total volume flow [m3/h]
+        - 'OverRead': Final over-read factor (OR) [-]
+        - 'C_wet': Final wet-gas discharge coefficient [-]
+        - 'LockhartMartinelli': Final Lockhart-Martinelli parameter X [-]
+        - 'Fr_gas': Final gas densiometric Froude number [-]
+        - 'Fr_gas_th': Final throat gas densiometric Froude number [-]
+        - 'n': Final n parameter [-]
+        - 'C_Ch': Final Chisholm coefficient [-]
+        - 'epsilon': Expansion factor used [-]
+        - 'iterations': Number of iterations to convergence [-]
+        
+        If inputs are invalid and check_input=False, all values will be NaN.
+
+    Notes
+    -----
+    The iteration process continues until the relative change in corrected gas mass flow 
+    is less than 1e-10 or until 100 iterations are reached. If convergence is not achieved
+    and check_input=True, an exception is raised. If check_input=False, NaN results are returned.
 
     References
     ----------
@@ -849,7 +868,6 @@ def calculate_flow_wetgas_venturi_ReaderHarrisGraham(
     .. [2] ISO/TR 11583:2012, Measurement of wet gas flow by means of pressure differential devices inserted in circular cross-section conduits.
     
     """
-
     # Define results dictionary with NaN values for consistent return structure
     results = {
         "MassFlow_gas_initial": np.nan,
@@ -902,7 +920,7 @@ def calculate_flow_wetgas_venturi_ReaderHarrisGraham(
 
     # Convert GVF to GMF if needed
     if GMF is None:
-        GMF = _GVF_to_GMF(GVF=GVF, rho_g=rho_g, rho_l=rho_l)
+        GMF = _GVF_to_GMF(GVF=GVF, rho_gas=rho_g, rho_liquid=rho_l)
 
     beta = calculate_beta_DP_meter(D=D, d=d)
 
@@ -976,7 +994,7 @@ def calculate_flow_wetgas_venturi_ReaderHarrisGraham(
 
         # Calculate gas densiometric Froude number
         Fr_gas = _gas_densiometric_Froude_number(
-            massflow_gas=MassFlow_gas_corrected_new / 3600,  # Convert to kg/s
+            massflow_gas=MassFlow_gas_corrected_new / 3600, # Convert to kg/s
             D=D,
             rho_g=rho_g,
             rho_l=rho_l
