@@ -22,6 +22,7 @@ SOFTWARE.
 """
 
 # Example: Overread correction for wetgas venturi, using the Reader-Harris, Graham correlation.
+# Sensitivity analysis of gas density and gas volume fraction.
 
 from pvtlib.metering import differential_pressure_flowmeters
 import numpy as np
@@ -33,52 +34,65 @@ venturi = {
     'd': 0.09*0.6,     # m, throat inner diameter (beta = 0.6)
     'P1' : 45.0,       # bara, static pressure at inlet
     'DP' : 140.0,      # mbar, differential pressure
-    'rho_g' : 18.0,    # kg/m3, gas density
     'rho_l' : 750.0,   # kg/m3, liquid density
     'H' : 1.0,         # Dimensionless fluid parameter (1 for hydrocarbon liquids, 1.35 for water)
     'kappa' : 1.3,     # isentropic exponent
 }
 
 GVF = np.linspace(0.95, 0.999, 100)  # Gas volume fraction from 0.95 to 0.99
+rho_g_range = np.linspace(10, 100, 10)  # Gas density from 10 to 100 kg/m3
 
 results = {}
-
 idx = 0
 
-for gvf in GVF:
-    res = differential_pressure_flowmeters.calculate_flow_wetgas_venturi_ReaderHarrisGraham(
-        D=venturi['D'],
-        d=venturi['d'],
-        P1=venturi['P1'],
-        dP=venturi['DP'],
-        rho_g=venturi['rho_g'],
-        rho_l=venturi['rho_l'],
-        GVF=gvf,
-        H=venturi['H'],
-        kappa=venturi['kappa']
-    )
-    
-    res['GVF'] = gvf
-    results[idx] = res
-    idx += 1
+for rho_g in rho_g_range:
+    for gvf in GVF:
+        res = differential_pressure_flowmeters.calculate_flow_wetgas_venturi_ReaderHarrisGraham(
+            D=venturi['D'],
+            d=venturi['d'],
+            P1=venturi['P1'],
+            dP=venturi['DP'],
+            rho_g=rho_g,
+            rho_l=venturi['rho_l'],
+            GVF=gvf,
+            H=venturi['H'],
+            kappa=venturi['kappa']
+        )
+        
+        res['GVF'] = gvf
+        res['rho_g'] = rho_g
+        results[idx] = res
+        idx += 1
 
 # Convert results to DataFrame for easier plotting
 df = pd.DataFrame(results).T
 
-# Plot Lockhart-Martinelli parameter vs GVF as a smooth line
-plt.figure(figsize=(10, 6))
-plt.plot(df['GVF'], df['LockhartMartinelli'], linestyle='-', marker=None)
-plt.title('Lockhart-Martinelli Parameter vs Gas Volume Fraction')
+# Plot Lockhart-Martinelli parameter vs GVF for different gas densities
+plt.figure(figsize=(12, 8))
+for rho_g in rho_g_range:
+    df_subset = df[df['rho_g'] == rho_g]
+    plt.plot(df_subset['GVF'], df_subset['LockhartMartinelli'], 
+             linestyle='-', label=f'ρ_g = {rho_g:.1f} kg/m³')
+
+plt.title('Lockhart-Martinelli Parameter vs Gas Volume Fraction\n(Gas Density Sensitivity)')
 plt.xlabel('Gas Volume Fraction')
 plt.ylabel('Lockhart-Martinelli Parameter')
+plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
 plt.grid()
+plt.tight_layout()
 plt.show()
 
-# Plot overread vs Lockhart-Martinelli parameter as a smooth line
-plt.figure(figsize=(10, 6))
-plt.plot(df['LockhartMartinelli'], df['OverRead'], linestyle='-', marker=None)
-plt.title('Gas Massflow Overread vs Lockhart-Martinelli Parameter')
+# Plot overread vs Lockhart-Martinelli parameter for different gas densities
+plt.figure(figsize=(12, 8))
+for rho_g in rho_g_range:
+    df_subset = df[df['rho_g'] == rho_g]
+    plt.plot(df_subset['LockhartMartinelli'], df_subset['OverRead'], 
+             linestyle='-', label=f'ρ_g = {rho_g:.1f} kg/m³')
+
+plt.title('Gas Massflow Overread vs Lockhart-Martinelli Parameter\n(Gas Density Sensitivity)')
 plt.xlabel('Lockhart-Martinelli Parameter')
 plt.ylabel('Venturi Meter Overreading')
+plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
 plt.grid()
+plt.tight_layout()
 plt.show()
