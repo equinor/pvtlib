@@ -894,6 +894,8 @@ def calculate_flow_wetgas_venturi_ReaderHarrisGraham(
             raise Exception("Pipe diameter D must be greater than zero.")
         if d <= 0.0:
             raise Exception("Throat diameter d must be greater than zero.")
+        if d >= D:
+            raise Exception("Throat diameter d must be smaller than pipe diameter D.")
         if P1 <= 0.0:
             raise Exception("Upstream pressure P1 must be greater than zero.")
         if dP < 0.0:
@@ -909,7 +911,7 @@ def calculate_flow_wetgas_venturi_ReaderHarrisGraham(
         if GVF is not None and not (0 < GVF <= 1):
             raise Exception("GVF must be in the range (0, 1].")
     else:
-        if D <= 0.0 or d <= 0.0 or P1 <= 0.0 or dP < 0.0 or rho_g <= 0.0 or rho_l <= 0.0:
+        if D <= 0.0 or d <= 0.0 or d >= D or P1 <= 0.0 or dP < 0.0 or rho_g <= 0.0 or rho_l <= 0.0:
             return results
         if GMF is None and GVF is None:
             return results
