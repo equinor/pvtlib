@@ -48,15 +48,15 @@ idx = 0
 for rho_g in rho_g_range:
     for gvf in GVF:
         res = differential_pressure_flowmeters.calculate_flow_wetgas_venturi_ReaderHarrisGraham(
-            D=venturi['D'],
-            d=venturi['d'],
-            P1=venturi['P1'],
-            dP=venturi['DP'],
-            rho_g=rho_g,
-            rho_l=venturi['rho_l'],
-            GVF=gvf,
-            H=venturi['H'],
-            kappa=venturi['kappa']
+            D=venturi['D'], # m, inlet inner diameter
+            d=venturi['d'], # m, throat inner diameter (beta = d/D)
+            P1=venturi['P1'], # bara, static pressure at inlet
+            dP=venturi['DP'], # mbar, differential pressure
+            rho_g=rho_g, # kg/m3, gas density at inlet conditions
+            rho_l=venturi['rho_l'], # kg/m3, liquid density at inlet conditions
+            GVF=gvf, # Gas fraction can be entered either as GVF or GMF. If both are given, GMF is used. 
+            H=venturi['H'], # Dimensionless fluid parameter (1 for hydrocarbon liquids, 1.35 for water)
+            kappa=venturi['kappa'] # isentropic exponent
         )
         
         res['GVF'] = gvf
