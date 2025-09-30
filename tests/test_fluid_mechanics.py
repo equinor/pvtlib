@@ -24,6 +24,98 @@ SOFTWARE.
 from pvtlib import fluid_mechanics
 import numpy as np
 
+
+def test_mixture_density_homogeneous_cases():
+    """
+    Test mixture_density_homogeneous function with multiple cases.
+    """
+    cases = [
+        # (volume_fractions, densities, expected)
+        {"volume_fractions": [0.5, 0.5], "densities": [1000, 800], "expected": 900.0},
+        {"volume_fractions": [1, 0], "densities": [1000, 800], "expected": 1000.0},
+        {"volume_fractions": [0, 1], "densities": [1000, 800], "expected": 800.0},
+        {"volume_fractions": [2, 1], "densities": [900, 600], "expected": 800.0},
+        {"volume_fractions": [0.2, 0.8], "densities": [1000, 800], "expected": 840.0},
+        {"volume_fractions": [0, 0], "densities": [1000, 800], "expected": np.nan},
+        {"volume_fractions": [1, 1], "densities": [0, 800], "expected": np.nan},
+        {"volume_fractions": [1, 1], "densities": [1000, -800], "expected": np.nan},
+        {"volume_fractions": [-1, 2], "densities": [1000, 800], "expected": np.nan},
+        {"volume_fractions": [1, 1], "densities": [np.nan, 800], "expected": np.nan},
+        {"volume_fractions": [1, 1], "densities": [1000, np.nan], "expected": np.nan},
+        {"volume_fractions": [1, 1, 1], "densities": [1000, 800, 600], "expected": 800.0},
+        {"volume_fractions": [0, 0, 0], "densities": [1000, 800, 600], "expected": np.nan},
+        {"volume_fractions": [0, 1, 1], "densities": [np.nan, 800, 600], "expected": 700.0},
+    ]
+    for case in cases:
+        try:
+            result = fluid_mechanics.mixture_density_homogeneous(case["volume_fractions"], case["densities"])
+        except ValueError:
+            # If ValueError is expected (e.g., mismatched lengths), expected must be ValueError
+            assert case.get("expected") == ValueError, f"mixture_density_homogeneous failed for {case}"
+            continue
+        if isinstance(case["expected"], float) and np.isnan(case["expected"]):
+            assert np.isnan(result), f"mixture_density_homogeneous failed for {case}: {result} != {case['expected']}"
+        else:
+            assert np.isclose(result, case["expected"]), f"mixture_density_homogeneous failed for {case}: {result} != {case['expected']}"
+
+
+def test_mixture_density_homogeneous_shape_mismatch():
+    """
+    Test mixture_density_homogeneous raises ValueError for mismatched input lengths.
+    """
+    try:
+        fluid_mechanics.mixture_density_homogeneous([1, 2], [1000])
+    except ValueError:
+        pass
+    else:
+        assert False, "mixture_density_homogeneous should raise ValueError for mismatched input lengths"
+
+def test_GMF_to_GVF_cases():
+    """
+    Test GMF_to_GVF function with multiple cases.
+    """
+    cases = [
+        # (GMF, rho_gas, rho_liquid, expected_GVF)
+        {"GMF": 0.5, "rho_gas": 100, "rho_liquid": 1000, "expected": 0.9090909090909091},
+        {"GMF": 0.1, "rho_gas": 50, "rho_liquid": 900, "expected": 0.6666666666666666},
+        {"GMF": 0.9, "rho_gas": 10, "rho_liquid": 1000, "expected": 0.998890122087},
+        {"GMF": 1.0, "rho_gas": 100, "rho_liquid": 1000, "expected": 1.0},
+        {"GMF": 0.0, "rho_gas": 100, "rho_liquid": 1000, "expected": 0.0},
+        {"GMF": -0.1, "rho_gas": 100, "rho_liquid": 1000, "expected": np.nan},
+        {"GMF": 0.5, "rho_gas": 0, "rho_liquid": 1000, "expected": np.nan},
+        {"GMF": 0.5, "rho_gas": 100, "rho_liquid": 0, "expected": np.nan},
+    ]
+    for case in cases:
+        result = fluid_mechanics.GMF_to_GVF(case["GMF"], case["rho_gas"], case["rho_liquid"])
+        if np.isnan(case["expected"]):
+            assert np.isnan(result), f"GMF_to_GVF failed for {case}"
+        else:
+            assert np.isclose(result, case["expected"]), f"GMF_to_GVF failed for {case}: {result} != {case['expected']}"
+
+
+def test_GVF_to_GMF_cases():
+    """
+    Test GVF_to_GMF function with multiple cases.
+    """
+    cases = [
+        # (GVF, rho_gas, rho_liquid, expected_GMF)
+        {"GVF": 0.5, "rho_gas": 100, "rho_liquid": 1000, "expected": 0.09090909090909091},
+        {"GVF": 0.1, "rho_gas": 50, "rho_liquid": 900, "expected": 0.006134969325153374},
+        {"GVF": 0.9, "rho_gas": 10, "rho_liquid": 1000, "expected": 0.08256880733944957},
+        {"GVF": 1.0, "rho_gas": 100, "rho_liquid": 1000, "expected": 1.0},
+        {"GVF": 0.0, "rho_gas": 100, "rho_liquid": 1000, "expected": 0.0},
+        {"GVF": -0.1, "rho_gas": 100, "rho_liquid": 1000, "expected": np.nan},
+        {"GVF": 0.5, "rho_gas": 0, "rho_liquid": 1000, "expected": np.nan},
+        {"GVF": 0.5, "rho_gas": 100, "rho_liquid": 0, "expected": np.nan},
+    ]
+    for case in cases:
+        result = fluid_mechanics.GVF_to_GMF(case["GVF"], case["rho_gas"], case["rho_liquid"])
+        if np.isnan(case["expected"]):
+            assert np.isnan(result), f"GVF_to_GMF failed for {case}"
+        else:
+            assert np.isclose(result, case["expected"]), f"GVF_to_GMF failed for {case}: {result} != {case['expected']}"
+
+
 #%% Test equations for evaluating homogeneous mixtures of oil and water in horizontal and vertical pipes (used in water-cut measurements)
 def test_critical_velocity_for_uniform_wio_dispersion_horizontal_1():
     '''
@@ -450,3 +542,108 @@ def test_contaminant_volume_percent_from_mixed_density_measured_density_lower():
     )
     
     assert ContaminantVolP == 0, f'Contaminant volume percent calculation failed'
+
+def test_lockhart_martinelli_parameter_typical():
+    """
+    Test Lockhart-Martinelli parameter with typical values.
+    """
+    X = fluid_mechanics.lockhart_martinelli_parameter(
+        mass_flow_rate_liquid=100,
+        mass_flow_rate_gas=50,
+        density_liquid=900,
+        density_gas=100
+    )
+    expected = (100 / 50) * ((100 / 900) ** 0.5)
+    assert np.isclose(X, expected), f"Lockhart-Martinelli parameter calculation failed: {X} != {expected}"
+
+def test_lockhart_martinelli_parameter_equal_mass_flow_and_density():
+    """
+    Test Lockhart-Martinelli parameter when mass flow rates and densities are equal.
+    Should return 1.0.
+    """
+    X = fluid_mechanics.lockhart_martinelli_parameter(
+        mass_flow_rate_liquid=10,
+        mass_flow_rate_gas=10,
+        density_liquid=1000,
+        density_gas=1000
+    )
+    assert X == 1.0, f"Lockhart-Martinelli parameter should be 1.0, got {X}"
+
+def test_lockhart_martinelli_parameter_zero_gas_flow():
+    """
+    Test Lockhart-Martinelli parameter when gas mass flow rate is zero.
+    Should return nan.
+    """
+    X = fluid_mechanics.lockhart_martinelli_parameter(
+        mass_flow_rate_liquid=10,
+        mass_flow_rate_gas=0,
+        density_liquid=1000,
+        density_gas=100
+    )
+    assert np.isnan(X), "Lockhart-Martinelli parameter should be nan for zero gas flow"
+
+def test_lockhart_martinelli_parameter_zero_gas_density():
+    """
+    Test Lockhart-Martinelli parameter when gas density is zero.
+    Should return nan.
+    """
+    X = fluid_mechanics.lockhart_martinelli_parameter(
+        mass_flow_rate_liquid=10,
+        mass_flow_rate_gas=5,
+        density_liquid=1000,
+        density_gas=0
+    )
+    assert np.isnan(X), "Lockhart-Martinelli parameter should be nan for zero gas density"
+
+def test_lockhart_martinelli_parameter_zero_liquid_density():
+    """
+    Test Lockhart-Martinelli parameter when liquid density is zero.
+    Should return nan.
+    """
+    X = fluid_mechanics.lockhart_martinelli_parameter(
+        mass_flow_rate_liquid=10,
+        mass_flow_rate_gas=5,
+        density_liquid=0,
+        density_gas=100
+    )
+    assert np.isnan(X), "Lockhart-Martinelli parameter should be nan for zero liquid density"
+
+def test_lockhart_martinelli_parameter_negative_values():
+    """
+    Test Lockhart-Martinelli parameter with negative values for mass flow or density.
+    Should return nan.
+    """
+    X1 = fluid_mechanics.lockhart_martinelli_parameter(
+        mass_flow_rate_liquid=10,
+        mass_flow_rate_gas=-5,
+        density_liquid=1000,
+        density_gas=100
+    )
+    X2 = fluid_mechanics.lockhart_martinelli_parameter(
+        mass_flow_rate_liquid=10,
+        mass_flow_rate_gas=5,
+        density_liquid=-1000,
+        density_gas=100
+    )
+    X3 = fluid_mechanics.lockhart_martinelli_parameter(
+        mass_flow_rate_liquid=10,
+        mass_flow_rate_gas=5,
+        density_liquid=1000,
+        density_gas=-100
+    )
+    assert np.isnan(X1), "Lockhart-Martinelli parameter should be nan for negative gas flow"
+    assert np.isnan(X2), "Lockhart-Martinelli parameter should be nan for negative liquid density"
+    assert np.isnan(X3), "Lockhart-Martinelli parameter should be nan for negative gas density"
+
+def test_lockhart_martinelli_parameter_liquid_flow_zero():
+    """
+    Test Lockhart-Martinelli parameter when liquid mass flow rate is zero.
+    Should return zero.
+    """
+    X = fluid_mechanics.lockhart_martinelli_parameter(
+        mass_flow_rate_liquid=0,
+        mass_flow_rate_gas=10,
+        density_liquid=1000,
+        density_gas=100
+    )
+    assert X == 0.0, f"Lockhart-Martinelli parameter should be 0.0 when liquid flow is zero, got {X}"

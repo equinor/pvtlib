@@ -80,7 +80,143 @@ def superficial_velocity(Q_phase, D):
         Us = (Q_phase/3600) / A
 
     return Us
-   
+
+
+def mixture_density_homogeneous(volume_fractions, densities):
+    '''
+    Calculate the density of a mixture of fluids or components assuming a homogeneous mixture (no slip between phases/components and no interaction between phases/components).
+    The volume fractions do not need to sum to 1, as they will be normalized in the function. 
+    This allows for easy use of volume fractions given in percentage (0-100 %) or with volume flowrates as direct input.
+
+    Parameters
+    ----------
+    volume_fractions : list or np.ndarray of float
+        Volume fractions of each phase [-].
+    densities : list or np.ndarray of float
+        Densities of each phase [kg/m3].
+
+    Returns
+    -------
+    rho_mixture : float
+        Mixture density [kg/m3].
+    
+    '''
+    vf = np.array(volume_fractions, dtype=float)
+    rho = np.array(densities, dtype=float)
+
+    if vf.shape != rho.shape:
+        raise ValueError("Length of volume_fractions and densities must be the same.")
+
+    if np.any(vf < 0):
+        return np.nan
+
+    # Filter out phases with zero volume fraction
+    non_zero_mask = vf != 0
+    vf_active = vf[non_zero_mask]
+    rho_active = rho[non_zero_mask]
+
+    # Check if any active phases have invalid densities
+    if np.any(rho_active <= 0) or np.any(np.isnan(rho_active)):
+        return np.nan
+
+    vf_sum = np.sum(vf_active)
+    if vf_sum == 0:
+        return np.nan
+
+    vf_normalized = vf_active / vf_sum
+
+    rho_mixture = np.dot(vf_normalized, rho_active)
+
+    return rho_mixture
+
+
+def GMF_to_GVF(GMF, rho_gas, rho_liquid):
+    '''
+    Convert from gas mass fraction (GMF) to gas volume fraction (GVF).
+    
+    Parameters
+    ----------
+    GMF : float
+        Gas mass fraction [-].
+    rho_gas : float
+        Gas density [kg/m3].
+    rho_liquid : float
+        Liquid density [kg/m3].
+    
+    Returns
+    -------
+    GVF : float
+        Gas volume fraction [-].
+    '''
+    if GMF < 0 or GMF > 1 or rho_gas <= 0 or rho_liquid <= 0:
+        return np.nan
+    if GMF == 0:
+        return 0.0
+    
+    GVF = 1 / (1 + ((1 - GMF) / GMF) * (rho_gas / rho_liquid))
+
+    return GVF
+
+
+def GVF_to_GMF(GVF, rho_gas, rho_liquid):
+    '''
+    Convert from gas volume fraction (GVF) to gas mass fraction (GMF).
+
+    Parameters
+    ----------
+    GVF : float
+        Gas volume fraction [-].
+    rho_gas : float
+        Gas density [kg/m3].
+    rho_liquid : float
+        Liquid density [kg/m3].
+
+    Returns
+    -------
+    GMF : float
+        Gas mass fraction [-].
+    '''
+    if GVF < 0 or GVF > 1 or rho_gas <= 0 or rho_liquid <= 0:
+        return np.nan
+    if GVF == 0:
+        return 0.0
+
+    GMF = 1 / (1 + ((1 - GVF) / GVF) * (rho_liquid / rho_gas))
+
+    return GMF
+
+
+def lockhart_martinelli_parameter(mass_flow_rate_liquid, mass_flow_rate_gas, density_liquid, density_gas):
+    '''
+    Calculate the Lockhart-Martinelli parameter X.
+
+    Note: The units for mass flow rates and densities must be consistent between phases,
+    but do not need to be SI units (e.g., both in kg/h and both in kg/m3 are valid).
+
+    Parameters
+    ----------
+    mass_flow_rate_liquid : float
+        Mass flow rate of liquid phase [kg/h or kg/s].
+    mass_flow_rate_gas : float
+        Mass flow rate of gas phase [kg/h or kg/s].
+    density_liquid : float
+        Density of liquid phase [kg/m3].
+    density_gas : float
+        Density of gas phase [kg/m3].
+
+    Returns
+    -------
+    X : float
+        Lockhart-Martinelli parameter [-].
+    '''
+
+    if mass_flow_rate_gas <= 0 or density_gas <= 0 or density_liquid <= 0:
+        return np.nan
+
+    X = (mass_flow_rate_liquid / mass_flow_rate_gas) * ((density_gas / density_liquid) ** 0.5)
+
+    return X
+
 
 def liquid_holdup_from_density(measured_density, liquid_density, gas_density):
     '''

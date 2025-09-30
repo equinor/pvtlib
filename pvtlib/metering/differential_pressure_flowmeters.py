@@ -24,7 +24,12 @@ SOFTWARE.
 import numpy as np
 from math import sqrt, pi, e
 
-from pvtlib.fluid_mechanics import reynolds_number, superficial_velocity
+from pvtlib.fluid_mechanics import (
+    reynolds_number as _reynolds_number,
+    superficial_velocity as _superficial_velocity,
+    lockhart_martinelli_parameter as _lockhart_martinelli_parameter,
+    GVF_to_GMF as _GVF_to_GMF
+)
 
 def _calculate_flow_DP_meter(C, D, d, epsilon, dP, rho1):
     """
@@ -75,7 +80,7 @@ def _calculate_flow_DP_meter(C, D, d, epsilon, dP, rho1):
     results['VolFlow'] = results['MassFlow']/rho1 # m3/h
 
     # Calculate velocity in m/s
-    results['Velocity'] = superficial_velocity(results['VolFlow'], D) # m/s
+    results['Velocity'] = _superficial_velocity(results['VolFlow'], D) # m/s
 
     return results
 
@@ -531,7 +536,7 @@ def calculate_flow_orifice(D, d, dP, rho1, mu=None, C=None, epsilon=None, tappin
             )
         
         # Calculate Reynolds number
-        results['Re'] = reynolds_number(rho=rho1, v=results['Velocity'], D=D, mu=mu)
+        results['Re'] = _reynolds_number(rho=rho1, v=results['Velocity'], D=D, mu=mu)
         
         return results
 
@@ -559,7 +564,7 @@ def calculate_flow_orifice(D, d, dP, rho1, mu=None, C=None, epsilon=None, tappin
             )
 
             # Calculate Reynolds number
-            Re = reynolds_number(rho=rho1, v=results['Velocity'], D=D, mu=mu)
+            Re = _reynolds_number(rho=rho1, v=results['Velocity'], D=D, mu=mu)
 
             # Calculate beta
             beta = calculate_beta_DP_meter(D=D, d=d)
@@ -717,3 +722,476 @@ def calculate_C_orifice_ReaderHarrisGallagher(D, beta, Re, tapping='corner', che
         - 0.031*(M2-0.8*M2**1.1)*beta**1.3 + additional_term
 
     return C
+
+
+def _gas_densiometric_Froude_number(massflow_gas, D, rho_g, rho_l):
+    """
+    Calculate the gas densiometric Froude number (Frg) for wet-gas flow in a venturi.
+
+    Parameters
+    ----------
+    massflow_gas : float
+        Gas mass flow rate [kg/s]
+    D : float
+        Upstream inner pipe diameter [m]
+    rho_g : float
+        Gas density [kg/m3]
+    rho_l : float
+        Liquid density [kg/m3]
+    
+    Returns
+    -------
+    Frg : float
+        Gas densiometric Froude number (Frg) [-]
+    """
+
+    if D <= 0.0 or rho_g <= 0.0 or rho_l <= 0.0 or massflow_gas < 0.0 or (rho_l - rho_g) == 0.0:
+        return np.nan
+
+    Fr_gas = (4*massflow_gas/(rho_g*pi*D**2*sqrt(9.81*D))) * sqrt(rho_g/(rho_l - rho_g))
+
+    return Fr_gas
+
+
+def calculate_C_wetgas_venturi_ReaderHarrisGraham(Fr_gas_th, X):
+    """
+    Calculate the discharge coefficient correction for wet-gas Venturi flow meters using the Reader-Harris/Graham correlation [1_].
+
+    Parameters
+    ----------
+    Fr_gas_th : float
+        Gas densiometric Froude number (Frg) [-]
+    X : float
+        Lockhart-Martinelli parameter [-]
+
+    Returns
+    -------
+    C_wet : float
+        Wet gas discharge coefficient [-]
+
+    References
+    ----------
+    .. [1] Reader-Harris, M. and Graham, E. An improved model for venturi-tube overreading in wet gas, North Sea Flow Measurement Workshop, 2009.
+
+    """
+
+    if Fr_gas_th < 0.0 or X < 0.0:
+        return np.nan
+
+    C_wet = 1-0.0463*np.exp(-0.05*Fr_gas_th)*min(1,sqrt(X/0.016))
+
+    return C_wet
+
+
+def calculate_flow_wetgas_venturi_ReaderHarrisGraham(
+    D, d, P1, dP, rho_g, rho_l, GMF=None, GVF=None, H=1, epsilon=None, kappa=None, check_input=False):
+    """
+    Calculate flowrates for a standard venturi meter in wet-gas conditions using the Reader-Harris/Graham correlation [1_], described in ISO/TR 11583:2012 [2_].
+    
+    The function uses an iterative approach to solve for the corrected gas mass flow rate. It calculates initial flow rates, 
+    then iteratively updates the Lockhart-Martinelli parameter, Froude numbers, discharge coefficient, and over-read factor 
+    until convergence is achieved.
+    
+    The function accepts either gas mass fraction (GMF) or gas volume fraction (GVF) as input. If both are provided, GMF is used.
+    The function accepts either expansibility (epsilon) or isentropic exponent (kappa) as input. If both are provided, epsilon is used.
+
+    H is a dimensionless parameter which is a function of the surface tension of the liquid. 
+    H equals 1 for hydrocarbon liquids, 1.35 for water. 
+
+    Valid for the following conditions:
+    0.4 ≤ β ≤ 0.75 
+    0 < X ≤ 0.3 
+    3 < Fr_gas,th 
+    0.02 < rho_g/rho_l
+    D ≥ 50 mm 
+
+    Parameters
+    ----------
+    D : float
+        Pipe diameter [m]
+    d : float
+        Throat diameter [m]
+    P1 : float
+        Upstream pressure [bara]
+    dP : float
+        Differential pressure [mbar]
+    rho_g : float
+        Gas density [kg/m3]
+    rho_l : float
+        Liquid density [kg/m3]
+    GMF : float, optional
+        Gas mass fraction (by mass, 0 < GMF <= 1). Either GMF or GVF must be provided.
+    GVF : float, optional
+        Gas volume fraction (by volume, 0 < GVF <= 1). Either GMF or GVF must be provided.
+    H : float, optional
+        Dimensionless fluid parameter (default 1, which is used for hydrocarbon liquids, 1.35 for water)
+    epsilon : float, optional
+        Expansion factor. If not provided, calculated from kappa.
+    kappa : float, optional
+        Isentropic exponent (required if epsilon is not provided)
+    check_input : bool, optional
+        If True, checks input validity and raises exceptions for invalid inputs.
+        If False, returns NaN results for invalid inputs.
+
+    Returns
+    -------
+    results : dict
+        Dictionary containing:
+        - 'MassFlow_gas_initial': Initial uncorrected gas mass flow [kg/h]
+        - 'MassFlow_gas_corrected': Final corrected gas mass flow [kg/h]
+        - 'MassFlow_liq': Final liquid mass flow [kg/h]
+        - 'MassFlow_tot': Final total mass flow [kg/h]
+        - 'VolFlow_gas': Final gas volume flow [m3/h]
+        - 'VolFlow_liq': Final liquid volume flow [m3/h]
+        - 'VolFlow_tot': Final total volume flow [m3/h]
+        - 'OverRead': Final over-read factor (OR) [-]
+        - 'C_wet': Final wet-gas discharge coefficient [-]
+        - 'LockhartMartinelli': Final Lockhart-Martinelli parameter X [-]
+        - 'Fr_gas': Final gas densiometric Froude number [-]
+        - 'Fr_gas_th': Final throat gas densiometric Froude number [-]
+        - 'n': Final n parameter [-]
+        - 'C_Ch': Final Chisholm coefficient [-]
+        - 'epsilon': Expansion factor used [-]
+        - 'iterations': Number of iterations to convergence [-]
+        
+        If inputs are invalid and check_input=False, all values will be NaN.
+
+    Notes
+    -----
+    The iteration process continues until the relative change in corrected gas mass flow 
+    is less than 1e-10 or until 100 iterations are reached. If convergence is not achieved
+    and check_input=True, an exception is raised. If check_input=False, NaN results are returned.
+
+    References
+    ----------
+    .. [1] Reader-Harris, M. and E. Graham, An improved model for Venturi-tube over reading in wet gas. North Sea Flow Measurement Workshop, 2009 
+    .. [2] ISO/TR 11583:2012, Measurement of wet gas flow by means of pressure differential devices inserted in circular cross-section conduits.
+    
+    """
+    # Define results dictionary with NaN values for consistent return structure
+    results = {
+        "MassFlow_gas_initial": np.nan,
+        "MassFlow_gas_corrected": np.nan,
+        "MassFlow_liq": np.nan,
+        "MassFlow_tot": np.nan,
+        "VolFlow_gas": np.nan,
+        "VolFlow_liq": np.nan,
+        "VolFlow_tot": np.nan,
+        "OverRead": np.nan,
+        "C_wet": np.nan,
+        "LockhartMartinelli": np.nan,
+        "Fr_gas": np.nan,
+        "Fr_gas_th": np.nan,
+        "n": np.nan,
+        "C_Ch": np.nan,
+        "epsilon": np.nan,
+        "iterations": np.nan,
+    }
+
+    # Input validation and GMF/GVF handling
+    if check_input:
+        if D <= 0.0:
+            raise Exception("Pipe diameter D must be greater than zero.")
+        if d <= 0.0:
+            raise Exception("Throat diameter d must be greater than zero.")
+        if d >= D:
+            raise Exception("Throat diameter d must be smaller than pipe diameter D.")
+        if P1 <= 0.0:
+            raise Exception("Upstream pressure P1 must be greater than zero.")
+        if dP < 0.0:
+            raise Exception("Differential pressure dP must be non-negative.")
+        if rho_g <= 0.0:
+            raise Exception("Gas density rho_g must be greater than zero.")
+        if rho_l <= 0.0:
+            raise Exception("Liquid density rho_l must be greater than zero.")
+        if GMF is None and GVF is None:
+            raise Exception("Either GMF or GVF must be provided.")
+        if GMF is not None and not (0 < GMF <= 1):
+            raise Exception("GMF must be in the range (0, 1].")
+        if GVF is not None and not (0 < GVF <= 1):
+            raise Exception("GVF must be in the range (0, 1].")
+    else:
+        if D <= 0.0 or d <= 0.0 or d >= D or P1 <= 0.0 or dP < 0.0 or rho_g <= 0.0 or rho_l <= 0.0:
+            return results
+        if GMF is None and GVF is None:
+            return results
+        if GMF is not None and not (0 < GMF <= 1):
+            return results
+        if GVF is not None and not (0 < GVF <= 1):
+            return results
+
+    # Convert GVF to GMF if needed
+    if GMF is None:
+        GMF = _GVF_to_GMF(GVF=GVF, rho_gas=rho_g, rho_liquid=rho_l)
+
+    beta = calculate_beta_DP_meter(D=D, d=d)
+
+    # Calculate expansibility for gas
+    if epsilon is None:
+        epsilon_used = calculate_expansibility_venturi(
+            P1=P1,
+            dP=dP,
+            beta=beta,
+            kappa=kappa
+        )
+    else:
+        epsilon_used = epsilon
+
+    # Initial calculation of gas flowrates using gas density only
+    venturi_results_gas = calculate_flow_venturi(
+        D=D,
+        d=d,
+        dP=dP,
+        rho1=rho_g,
+        C=1.0,
+        epsilon=epsilon_used,
+        check_input=check_input
+    )
+
+    MassFlow_gas_initial = venturi_results_gas['MassFlow'] # kg/h
+    MassFlow_liq_initial = (MassFlow_gas_initial*(1-GMF))/GMF # kg/h
+
+    # Calculate Lockhart-Martinelli parameter
+    X = _lockhart_martinelli_parameter(
+        mass_flow_rate_liquid=MassFlow_liq_initial/3600, # Convert to kg/s
+        mass_flow_rate_gas=MassFlow_gas_initial/3600, # Convert to kg/s
+        density_liquid=rho_l,
+        density_gas=rho_g
+    )
+
+    # Calculate gas densiometric Froude number
+    Fr_gas = _gas_densiometric_Froude_number(
+        massflow_gas=MassFlow_gas_initial/3600, # Convert to kg/s
+        D=D,
+        rho_g=rho_g,
+        rho_l=rho_l
+    )
+
+    Fr_gas_th = Fr_gas / beta**2.5
+
+    # Calculate wet-gas discharge coefficient
+    C_wet = calculate_C_wetgas_venturi_ReaderHarrisGraham(
+        Fr_gas_th=Fr_gas_th,
+        X=X
+    )
+
+    # Calculate n
+    n = max(0.583 - 0.18*beta**2 - 0.578*np.exp(-0.8*Fr_gas/H), 0.392 - 0.18*beta**2)
+
+    # Calculate Chisholm coefficient
+    C_Ch = (rho_l/rho_g)**n + (rho_g/rho_l)**n
+
+    # Calculate over-read
+    OR = sqrt(1 + C_Ch*X + X**2)
+
+    # Calculate corrected gas mass flow using the over-read factor and wet-gas discharge coefficient
+    MassFlow_gas_corrected = (MassFlow_gas_initial / OR) * C_wet
+
+    # Iteration parameters
+    max_iterations = 100
+    tolerance = 1e-10 # Tolerance is set to match number of iterations provided in the ISO. 
+    MassFlow_gas_corrected_new = MassFlow_gas_corrected
+    
+    for iteration in range(max_iterations):
+
+        # Calculate gas densiometric Froude number
+        Fr_gas = _gas_densiometric_Froude_number(
+            massflow_gas=MassFlow_gas_corrected_new / 3600, # Convert to kg/s
+            D=D,
+            rho_g=rho_g,
+            rho_l=rho_l
+        )
+
+        Fr_gas_th = Fr_gas / beta**2.5
+
+        # Calculate wet-gas discharge coefficient
+        C_wet = calculate_C_wetgas_venturi_ReaderHarrisGraham(
+            Fr_gas_th=Fr_gas_th,
+            X=X
+        )
+
+        # Calculate n
+        n = max(0.583 - 0.18*beta**2 - 0.578*np.exp(-0.8*Fr_gas/H), 0.392 - 0.18*beta**2)
+
+        # Calculate Chisholm coefficient
+        C_Ch = (rho_l/rho_g)**n + (rho_g/rho_l)**n
+
+        # Calculate over-read
+        OR = sqrt(1 + C_Ch*X + X**2)
+
+        # Calculate new corrected gas mass flow
+        MassFlow_gas_corrected_new = (MassFlow_gas_initial / OR) * C_wet
+
+        # Check for convergence
+        relative_error = abs(MassFlow_gas_corrected_new - MassFlow_gas_corrected) / MassFlow_gas_corrected
+        if relative_error < tolerance:
+            MassFlow_gas_corrected = MassFlow_gas_corrected_new
+            break
+            
+        MassFlow_gas_corrected = MassFlow_gas_corrected_new
+    
+    else:
+        # If we reach here, iterations didn't converge
+        if check_input:
+            raise Exception(f"Wet-gas Venturi calculation did not converge after {max_iterations} iterations")
+        else:
+            return results
+
+    # Final total and liquid mass flow calculation
+    MassFlow_tot_final = MassFlow_gas_corrected / GMF
+    MassFlow_liq_final = MassFlow_tot_final*(1-GMF)
+
+    # Calculate volume flow
+    VolFlow_gas = MassFlow_gas_corrected / rho_g # m3/h
+    VolFlow_liq = MassFlow_liq_final / rho_l # m3/h
+    VolFlow_tot = VolFlow_gas + VolFlow_liq # m3/h Assuming no volume change on mixing and homogeneous flow
+
+    # Update results dictionary with calculated values
+    results.update({
+        "MassFlow_gas_initial": MassFlow_gas_initial,
+        "MassFlow_gas_corrected": MassFlow_gas_corrected,
+        "MassFlow_liq": MassFlow_liq_final,
+        "MassFlow_tot": MassFlow_tot_final,
+        "VolFlow_gas": VolFlow_gas,
+        "VolFlow_liq": VolFlow_liq,
+        "VolFlow_tot": VolFlow_tot,
+        "OverRead": OR,
+        "C_wet": C_wet,
+        "LockhartMartinelli": X,
+        "Fr_gas": Fr_gas,
+        "Fr_gas_th": Fr_gas_th,
+        "n": n,
+        "C_Ch": C_Ch,
+        "epsilon": epsilon_used,
+        "iterations": iteration + 1,
+    })
+
+    return results
+
+
+# Have not validated the homogeneous model yet, so commenting out for now
+
+# def calculate_flow_venturi_homogeneous_wetgas(
+#     D, d, dP, rho_g, rho_l, GMF, C=None, epsilon=None, check_input=False
+# ):
+#     """
+#     Calculate the corrected gas mass flow rate for a Venturi meter in wet-gas conditions
+#     using the homogeneous correction model.
+
+#     NOTE: This function has not been validated yet. Use with caution.
+
+#     Parameters
+#     ----------
+#     D : float
+#         Pipe diameter [m]
+#     d : float
+#         Throat diameter [m]
+#     dP : float
+#         Differential pressure [mbar]
+#     rho_g : float
+#         Gas density [kg/m3]
+#     rho_l : float
+#         Liquid density [kg/m3]
+#     GMF : float
+#         Gas mass fraction (by mass, 0 < GMF <= 1)
+#     C : float, optional
+#         Discharge coefficient (default 0.984)
+#     epsilon : float, optional
+#         Expansion factor (default 1.0)
+#     check_input : bool, optional
+#         If True, checks input validity
+
+#     Returns
+#     -------
+#     results : dict
+#         Dictionary containing:
+#         - 'MassFlow_indicated': Uncorrected gas mass flow [kg/h]
+#         - 'MassFlow_corrected': Corrected gas mass flow [kg/h]
+#         - 'OverRead': Over-read factor (OR)
+#         - 'MixtureDensity': Homogeneous mixture density [kg/m3]
+#         - 'LockhartMartinelli': Lockhart-Martinelli parameter X
+#         - 'GMF': Gas mass fraction used
+#         - 'C': Discharge coefficient used
+#         - 'epsilon': Expansion factor used
+#         - 'iterations': Number of iterations to convergence
+#     """
+#     # Input checks
+#     if check_input:
+#         if D <= 0.0 or d <= 0.0 or dP <= 0.0 or rho_g <= 0.0 or rho_l <= 0.0 or not (0 < GMF <= 1):
+#             raise Exception("Invalid input parameters for wet-gas Venturi calculation.")
+
+#     # Defaults
+#     C_used = C if C is not None else 0.984
+#     epsilon_used = epsilon if epsilon is not None else 1.0
+
+#     # Step 1: Calculate initial gas mass flow using gas density only
+#     venturi_results_gas = calculate_flow_venturi(
+#         D=D,
+#         d=d,
+#         dP=dP,
+#         rho1=rho_g,
+#         C=C_used,
+#         epsilon=epsilon_used,
+#         check_input=check_input
+#     )
+    
+#     MassFlow_gas_initial = venturi_results_gas['MassFlow']
+
+#     # Iteration parameters
+#     max_iterations = 100
+#     tolerance = 1e-6
+#     MassFlow_corrected = MassFlow_gas_initial
+    
+#     for iteration in range(max_iterations):
+#         # Step 2: Calculate total mass flow from corrected gas mass flow
+#         MassFlow_total = MassFlow_corrected / GMF
+        
+#         # Step 3: Calculate individual phase mass flow rates
+#         mass_flow_rate_gas = MassFlow_corrected
+#         mass_flow_rate_liquid = MassFlow_total - MassFlow_corrected
+        
+#         # Step 4: Calculate Lockhart-Martinelli parameter
+#         X = _lockhart_martinelli_parameter(
+#             mass_flow_rate_liquid=mass_flow_rate_liquid,
+#             mass_flow_rate_gas=mass_flow_rate_gas,
+#             density_liquid=rho_l,
+#             density_gas=rho_g
+#         )
+        
+#         # Step 5: Calculate homogeneous correction factor and over-read
+#         C_hom = (rho_g / rho_l) ** 0.5 + (rho_l / rho_g) ** 0.5
+#         OR = (1 + C_hom * X + X ** 2) ** 0.5
+        
+#         # Step 6: Calculate new corrected mass flow
+#         MassFlow_corrected_new = MassFlow_gas_initial / OR
+        
+#         # Check for convergence
+#         relative_error = abs(MassFlow_corrected_new - MassFlow_corrected) / MassFlow_corrected
+#         if relative_error < tolerance:
+#             MassFlow_corrected = MassFlow_corrected_new
+#             break
+            
+#         MassFlow_corrected = MassFlow_corrected_new
+    
+#     else:
+#         # If we reach here, iterations didn't converge
+#         if check_input:
+#             raise Exception(f"Wet-gas Venturi calculation did not converge after {max_iterations} iterations")
+    
+#     # Final calculations
+#     MassFlow_total_final = MassFlow_corrected / GMF
+#     mass_flow_rate_liquid_final = MassFlow_total_final - MassFlow_corrected
+#     rho_hom = rho_l * (mass_flow_rate_liquid_final / MassFlow_total_final) + rho_g * (MassFlow_corrected / MassFlow_total_final)
+
+#     results = {
+#         "MassFlow_indicated": MassFlow_gas_initial,
+#         "MassFlow_corrected": MassFlow_corrected,
+#         "OverRead": OR,
+#         "MixtureDensity": rho_hom,
+#         "LockhartMartinelli": X,
+#         "GMF": GMF,
+#         "C": C_used,
+#         "epsilon": epsilon_used,
+#         "iterations": iteration + 1,
+#     }
+#     return results
