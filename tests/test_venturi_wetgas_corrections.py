@@ -96,34 +96,16 @@ def test_calculate_C_wetgas_venturi_ReaderHarrisGraham_invalid_inputs():
 
 def test_calculate_flow_wetgas_venturi_ReaderHarrisGraham():
     cases = {
-        'case01': {
-            'input': {
-                'D': 0.1,
-                'd': 0.06,
-                'P1': 60.0,
-                'dP': 500,
-                'rho_g': 50.0,
-                'rho_l': 800.0,
-                'GMF': 0.6666666666667,
-                'kappa': 1.3,
-                'check_input': False
-            },
-            'expected': {
-                'MassFlow_gas_initial': 24255.48402999051,
-                'MassFlow_gas_corrected': 19149.329321232053,
-                'MassFlow_liq': 9574.664660614588,
-                'MassFlow_tot': 28723.99398184664,
-                'OverRead': 1.2355130324095747,
-                'C_wet': 0.9754184212127738,
-                'LockhartMartinelli': 0.12499999999998121,
-                'Fr_gas': 3.531108386512728,
-                'Fr_gas_th': 12.662892569089944,
-                'n': 0.4839157124785805,
-                'C_Ch': 4.086939626031874,
-                'epsilon': 0.9942360398004272,
-                'iterations': 6
-            }
-        }
+        'case01': {'input': {'D': 0.12, 'd': 0.08, 'P1': 50.0, 'dP': 450, 'rho_g': 40.0, 'rho_l': 850.0, 'GMF': 0.6666666666667, 'kappa': 1.3, 'check_input': False},
+                   'expected': {'MassFlow_gas_initial': 38063.304281883706, 'MassFlow_gas_corrected': 30217.522925625468, 'MassFlow_liq': 15108.761462810464, 'MassFlow_tot': 45326.28438843593, 'VolFlow_gas': 755.4380731406367, 'VolFlow_liq': 17.77501348565937, 'VolFlow_tot': 773.213086626296, 'OverRead': 1.2250949095211476, 'C_wet': 0.9725727761407659, 'LockhartMartinelli': 0.10846522890931178, 'Fr_gas': 3.8001991303710585, 'Fr_gas_th': 10.47211738917464, 'n': 0.47535583805692694, 'C_Ch': 4.509213103318227, 'epsilon': 0.993109300625241, 'iterations': 6}},
+        'case02': {'input': {'D': 0.12, 'd': 0.08, 'P1': 50.0, 'dP': 550, 'rho_g': 50.0, 'rho_l': 850.0, 'GMF': 0.6666666666667, 'kappa': 1.3, 'check_input': False},
+                   'expected': {'MassFlow_gas_initial': 46975.033547223604, 'MassFlow_gas_corrected': 37089.08852152743, 'MassFlow_liq': 18544.54426076093, 'MassFlow_tot': 55633.63278228836, 'VolFlow_gas': 741.7817704305486, 'VolFlow_liq': 21.817110895012856, 'VolFlow_tot': 763.5988813255615, 'OverRead': 1.2336605613787315, 'C_wet': 0.9740354037319746, 'LockhartMartinelli': 0.12126781251814828, 'Fr_gas': 4.197939389569316, 'Fr_gas_th': 11.568160660022452, 'n': 0.48288989636823004, 'C_Ch': 4.1825814106479715, 'epsilon': 0.9915795625474295, 'iterations': 5}},
+        'case03': {'input': {'D': 0.12, 'd': 0.08, 'P1': 50.0, 'dP': 650, 'rho_g': 60.0, 'rho_l': 850.0, 'GMF': 0.6666666666667, 'kappa': 1.3, 'check_input': False},
+                   'expected': {'MassFlow_gas_initial': 55855.09273617424, 'MassFlow_gas_corrected': 43920.53612074391, 'MassFlow_liq': 21960.26806036866, 'MassFlow_tot': 65880.80418111257, 'VolFlow_gas': 732.0089353457319, 'VolFlow_liq': 25.83560948278666, 'VolFlow_tot': 757.8445448285186, 'OverRead': 1.2403463223282916, 'C_wet': 0.9753215469423092, 'LockhartMartinelli': 0.13284223283099433, 'Fr_gas': 4.566657713062191, 'Fr_gas_th': 12.584228880315958, 'n': 0.48802701319020325, 'C_Ch': 3.9205298600512526, 'epsilon': 0.9900503659309642, 'iterations': 4}},
+        'case04': {'input': {'D': 0.12, 'd': 0.08, 'P1': 50.0, 'dP': 750, 'rho_g': 70.0, 'rho_l': 850.0, 'GMF': 0.6666666666667, 'kappa': 1.3, 'check_input': False},
+                   'expected': {'MassFlow_gas_initial': 64705.17944668863, 'MassFlow_gas_corrected': 50711.735110735375, 'MassFlow_liq': 25355.86755536388, 'MassFlow_tot': 76067.60266609925, 'VolFlow_gas': 724.4533587247911, 'VolFlow_liq': 29.83043241807515, 'VolFlow_tot': 754.2837911428662, 'OverRead': 1.2459193576866787, 'C_wet': 0.9764710178788921, 'LockhartMartinelli': 0.14348601079586634, 'Fr_gas': 4.9128346564015475, 'Fr_gas_th': 13.53818036120097, 'n': 0.491648996619922, 'C_Ch': 3.7057745742248547, 'epsilon': 0.9885217041581938, 'iterations': 3}},
+        'case05': {'input': {'D': 0.12, 'd': 0.08, 'P1': 50.0, 'dP': 850, 'rho_g': 80.0, 'rho_l': 850.0, 'GMF': 0.6666666666667, 'kappa': 1.3, 'check_input': False},
+                   'expected': {'MassFlow_gas_initial': 73526.17355917922, 'MassFlow_gas_corrected': 57461.27070391029, 'MassFlow_liq': 28730.63535195083, 'MassFlow_tot': 86191.90605586112, 'VolFlow_gas': 718.2658837988786, 'VolFlow_liq': 33.80074747288333, 'VolFlow_tot': 752.0666312717619, 'OverRead': 1.2508013183707996, 'C_wet': 0.9775108600458319, 'LockhartMartinelli': 0.15339299776945103, 'Fr_gas': 5.240887879590297, 'Fr_gas_th': 14.442188742149748, 'n': 0.4942691427142624, 'C_Ch': 3.526722432835647, 'epsilon': 0.9869935706113948, 'iterations': 5}}
     }
 
     for case_name, case in cases.items():
