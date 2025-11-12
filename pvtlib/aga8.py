@@ -25,7 +25,7 @@ The code is based upon the python library pyaga8, which is again based upon the 
 
 import pyaga8
 from scipy import optimize
-from math import nan, isnan
+from numpy import nan, isnan
 
 class AGA8:
     """
