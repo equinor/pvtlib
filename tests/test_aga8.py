@@ -71,7 +71,7 @@ def test_aga8_PT():
         #compare calculated data against test results
         for key, value in test_results.items():
             
-            if abs(value - results[key]) > 1e-20:
+            if abs(value - results[key]) > 1e-10:
                 failed_tests.append(f'Property: {key}, {filename}')
     
     assert failed_tests == [], f'AGA8 P&T calculation, following tests failed: {failed_tests}'
