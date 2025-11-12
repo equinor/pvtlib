@@ -29,7 +29,7 @@ def parse_requirements(filename):
 
 setup(
     name='pvtlib',
-    version='1.8.2',
+    version='1.9.0',
     author='Christian Hågenvik',
     author_email='chaagen2013@gmail.com',
     description='A library containing various tools in the categories of thermodynamics, fluid mechanics, metering etc.',
@@ -44,6 +44,6 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
     ],
-    python_requires='>=3.9, <3.12',
+    python_requires='>=3.9',
     keywords='thermodynamics fluid-mechanics metering aga8',
 )
