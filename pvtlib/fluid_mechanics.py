@@ -437,12 +437,14 @@ def mass_percent_to_volume_percent(ContaminantMassP, DominantPhase_EOS_density, 
 
 def dominant_phase_corrected_density(measured_total_density, ContaminantVolP, ContaminantPhase_EOS_density):    
     '''
-    Use measured total density (for example from a coriolis meter) to estimate a "measured" density of the dominant phase corrected for contamination, 
+    Use measured total density (for example from a coriolis meter) to estimate a "measured" density of the dominant phase corrected for contamination,
     i.e. the density with the contaminant phase removed.
     The EOS density can be calculated from an equation of state, or from another source, as long as it represents the density of the dominant and contaminant phases.
 
+    If ContaminantVolP is zero, the function returns the measured_total_density.
+
     Example of usage: What is the density of the oil phase if the measured density is 800 kg/m3 and the water fraction is 1vol%?
-    
+
     Parameters
     ----------
     measured_total_density : float
@@ -456,6 +458,7 @@ def dominant_phase_corrected_density(measured_total_density, ContaminantVolP, Co
     -------
     Density_dominant_corr : float
         Estimated density of the dominant phase, based on measured density, corrected for contaminant phase [kg/m3]
+        If ContaminantVolP is zero, returns measured_total_density.
 
     '''
     
@@ -464,6 +467,8 @@ def dominant_phase_corrected_density(measured_total_density, ContaminantVolP, Co
     # Check for division by zero error, in which the function will return nan
     if (1 - Contaminant_alpha) == 0:
         Density_dominant_corr = np.nan
+    elif Contaminant_alpha == 0:
+        Density_dominant_corr = measured_total_density
     else:
         Density_dominant_corr = (measured_total_density - ContaminantPhase_EOS_density * Contaminant_alpha) / (
                     1 - Contaminant_alpha)
