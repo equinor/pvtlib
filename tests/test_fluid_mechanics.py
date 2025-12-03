@@ -305,6 +305,33 @@ def test_dominant_phase_corrected_density_3():
     
     assert round(corrected_density, 2) == 888.89, f'Dominant phase corrected density calculation failed'
 
+def test_dominant_phase_corrected_density_4():
+    '''
+    Test calculation of dominant phase corrected density.
+    Example: Contaminant volume fraction is 0 vol%, should return measured density.
+    '''
+
+    corrected_density = fluid_mechanics.dominant_phase_corrected_density(
+        measured_total_density=900,
+        ContaminantVolP=0,
+        ContaminantPhase_EOS_density=1000
+    )
+
+    assert round(corrected_density, 2) == 900.0, f'Dominant phase corrected density calculation failed'
+
+def test_dominant_phase_corrected_density_5():
+    '''
+    Test calculation of dominant phase corrected density.
+    Example: Contaminant volume fraction is 0 vol% and ContaminantPhase_EOS_density is np.nan, should return measured density.
+    '''
+
+    corrected_density = fluid_mechanics.dominant_phase_corrected_density(
+        measured_total_density=900,
+        ContaminantVolP=0,
+        ContaminantPhase_EOS_density=np.nan
+    )
+
+    assert round(corrected_density, 2) == 900.0, f'Dominant phase corrected density calculation failed'
 
 def test_dominant_phase_corrected_density_all_zeros():
     '''
