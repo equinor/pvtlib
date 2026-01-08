@@ -23,6 +23,7 @@ SOFTWARE.
 
 from pvtlib import unit_converters
 import math
+import numpy as np
 
 def energy_rate_balance(h_in, h_out, massflow, vel_in, vel_out):
     '''
@@ -139,3 +140,150 @@ def natural_gas_viscosity_Lee_et_al(T, M, rho):
     mu = K1*math.exp(X*(rho_gpercm3)**Y)/1e4 #Convert from microPoise to cP
 
     return mu
+
+#%% Speed of sound based methods for determining physical properties
+def density_from_sos_kappa(measured_sos, kappa, pressure_bara):
+    '''
+    Calculate gas density from speed of sound, isentropic exponent and pressure.
+    The method is described in [1]_ from the GFMW2024. 
+
+    Parameters
+    ----------
+    measured_sos : float
+        Measured Speed of Sound [m/s]
+        Measured Speed of Sound [m/s]
+    kappa : float
+        Isentropic Exponent calculated by appropriate equation of state [-]
+    pressure_bara : float
+        Measured pressure [bara]
+
+    Returns
+    -------
+    rho : float
+        Gas density from speed of sound, isentropic exponent and pressure [kg/m3]
+
+    References
+    ----------
+    .. [1] Hågenvik, C., D. Van Putten, and D. Mæland, Exploring the Relationship between Speed of Sound, Density, and Isentropic Exponent. Global Flow Measurement Workshop, 2024
+    '''
+    
+    P_Pa = pressure_bara*10**5
+    
+    if measured_sos==0:
+        rho = np.nan
+    else:
+        rho = kappa * P_Pa/(measured_sos**2)
+
+    return rho
+
+def sos_from_rho_kappa(measured_rho, kappa, pressure_bara):
+    '''
+    Calculate speed of sound from density, isentropic exponent and pressure. 
+    The method is described in [1]_ from the GFMW2024. 
+
+    Parameters
+    ----------
+    measured_rho : float
+        Measured gas density [kg/m3]
+    kappa : float
+        Isentropic Exponent calculated by appropriate equation of state [-]
+    pressure_bara : float
+        Measured pressure [bara]
+
+    Returns
+    -------
+    sos : float
+        Speed of sound [m/s]
+
+    References
+    ----------
+    .. [1] Hågenvik, C., D. Van Putten, and D. Mæland, Exploring the Relationship between Speed of Sound, Density, and Isentropic Exponent. Global Flow Measurement Workshop, 2024
+    '''
+    P_Pa = pressure_bara * 1e5
+
+    denominator = measured_rho
+    numerator = kappa * P_Pa
+
+    if denominator == 0 or numerator / denominator < 0:
+        sos = np.nan
+    else:
+        sos = np.sqrt(numerator / denominator)
+
+    return sos
+
+def molar_mass_from_sos_kappa(measured_sos, kappa, Z, temperature_C, R=8.3144621):
+    '''
+    Calculate molar mass from measured speed of sound, isentropic exponent, compressibility factor, and temperature.
+    Based on the principles described in [1]_ from GFMW2024. 
+
+    Same equation of state must be used to establish both kappa and Z, otherwise it can cause inconsistencies.
+
+    Parameters
+    ----------
+    measured_sos : float
+        Measured speed of sound [m/s]
+    kappa : float
+        Isentropic exponent calculated by appropriate equation of state [-]
+    Z : float
+        Compressibility factor calculated by appropriate equation of state [-]
+    temperature_C : float
+        Temperature [C]
+    R : float, optional
+        Universal gas constant [J/(mol·K)]. Default is 8.3144621 (GERG-2008).
+
+    Returns
+    -------
+    M : float
+        Molar mass [kg/kmol]
+
+    References
+    ----------
+    .. [1] Hågenvik, C., D. Van Putten, and D. Mæland, Exploring the Relationship between Speed of Sound, Density, and Isentropic Exponent. Global Flow Measurement Workshop, 2024
+    '''
+    T_K = temperature_C + 273.15
+
+    if measured_sos == 0:
+        M = np.nan
+    else:
+        M = (kappa * Z * R * T_K) / (measured_sos ** 2)
+        M = M * 1e3  # Convert from kg/mol to kg/kmol
+
+    return M
+
+
+def Z_from_sos_kappa(measured_sos, kappa, molar_mass, temperature_C, R=8.3144621):
+    '''
+    Calculate compressibility factor Z from measured speed of sound, isentropic exponent, molar mass, and temperature.
+    Based on the principles described in [1]_ from GFMW2024.
+
+    Parameters
+    ----------
+    measured_sos : float
+        Measured speed of sound [m/s]
+    kappa : float
+        Isentropic exponent calculated by appropriate equation of state [-]
+    molar_mass : float
+        Molar mass [kg/kmol]
+    temperature_C : float
+        Temperature [C]
+    R : float, optional
+        Universal gas constant [J/(mol·K)]. Default is 8.3144621 (GERG-2008).
+
+    Returns
+    -------
+    Z : float
+        Compressibility factor [-]
+
+    References
+    ----------
+    .. [1] Hågenvik, C., D. Van Putten, and D. Mæland, Exploring the Relationship between Speed of Sound, Density, and Isentropic Exponent. Global Flow Measurement Workshop, 2024
+    '''
+    T_K = temperature_C + 273.15
+    M_kg_per_mol = molar_mass / 1e3  # Convert kg/kmol to kg/mol
+
+    if kappa == 0 or R == 0 or T_K == 0:
+        Z = np.nan
+    else:
+        Z = (measured_sos ** 2) * M_kg_per_mol / (kappa * R * T_K)
+
+    return Z
