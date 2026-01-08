@@ -21,7 +21,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from pvtlib import unit_converters
 import math
 import numpy as np
 
@@ -130,7 +129,7 @@ def natural_gas_viscosity_Lee_et_al(T, M, rho):
     https://petrowiki.spe.org/Gas_viscosity
     '''
 
-    T_R = unit_converters.celsius_to_rankine(T)
+    T_R = (T + 273.15) * 9/5  # Convert Celsius to Rankine
     rho_gpercm3 = rho/1000
 
     K1 = ((9.4+0.02*M)*T_R**1.5)/(209+19*M+T_R)
@@ -287,3 +286,102 @@ def Z_from_sos_kappa(measured_sos, kappa, molar_mass, temperature_C, R=8.3144621
         Z = (measured_sos ** 2) * M_kg_per_mol / (kappa * R * T_K)
 
     return Z
+
+def properties_from_sos_kappa(gas_composition, measured_sos, pressure_bara, temperature_C, EOS='GERG-2008'):
+    '''
+    Calculate gas properties (density, molar mass, compressibility factor) from measured speed of sound,
+    using the relationship between speed of sound, density, and isentropic exponent.
+
+    This function uses an equation of state (EOS) to calculate kappa and Z at the given conditions,
+    then applies these to determine the properties from the measured speed of sound.
+
+    Parameters
+    ----------
+    gas_composition : dict
+        Gas composition dictionary with component names as keys and mole percent or mole fraction as values.
+        Uses the same format as AGA8 (C1, N2, CO2, C2, C3, iC4, nC4, iC5, nC5, nC6, etc.)
+    measured_sos : float
+        Measured speed of sound [m/s]
+    pressure_bara : float
+        Pressure [bara]
+    temperature_C : float
+        Temperature [C]
+    EOS : str, optional
+        Equation of state to use. Either 'GERG-2008' or 'DETAIL'. Default is 'GERG-2008'.
+
+    Returns
+    -------
+    output : dict
+        Dictionary containing:
+            'rho' : Mass density calculated from measured speed of sound [kg/m3]
+            'M' : Molar mass calculated from measured speed of sound [kg/kmol]
+            'Z' : Compressibility factor calculated from measured speed of sound [-]
+
+    References
+    ----------
+    .. [1] Hågenvik, C., D. Van Putten, and D. Mæland, Exploring the Relationship between Speed of Sound, 
+           Density, and Isentropic Exponent. Global Flow Measurement Workshop, 2024
+    '''
+
+    output = {
+        'rho' : np.nan,
+        'M' : np.nan,
+        'Z' : np.nan
+    }
+
+    # Use caching to avoid re-initializing the AGA8 object for performance
+    # This is important for Monte Carlo simulations or repeated calls
+    if not hasattr(properties_from_sos_kappa, '_cached_data'):
+        properties_from_sos_kappa._cached_data = {}
+    
+    # Check if we have a cached AGA8 object for this EOS
+    if EOS not in properties_from_sos_kappa._cached_data:
+        # Initialize AGA8 object for the specified equation of state
+        from pvtlib import aga8
+        properties_from_sos_kappa._cached_data[EOS] = aga8.AGA8(EOS)
+    
+    # Get the cached AGA8 object
+    eos_adapter = properties_from_sos_kappa._cached_data[EOS]
+    
+    # Calculate gas properties using the equation of state
+    eos_properties = eos_adapter.calculate_from_PT(
+        composition=gas_composition,
+        pressure=pressure_bara,
+        temperature=temperature_C,
+        pressure_unit='bara',
+        temperature_unit='C'
+    )
+    
+    # Extract the calculated properties from EOS
+    kappa_eos = eos_properties['kappa']  # Isentropic exponent from EOS
+    Z_eos = eos_properties['Z']          # Compressibility factor from EOS
+    M_eos = eos_properties['mm']         # Molar mass from EOS [g/mol], need to convert to kg/kmol
+    
+    # Calculate density from measured speed of sound and EOS kappa
+    output['rho'] = density_from_sos_kappa(
+        measured_sos=measured_sos,
+        kappa=kappa_eos,
+        pressure_bara=pressure_bara
+    )
+    
+    # Calculate molar mass from measured speed of sound and EOS properties
+    output['M'] = molar_mass_from_sos_kappa(
+        measured_sos=measured_sos,
+        kappa=kappa_eos,
+        Z=Z_eos,
+        temperature_C=temperature_C
+    )
+    
+    # Calculate compressibility factor from measured speed of sound and EOS properties
+    # Note: M_eos is in g/mol, need to convert to kg/kmol (multiply by 1)
+    output['Z'] = Z_from_sos_kappa(
+        measured_sos=measured_sos,
+        kappa=kappa_eos,
+        molar_mass=M_eos,  # AGA8 returns mm in g/mol, which equals kg/kmol numerically
+        temperature_C=temperature_C
+    )
+    
+    return output
+
+
+
