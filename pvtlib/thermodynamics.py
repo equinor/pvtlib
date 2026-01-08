@@ -21,8 +21,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from pvtlib import unit_converters
 import math
+import numpy as np
 
 def energy_rate_balance(h_in, h_out, massflow, vel_in, vel_out):
     '''
@@ -129,7 +129,7 @@ def natural_gas_viscosity_Lee_et_al(T, M, rho):
     https://petrowiki.spe.org/Gas_viscosity
     '''
 
-    T_R = unit_converters.celsius_to_rankine(T)
+    T_R = (T + 273.15) * 9/5  # Convert Celsius to Rankine
     rho_gpercm3 = rho/1000
 
     K1 = ((9.4+0.02*M)*T_R**1.5)/(209+19*M+T_R)
@@ -139,3 +139,249 @@ def natural_gas_viscosity_Lee_et_al(T, M, rho):
     mu = K1*math.exp(X*(rho_gpercm3)**Y)/1e4 #Convert from microPoise to cP
 
     return mu
+
+#%% Speed of sound based methods for determining physical properties
+def density_from_sos_kappa(measured_sos, kappa, pressure_bara):
+    '''
+    Calculate gas density from speed of sound, isentropic exponent and pressure.
+    The method is described in [1]_ from the GFMW2024. 
+
+    Parameters
+    ----------
+    measured_sos : float
+        Measured Speed of Sound [m/s]
+        Measured Speed of Sound [m/s]
+    kappa : float
+        Isentropic Exponent calculated by appropriate equation of state [-]
+    pressure_bara : float
+        Measured pressure [bara]
+
+    Returns
+    -------
+    rho : float
+        Gas density from speed of sound, isentropic exponent and pressure [kg/m3]
+
+    References
+    ----------
+    .. [1] Hågenvik, C., D. Van Putten, and D. Mæland, Exploring the Relationship between Speed of Sound, Density, and Isentropic Exponent. Global Flow Measurement Workshop, 2024
+    '''
+    
+    P_Pa = pressure_bara*10**5
+    
+    if measured_sos==0:
+        rho = np.nan
+    else:
+        rho = kappa * P_Pa/(measured_sos**2)
+
+    return rho
+
+def sos_from_rho_kappa(measured_rho, kappa, pressure_bara):
+    '''
+    Calculate speed of sound from density, isentropic exponent and pressure. 
+    The method is described in [1]_ from the GFMW2024. 
+
+    Parameters
+    ----------
+    measured_rho : float
+        Measured gas density [kg/m3]
+    kappa : float
+        Isentropic Exponent calculated by appropriate equation of state [-]
+    pressure_bara : float
+        Measured pressure [bara]
+
+    Returns
+    -------
+    sos : float
+        Speed of sound [m/s]
+
+    References
+    ----------
+    .. [1] Hågenvik, C., D. Van Putten, and D. Mæland, Exploring the Relationship between Speed of Sound, Density, and Isentropic Exponent. Global Flow Measurement Workshop, 2024
+    '''
+    P_Pa = pressure_bara * 1e5
+
+    denominator = measured_rho
+    numerator = kappa * P_Pa
+
+    if denominator == 0 or numerator / denominator < 0:
+        sos = np.nan
+    else:
+        sos = np.sqrt(numerator / denominator)
+
+    return sos
+
+def molar_mass_from_sos_kappa(measured_sos, kappa, Z, temperature_C, R=8.3144621):
+    '''
+    Calculate molar mass from measured speed of sound, isentropic exponent, compressibility factor, and temperature.
+    Based on the principles described in [1]_ from GFMW2024. 
+
+    Same equation of state must be used to establish both kappa and Z, otherwise it can cause inconsistencies.
+
+    Parameters
+    ----------
+    measured_sos : float
+        Measured speed of sound [m/s]
+    kappa : float
+        Isentropic exponent calculated by appropriate equation of state [-]
+    Z : float
+        Compressibility factor calculated by appropriate equation of state [-]
+    temperature_C : float
+        Temperature [C]
+    R : float, optional
+        Universal gas constant [J/(mol·K)]. Default is 8.3144621 (GERG-2008).
+
+    Returns
+    -------
+    M : float
+        Molar mass [kg/kmol]
+
+    References
+    ----------
+    .. [1] Hågenvik, C., D. Van Putten, and D. Mæland, Exploring the Relationship between Speed of Sound, Density, and Isentropic Exponent. Global Flow Measurement Workshop, 2024
+    '''
+    T_K = temperature_C + 273.15
+
+    if measured_sos == 0:
+        M = np.nan
+    else:
+        M = (kappa * Z * R * T_K) / (measured_sos ** 2)
+        M = M * 1e3  # Convert from kg/mol to kg/kmol
+
+    return M
+
+
+def Z_from_sos_kappa(measured_sos, kappa, molar_mass, temperature_C, R=8.3144621):
+    '''
+    Calculate compressibility factor Z from measured speed of sound, isentropic exponent, molar mass, and temperature.
+    Based on the principles described in [1]_ from GFMW2024.
+
+    Parameters
+    ----------
+    measured_sos : float
+        Measured speed of sound [m/s]
+    kappa : float
+        Isentropic exponent calculated by appropriate equation of state [-]
+    molar_mass : float
+        Molar mass [kg/kmol]
+    temperature_C : float
+        Temperature [C]
+    R : float, optional
+        Universal gas constant [J/(mol·K)]. Default is 8.3144621 (GERG-2008).
+
+    Returns
+    -------
+    Z : float
+        Compressibility factor [-]
+
+    References
+    ----------
+    .. [1] Hågenvik, C., D. Van Putten, and D. Mæland, Exploring the Relationship between Speed of Sound, Density, and Isentropic Exponent. Global Flow Measurement Workshop, 2024
+    '''
+    T_K = temperature_C + 273.15
+    M_kg_per_mol = molar_mass / 1e3  # Convert kg/kmol to kg/mol
+
+    if kappa == 0 or R == 0 or T_K == 0:
+        Z = np.nan
+    else:
+        Z = (measured_sos ** 2) * M_kg_per_mol / (kappa * R * T_K)
+
+    return Z
+
+def properties_from_sos_kappa(gas_composition, measured_sos, pressure_bara, temperature_C, EOS='GERG-2008'):
+    '''
+    Calculate gas properties (density, molar mass, compressibility factor) from measured speed of sound,
+    using the relationship between speed of sound, density, and isentropic exponent.
+
+    This function uses an equation of state (EOS) to calculate kappa and Z at the given conditions,
+    then applies these to determine the properties from the measured speed of sound.
+
+    Parameters
+    ----------
+    gas_composition : dict
+        Gas composition dictionary with component names as keys and mole percent or mole fraction as values.
+        Uses the same format as AGA8 (C1, N2, CO2, C2, C3, iC4, nC4, iC5, nC5, nC6, etc.)
+    measured_sos : float
+        Measured speed of sound [m/s]
+    pressure_bara : float
+        Pressure [bara]
+    temperature_C : float
+        Temperature [C]
+    EOS : str, optional
+        Equation of state to use. Either 'GERG-2008' or 'DETAIL'. Default is 'GERG-2008'.
+
+    Returns
+    -------
+    output : dict
+        Dictionary containing:
+            'rho' : Mass density calculated from measured speed of sound [kg/m3]
+            'mm' : Molar mass calculated from measured speed of sound [kg/kmol]
+            'z' : Compressibility factor calculated from measured speed of sound [-]
+
+    References
+    ----------
+    .. [1] Hågenvik, C., D. Van Putten, and D. Mæland, Exploring the Relationship between Speed of Sound, 
+           Density, and Isentropic Exponent. Global Flow Measurement Workshop, 2024
+    '''
+
+    output = {
+        'rho' : np.nan,
+        'mm' : np.nan,
+        'z' : np.nan
+    }
+
+    # Use caching to avoid re-initializing the AGA8 object for performance
+    # This is important for Monte Carlo simulations or repeated calls
+    if not hasattr(properties_from_sos_kappa, '_cached_data'):
+        properties_from_sos_kappa._cached_data = {}
+    
+    # Check if we have a cached AGA8 object for this EOS
+    if EOS not in properties_from_sos_kappa._cached_data:
+        # Initialize AGA8 object for the specified equation of state
+        from pvtlib import aga8
+        properties_from_sos_kappa._cached_data[EOS] = aga8.AGA8(EOS)
+    
+    # Get the cached AGA8 object
+    eos_adapter = properties_from_sos_kappa._cached_data[EOS]
+    
+    # Calculate gas properties using the equation of state
+    eos_properties = eos_adapter.calculate_from_PT(
+        composition=gas_composition,
+        pressure=pressure_bara,
+        temperature=temperature_C,
+        pressure_unit='bara',
+        temperature_unit='C'
+    )
+    
+    # Extract the calculated properties from EOS
+    kappa_eos = eos_properties['kappa']  # Isentropic exponent from EOS
+    Z_eos = eos_properties['z']          # Compressibility factor from EOS
+    M_eos = eos_properties['mm']         # Molar mass from EOS [g/mol], need to convert to kg/kmol
+    
+    # Calculate density from measured speed of sound and EOS kappa
+    output['rho'] = density_from_sos_kappa(
+        measured_sos=measured_sos,
+        kappa=kappa_eos,
+        pressure_bara=pressure_bara
+    )
+    
+    # Calculate molar mass from measured speed of sound and EOS properties
+    output['mm'] = molar_mass_from_sos_kappa(
+        measured_sos=measured_sos,
+        kappa=kappa_eos,
+        Z=Z_eos,
+        temperature_C=temperature_C
+    )
+    
+    # Calculate compressibility factor from measured speed of sound and EOS properties
+    # Note: M_eos is in g/mol, need to convert to kg/kmol (multiply by 1)
+    output['z'] = Z_from_sos_kappa(
+        measured_sos=measured_sos,
+        kappa=kappa_eos,
+        molar_mass=M_eos,  # AGA8 returns mm in g/mol, which equals kg/kmol numerically
+        temperature_C=temperature_C
+    )
+    
+    return output
+
+
+

@@ -22,6 +22,7 @@ SOFTWARE.
 """
 
 from pvtlib import thermodynamics, utilities
+import numpy as np
 
 def test_natural_gas_viscosity_Lee_et_al():
 
@@ -50,7 +51,558 @@ def test_natural_gas_viscosity_Lee_et_al():
         relative_error=abs(utilities.calculate_relative_deviation(mu,case_dict['mu_expected']))
         
         assert relative_error<case_dict['criteria'], f'Natural gas viscosity calculation failed for {case_name}'
-        
+
+
+def test_density_from_sos_kappa():
+    """
+    Test density_from_sos_kappa function based on GFMW2024 paper.
+    
+    Reference case:
+    - Pressure: 100 bara
+    - Temperature: 50 C
+    - Properties from GERG-2008:
+      - rho: 75.9810 kg/m3
+      - sos: 434.0811 m/s
+      - M: 17.8016 kg/kmol
+      - Z: 0.8720
+      - kappa: 1.4317 (calculated from GERG-2008)
+    
+    When measured speed of sound is 433 m/s, expected density is 76.361 kg/m3
+    """
+    # Input values
+    measured_sos = 433.0  # m/s
+    kappa = 1.4317  # From GERG-2008
+    pressure_bara = 100.0  # bara
+    
+    # Expected result from GFMW2024 paper
+    expected_rho = 76.361  # kg/m3
+    
+    # Calculate density
+    calculated_rho = thermodynamics.density_from_sos_kappa(
+        measured_sos=measured_sos,
+        kappa=kappa,
+        pressure_bara=pressure_bara
+    )
+    
+    # Calculate relative error (tolerance: 0.1%)
+    relative_error = abs(utilities.calculate_relative_deviation(calculated_rho, expected_rho))
+    
+    assert relative_error < 0.01, f'Density from speed of sound calculation failed. Expected: {expected_rho:.3f}, Got: {calculated_rho:.3f}, Error: {relative_error:.2f}%'
+
+
+def test_sos_from_rho_kappa():
+    """
+    Test sos_from_rho_kappa function based on GFMW2024 paper.
+    
+    Reference case:
+    - Pressure: 100 bara
+    - Temperature: 50 C
+    - Properties from GERG-2008:
+      - rho: 75.9810 kg/m3
+      - sos: 434.0811 m/s
+      - M: 17.8016 kg/kmol
+      - Z: 0.8720
+      - kappa: 1.4317 (calculated from GERG-2008)
+    
+    When measured density is 75 kg/m3, expected speed of sound is 436.91 m/s
+    """
+    # Input values
+    measured_rho = 75.0  # kg/m3
+    kappa = 1.4317  # From GERG-2008
+    pressure_bara = 100.0  # bara
+    
+    # Expected result from GFMW2024 paper
+    expected_sos = 436.91  # m/s
+    
+    # Calculate speed of sound
+    calculated_sos = thermodynamics.sos_from_rho_kappa(
+        measured_rho=measured_rho,
+        kappa=kappa,
+        pressure_bara=pressure_bara
+    )
+    
+    # Calculate relative error (tolerance: 0.1%)
+    relative_error = abs(utilities.calculate_relative_deviation(calculated_sos, expected_sos))
+    
+    assert relative_error < 0.01, f'Speed of sound from density calculation failed. Expected: {expected_sos:.2f}, Got: {calculated_sos:.2f}, Error: {relative_error:.2f}%'
+
+
+def test_molar_mass_from_sos_kappa():
+    """
+    Test molar_mass_from_sos_kappa function based on GFMW2024 paper.
+    
+    Reference case:
+    - Pressure: 100 bara
+    - Temperature: 50 C
+    - Properties from GERG-2008:
+      - rho: 75.9810 kg/m3
+      - sos: 434.0811 m/s
+      - M: 17.8016 kg/kmol
+      - Z: 0.8720
+      - kappa: 1.4317 (calculated from GERG-2008)
+    
+    When measured speed of sound is 433 m/s, expected molar mass is 17.891 g/mol (17.891 kg/kmol)
+    """
+    # Input values
+    measured_sos = 433.0  # m/s
+    kappa = 1.4317  # From GERG-2008
+    Z = 0.8720  # From GERG-2008
+    temperature_C = 50.0  # C
+    
+    # Expected result from GFMW2024 paper
+    expected_M = 17.891  # kg/kmol (same as g/mol)
+    
+    # Calculate molar mass
+    calculated_M = thermodynamics.molar_mass_from_sos_kappa(
+        measured_sos=measured_sos,
+        kappa=kappa,
+        Z=Z,
+        temperature_C=temperature_C
+    )
+    
+    # Calculate relative error (tolerance: 0.1%)
+    relative_error = abs(utilities.calculate_relative_deviation(calculated_M, expected_M))
+    
+    assert relative_error < 0.01, f'Molar mass from speed of sound calculation failed. Expected: {expected_M:.3f}, Got: {calculated_M:.3f}, Error: {relative_error:.2f}%'
+
+
+def test_Z_from_sos_kappa():
+    """
+    Test Z_from_sos_kappa function based on GFMW2024 paper.
+    
+    Reference case:
+    - Pressure: 100 bara
+    - Temperature: 50 C
+    - Properties from GERG-2008:
+      - rho: 75.9810 kg/m3
+      - sos: 434.0811 m/s
+      - M: 17.8016 kg/kmol
+      - Z: 0.8720
+      - kappa: 1.4317 (calculated from GERG-2008)
+    
+    When measured speed of sound is 433 m/s, expected compressibility factor Z is 0.8677
+    """
+    # Input values
+    measured_sos = 433.0  # m/s
+    kappa = 1.4317  # From GERG-2008
+    molar_mass = 17.8016  # kg/kmol (from GERG-2008)
+    temperature_C = 50.0  # C
+    
+    # Expected result from GFMW2024 paper
+    expected_Z = 0.8677
+    
+    # Calculate compressibility factor
+    calculated_Z = thermodynamics.Z_from_sos_kappa(
+        measured_sos=measured_sos,
+        kappa=kappa,
+        molar_mass=molar_mass,
+        temperature_C=temperature_C
+    )
+    
+    # Calculate relative error (tolerance: 0.1%)
+    relative_error = abs(utilities.calculate_relative_deviation(calculated_Z, expected_Z))
+    
+    assert relative_error < 0.01, f'Compressibility factor from speed of sound calculation failed. Expected: {expected_Z:.4f}, Got: {calculated_Z:.4f}, Error: {relative_error:.2f}%'
+
+
+def test_density_from_sos_kappa_invalid_inputs():
+    """
+    Test density_from_sos_kappa function with invalid inputs.
+    
+    Tests:
+    1. Zero speed of sound should return NaN
+    2. Negative speed of sound should still calculate (mathematically valid but physically meaningless)
+    3. Zero kappa should return zero density
+    4. Zero pressure should return zero density
+    5. NaN speed of sound should return NaN
+    6. NaN kappa should return NaN
+    7. NaN pressure should return NaN
+    """
+    import numpy as np
+    
+    # Test 1: Zero speed of sound should return NaN
+    result = thermodynamics.density_from_sos_kappa(
+        measured_sos=0.0,
+        kappa=1.4317,
+        pressure_bara=100.0
+    )
+    assert np.isnan(result), f'Expected NaN for zero speed of sound, got {result}'
+    
+    # Test 2: Negative speed of sound (squared in formula, so still produces result)
+    result = thermodynamics.density_from_sos_kappa(
+        measured_sos=-433.0,
+        kappa=1.4317,
+        pressure_bara=100.0
+    )
+    assert not np.isnan(result) and result > 0, f'Negative speed of sound should still produce positive density due to squaring'
+    
+    # Test 3: Zero kappa should return zero density
+    result = thermodynamics.density_from_sos_kappa(
+        measured_sos=433.0,
+        kappa=0.0,
+        pressure_bara=100.0
+    )
+    assert result == 0.0, f'Expected 0 for zero kappa, got {result}'
+    
+    # Test 4: Zero pressure should return zero density
+    result = thermodynamics.density_from_sos_kappa(
+        measured_sos=433.0,
+        kappa=1.4317,
+        pressure_bara=0.0
+    )
+    assert result == 0.0, f'Expected 0 for zero pressure, got {result}'
+    
+    # Test 5: NaN speed of sound should return NaN
+    result = thermodynamics.density_from_sos_kappa(
+        measured_sos=np.nan,
+        kappa=1.4317,
+        pressure_bara=100.0
+    )
+    assert np.isnan(result), f'Expected NaN for NaN speed of sound, got {result}'
+    
+    # Test 6: NaN kappa should return NaN
+    result = thermodynamics.density_from_sos_kappa(
+        measured_sos=433.0,
+        kappa=np.nan,
+        pressure_bara=100.0
+    )
+    assert np.isnan(result), f'Expected NaN for NaN kappa, got {result}'
+    
+    # Test 7: NaN pressure should return NaN
+    result = thermodynamics.density_from_sos_kappa(
+        measured_sos=433.0,
+        kappa=1.4317,
+        pressure_bara=np.nan
+    )
+    assert np.isnan(result), f'Expected NaN for NaN pressure, got {result}'
+
+
+def test_sos_from_rho_kappa_invalid_inputs():
+    """
+    Test sos_from_rho_kappa function with invalid inputs.
+    
+    Tests:
+    1. Zero density should return NaN
+    2. Negative density should return NaN (would cause sqrt of negative)
+    3. Zero kappa with zero pressure should return NaN
+    4. Negative kappa should return NaN (would cause sqrt of negative)
+    5. NaN density should return NaN
+    6. NaN kappa should return NaN
+    7. NaN pressure should return NaN
+    """
+    import numpy as np
+    
+    # Test 1: Zero density should return NaN
+    result = thermodynamics.sos_from_rho_kappa(
+        measured_rho=0.0,
+        kappa=1.4317,
+        pressure_bara=100.0
+    )
+    assert np.isnan(result), f'Expected NaN for zero density, got {result}'
+    
+    # Test 2: Negative density should return NaN
+    result = thermodynamics.sos_from_rho_kappa(
+        measured_rho=-75.0,
+        kappa=1.4317,
+        pressure_bara=100.0
+    )
+    assert np.isnan(result), f'Expected NaN for negative density, got {result}'
+    
+    # Test 3: Zero kappa with zero pressure should return NaN (0/0)
+    result = thermodynamics.sos_from_rho_kappa(
+        measured_rho=75.0,
+        kappa=0.0,
+        pressure_bara=0.0
+    )
+    assert np.isnan(result) or result == 0.0, f'Expected NaN or 0 for zero kappa and zero pressure, got {result}'
+    
+    # Test 4: Negative kappa should return NaN (sqrt of negative if pressure positive)
+    result = thermodynamics.sos_from_rho_kappa(
+        measured_rho=75.0,
+        kappa=-1.4317,
+        pressure_bara=100.0
+    )
+    assert np.isnan(result), f'Expected NaN for negative kappa, got {result}'
+    
+    # Test 5: NaN density should return NaN
+    result = thermodynamics.sos_from_rho_kappa(
+        measured_rho=np.nan,
+        kappa=1.4317,
+        pressure_bara=100.0
+    )
+    assert np.isnan(result), f'Expected NaN for NaN density, got {result}'
+    
+    # Test 6: NaN kappa should return NaN
+    result = thermodynamics.sos_from_rho_kappa(
+        measured_rho=75.0,
+        kappa=np.nan,
+        pressure_bara=100.0
+    )
+    assert np.isnan(result), f'Expected NaN for NaN kappa, got {result}'
+    
+    # Test 7: NaN pressure should return NaN
+    result = thermodynamics.sos_from_rho_kappa(
+        measured_rho=75.0,
+        kappa=1.4317,
+        pressure_bara=np.nan
+    )
+    assert np.isnan(result), f'Expected NaN for NaN pressure, got {result}'
+
+
+def test_molar_mass_from_sos_kappa_invalid_inputs():
+    """
+    Test molar_mass_from_sos_kappa function with invalid inputs.
+    
+    Tests:
+    1. Zero speed of sound should return NaN
+    2. Zero kappa should return zero molar mass
+    3. Zero Z should return zero molar mass
+    4. Very low temperature (near absolute zero) should still calculate
+    5. Negative speed of sound (squared in formula)
+    6. NaN speed of sound should return NaN
+    7. NaN kappa should return NaN
+    8. NaN Z should return NaN
+    9. NaN temperature should return NaN
+    """
+
+    
+    # Test 1: Zero speed of sound should return NaN
+    result = thermodynamics.molar_mass_from_sos_kappa(
+        measured_sos=0.0,
+        kappa=1.4317,
+        Z=0.8720,
+        temperature_C=50.0
+    )
+    assert np.isnan(result), f'Expected NaN for zero speed of sound, got {result}'
+    
+    # Test 2: Zero kappa should return zero molar mass
+    result = thermodynamics.molar_mass_from_sos_kappa(
+        measured_sos=433.0,
+        kappa=0.0,
+        Z=0.8720,
+        temperature_C=50.0
+    )
+    assert result == 0.0, f'Expected 0 for zero kappa, got {result}'
+    
+    # Test 3: Zero Z should return zero molar mass
+    result = thermodynamics.molar_mass_from_sos_kappa(
+        measured_sos=433.0,
+        kappa=1.4317,
+        Z=0.0,
+        temperature_C=50.0
+    )
+    assert result == 0.0, f'Expected 0 for zero Z, got {result}'
+    
+    # Test 4: Very low temperature (near absolute zero, -273 C)
+    result = thermodynamics.molar_mass_from_sos_kappa(
+        measured_sos=433.0,
+        kappa=1.4317,
+        Z=0.8720,
+        temperature_C=-273.0
+    )
+    assert result >= 0 and result < 0.1, f'Expected near-zero molar mass for near absolute zero temperature, got {result}'
+    
+    # Test 5: Negative speed of sound (squared in formula, so still produces result)
+    result = thermodynamics.molar_mass_from_sos_kappa(
+        measured_sos=-433.0,
+        kappa=1.4317,
+        Z=0.8720,
+        temperature_C=50.0
+    )
+    assert not np.isnan(result) and result > 0, f'Negative speed of sound should still produce positive molar mass due to squaring'
+    
+    # Test 6: NaN speed of sound should return NaN
+    result = thermodynamics.molar_mass_from_sos_kappa(
+        measured_sos=np.nan,
+        kappa=1.4317,
+        Z=0.8720,
+        temperature_C=50.0
+    )
+    assert np.isnan(result), f'Expected NaN for NaN speed of sound, got {result}'
+    
+    # Test 7: NaN kappa should return NaN
+    result = thermodynamics.molar_mass_from_sos_kappa(
+        measured_sos=433.0,
+        kappa=np.nan,
+        Z=0.8720,
+        temperature_C=50.0
+    )
+    assert np.isnan(result), f'Expected NaN for NaN kappa, got {result}'
+    
+    # Test 8: NaN Z should return NaN
+    result = thermodynamics.molar_mass_from_sos_kappa(
+        measured_sos=433.0,
+        kappa=1.4317,
+        Z=np.nan,
+        temperature_C=50.0
+    )
+    assert np.isnan(result), f'Expected NaN for NaN Z, got {result}'
+    
+    # Test 9: NaN temperature should return NaN
+    result = thermodynamics.molar_mass_from_sos_kappa(
+        measured_sos=433.0,
+        kappa=1.4317,
+        Z=0.8720,
+        temperature_C=np.nan
+    )
+    assert np.isnan(result), f'Expected NaN for NaN temperature, got {result}'
+
+
+def test_Z_from_sos_kappa_invalid_inputs():
+    """
+    Test Z_from_sos_kappa function with invalid inputs.
+    
+    Tests:
+    1. Zero kappa should return NaN
+    2. Zero R (gas constant) should return NaN
+    3. Temperature at absolute zero (-273.15 C) should return NaN
+    4. Zero molar mass should return zero Z
+    5. Zero speed of sound should return zero Z
+    6. NaN speed of sound should return NaN
+    7. NaN kappa should return NaN
+    8. NaN molar mass should return NaN
+    9. NaN temperature should return NaN
+    """
+    import numpy as np
+    
+    # Test 1: Zero kappa should return NaN
+    result = thermodynamics.Z_from_sos_kappa(
+        measured_sos=433.0,
+        kappa=0.0,
+        molar_mass=17.8016,
+        temperature_C=50.0
+    )
+    assert np.isnan(result), f'Expected NaN for zero kappa, got {result}'
+    
+    # Test 2: Zero R (gas constant) should return NaN
+    result = thermodynamics.Z_from_sos_kappa(
+        measured_sos=433.0,
+        kappa=1.4317,
+        molar_mass=17.8016,
+        temperature_C=50.0,
+        R=0.0
+    )
+    assert np.isnan(result), f'Expected NaN for zero R, got {result}'
+    
+    # Test 3: Temperature at absolute zero should return NaN
+    result = thermodynamics.Z_from_sos_kappa(
+        measured_sos=433.0,
+        kappa=1.4317,
+        molar_mass=17.8016,
+        temperature_C=-273.15
+    )
+    assert np.isnan(result), f'Expected NaN for absolute zero temperature, got {result}'
+    
+    # Test 4: Zero molar mass should return zero Z
+    result = thermodynamics.Z_from_sos_kappa(
+        measured_sos=433.0,
+        kappa=1.4317,
+        molar_mass=0.0,
+        temperature_C=50.0
+    )
+    assert result == 0.0, f'Expected 0 for zero molar mass, got {result}'
+    
+    # Test 5: Zero speed of sound should return zero Z
+    result = thermodynamics.Z_from_sos_kappa(
+        measured_sos=0.0,
+        kappa=1.4317,
+        molar_mass=17.8016,
+        temperature_C=50.0
+    )
+    assert result == 0.0, f'Expected 0 for zero speed of sound, got {result}'
+    
+    # Test 6: NaN speed of sound should return NaN
+    result = thermodynamics.Z_from_sos_kappa(
+        measured_sos=np.nan,
+        kappa=1.4317,
+        molar_mass=17.8016,
+        temperature_C=50.0
+    )
+    assert np.isnan(result), f'Expected NaN for NaN speed of sound, got {result}'
+    
+    # Test 7: NaN kappa should return NaN
+    result = thermodynamics.Z_from_sos_kappa(
+        measured_sos=433.0,
+        kappa=np.nan,
+        molar_mass=17.8016,
+        temperature_C=50.0
+    )
+    assert np.isnan(result), f'Expected NaN for NaN kappa, got {result}'
+    
+    # Test 8: NaN molar mass should return NaN
+    result = thermodynamics.Z_from_sos_kappa(
+        measured_sos=433.0,
+        kappa=1.4317,
+        molar_mass=np.nan,
+        temperature_C=50.0
+    )
+    assert np.isnan(result), f'Expected NaN for NaN molar mass, got {result}'
+    
+    # Test 9: NaN temperature should return NaN
+    result = thermodynamics.Z_from_sos_kappa(
+        measured_sos=433.0,
+        kappa=1.4317,
+        molar_mass=17.8016,
+        temperature_C=np.nan
+    )
+    assert np.isnan(result), f'Expected NaN for NaN temperature, got {result}'
+
+
+def test_properties_from_sos_kappa():
+    """
+    Test properties_from_sos_kappa function based on values from properties_from_measured_sos_example.py.
+    
+    Reference case:
+    - Pressure: 100 bara
+    - Temperature: 50 C
+    - Gas composition: N2=1%, CO2=2%, C1=90%, C2=6.4%, C3=0.5%, iC4=0.05%, nC4=0.05%
+    - EOS: GERG-2008
+    
+    First calculate reference properties using AGA8 directly, then use those properties
+    to test the properties_from_sos_kappa method with the reference speed of sound.
+    The calculated properties should match the reference values within 0.1% tolerance.
+    """
+    from pvtlib import aga8
+    
+    # Define input conditions
+    P = 100.0  # Pressure [bara]
+    T = 50.0  # Temperature [C]
+    measured_sos = 433.0
+
+    composition = {
+        'N2': 1.0,
+        'CO2': 2.0,
+        'C1': 90.0,
+        'C2': 6.4,
+        'C3': 0.5,
+        'iC4': 0.05,
+        'nC4': 0.05
+    }
+   
+    # Calculate properties from measured speed of sound using properties_from_sos_kappa
+    calculated_properties = thermodynamics.properties_from_sos_kappa(
+        gas_composition=composition,
+        measured_sos=measured_sos,
+        pressure_bara=P,
+        temperature_C=T,
+        EOS='GERG-2008'
+    )
+    
+    # Expected results from GFMW2024 paper
+    expected_rho = 76.361
+    expected_mm = 17.891
+    expected_z = 0.8677
+
+    # Check results: equal within 3 decimals for rho and mm, 4 decimals for z
+    assert round(calculated_properties['rho'], 3) == round(expected_rho, 3), \
+        f"rho: expected {expected_rho:.3f}, got {calculated_properties['rho']:.3f}"
+
+    assert round(calculated_properties['mm'], 3) == round(expected_mm, 3), \
+        f"mm: expected {expected_mm:.3f}, got {calculated_properties['mm']:.3f}"
+
+    assert round(calculated_properties['z'], 4) == round(expected_z, 4), \
+        f"z: expected {expected_z:.4f}, got {calculated_properties['z']:.4f}"
+
 
 
         
