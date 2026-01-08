@@ -331,13 +331,15 @@ class AGA8:
             return results
 
         def residual(temperature):
-            results = self.calculate_from_PT(composition, pressure, temperature, pressure_unit, temperature_unit, molar_mass)
+            # Extract scalar from numpy array for compatibility with numpy 2.x
+            temp_scalar = temperature[0] if hasattr(temperature, '__len__') else temperature
+            results = self.calculate_from_PT(composition, pressure, temp_scalar, pressure_unit, temperature_unit, molar_mass)
             return results['h'] - enthalpy
         
         temperature_guess = 20.0 # Celsius
 
         temperature_solution = optimize.fsolve(residual, x0=[temperature_guess])
-        temperature_scalar = float(temperature_solution[0])
+        temperature_scalar = temperature_solution.item() if hasattr(temperature_solution, 'item') else float(temperature_solution[0])
         results = self.calculate_from_PT(composition, pressure, temperature_scalar, pressure_unit, temperature_unit, molar_mass)
         return results
     
@@ -383,13 +385,15 @@ class AGA8:
             return results
 
         def residual(temperature):
-            results = self.calculate_from_PT(composition, pressure, temperature, pressure_unit, temperature_unit, molar_mass)
+            # Extract scalar from numpy array for compatibility with numpy 2.x
+            temp_scalar = temperature[0] if hasattr(temperature, '__len__') else temperature
+            results = self.calculate_from_PT(composition, pressure, temp_scalar, pressure_unit, temperature_unit, molar_mass)
             return results['s'] - entropy
         
         temperature_guess = 20.0
 
         temperature_solution = optimize.fsolve(residual, x0=[temperature_guess])
-        temperature_scalar = float(temperature_solution[0])
+        temperature_scalar = temperature_solution.item() if hasattr(temperature_solution, 'item') else float(temperature_solution[0])
         results = self.calculate_from_PT(composition, pressure, temperature_scalar, pressure_unit, temperature_unit, molar_mass)
         return results
 
