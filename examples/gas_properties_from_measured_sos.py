@@ -49,8 +49,8 @@ calculated_properties = pvtlib.thermodynamics.properties_from_sos_kappa(
 
 print("Properties calculated from measured speed of sound: (using the properties_from_sos_kappa method)")
 print(f"  Density: {calculated_properties['rho']:.3f} kg/m3")
-print(f"  Molar mass: {calculated_properties['M']:.3f} kg/kmol")
-print(f"  Compressibility factor: {calculated_properties['Z']:.5f}")
+print(f"  Molar mass: {calculated_properties['mm']:.3f} kg/kmol")
+print(f"  Compressibility factor: {calculated_properties['z']:.5f}")
 print()
 
 

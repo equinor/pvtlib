@@ -590,18 +590,18 @@ def test_properties_from_sos_kappa():
     
     # Expected results from GFMW2024 paper
     expected_rho = 76.361
-    expected_M = 17.891
-    expected_Z = 0.8677
+    expected_mm = 17.891
+    expected_z = 0.8677
 
-    # Check results: equal within 3 decimals for rho and M, 4 decimals for Z
+    # Check results: equal within 3 decimals for rho and mm, 4 decimals for z
     assert round(calculated_properties['rho'], 3) == round(expected_rho, 3), \
         f"rho: expected {expected_rho:.3f}, got {calculated_properties['rho']:.3f}"
 
-    assert round(calculated_properties['M'], 3) == round(expected_M, 3), \
-        f"M: expected {expected_M:.3f}, got {calculated_properties['M']:.3f}"
+    assert round(calculated_properties['mm'], 3) == round(expected_mm, 3), \
+        f"mm: expected {expected_mm:.3f}, got {calculated_properties['mm']:.3f}"
 
-    assert round(calculated_properties['Z'], 4) == round(expected_Z, 4), \
-        f"Z: expected {expected_Z:.4f}, got {calculated_properties['Z']:.4f}"
+    assert round(calculated_properties['z'], 4) == round(expected_z, 4), \
+        f"z: expected {expected_z:.4f}, got {calculated_properties['z']:.4f}"
 
 
 

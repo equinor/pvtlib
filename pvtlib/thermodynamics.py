@@ -314,8 +314,8 @@ def properties_from_sos_kappa(gas_composition, measured_sos, pressure_bara, temp
     output : dict
         Dictionary containing:
             'rho' : Mass density calculated from measured speed of sound [kg/m3]
-            'M' : Molar mass calculated from measured speed of sound [kg/kmol]
-            'Z' : Compressibility factor calculated from measured speed of sound [-]
+            'mm' : Molar mass calculated from measured speed of sound [kg/kmol]
+            'z' : Compressibility factor calculated from measured speed of sound [-]
 
     References
     ----------
@@ -325,8 +325,8 @@ def properties_from_sos_kappa(gas_composition, measured_sos, pressure_bara, temp
 
     output = {
         'rho' : np.nan,
-        'M' : np.nan,
-        'Z' : np.nan
+        'mm' : np.nan,
+        'z' : np.nan
     }
 
     # Use caching to avoid re-initializing the AGA8 object for performance
@@ -365,7 +365,7 @@ def properties_from_sos_kappa(gas_composition, measured_sos, pressure_bara, temp
     )
     
     # Calculate molar mass from measured speed of sound and EOS properties
-    output['M'] = molar_mass_from_sos_kappa(
+    output['mm'] = molar_mass_from_sos_kappa(
         measured_sos=measured_sos,
         kappa=kappa_eos,
         Z=Z_eos,
@@ -374,7 +374,7 @@ def properties_from_sos_kappa(gas_composition, measured_sos, pressure_bara, temp
     
     # Calculate compressibility factor from measured speed of sound and EOS properties
     # Note: M_eos is in g/mol, need to convert to kg/kmol (multiply by 1)
-    output['Z'] = Z_from_sos_kappa(
+    output['z'] = Z_from_sos_kappa(
         measured_sos=measured_sos,
         kappa=kappa_eos,
         molar_mass=M_eos,  # AGA8 returns mm in g/mol, which equals kg/kmol numerically
