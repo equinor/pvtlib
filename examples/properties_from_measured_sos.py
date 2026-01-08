@@ -24,39 +24,19 @@ SOFTWARE.
 import pvtlib
 
 # Specify pressure, temperature and composition
-P = 50.0  # Pressure [bara]
-T = 40.0  # Temperature [C]
+P = 100.0  # Pressure [bara]
+T = 50.0  # Temperature [C]
+measured_sos = 433.0  # Speed of sound [m/s]
 
 composition = {
     'N2': 1.0,
-    'CO2': 1.0,
+    'CO2': 2.0,
     'C1': 90.0,
-    'C2': 5.0,
-    'C3': 2.0,
-    'iC4': 0.5,
-    'nC4': 0.5
+    'C2': 6.4,
+    'C3': 0.5,
+    'iC4': 0.05,
+    'nC4': 0.05
 }
-
-# First, calculate the "true" properties using AGA8 directly to get a reference speed of sound
-gerg = pvtlib.AGA8('GERG-2008')
-reference_properties = gerg.calculate_from_PT(
-    composition=composition,
-    pressure=P,
-    temperature=T,
-)
-
-# Get the reference speed of sound and other properties
-measured_sos = reference_properties['w']  # Speed of sound [m/s]
-reference_rho = reference_properties['rho']  # Density [kg/m3]
-reference_M = reference_properties['mm']  # Molar mass [g/mol = kg/kmol]
-reference_Z = reference_properties['Z']  # Compressibility factor [-]
-
-print("Reference properties from GERG-2008:")
-print(f"  Speed of sound: {measured_sos:.3f} m/s")
-print(f"  Density: {reference_rho:.3f} kg/m3")
-print(f"  Molar mass: {reference_M:.3f} kg/kmol")
-print(f"  Compressibility factor: {reference_Z:.5f}")
-print()
 
 # Now use the properties_from_sos_kappa method to calculate properties from the measured speed of sound
 calculated_properties = pvtlib.thermodynamics.properties_from_sos_kappa(
@@ -73,12 +53,45 @@ print(f"  Molar mass: {calculated_properties['M']:.3f} kg/kmol")
 print(f"  Compressibility factor: {calculated_properties['Z']:.5f}")
 print()
 
-# Calculate differences
-rho_diff = abs(calculated_properties['rho'] - reference_rho)
-M_diff = abs(calculated_properties['M'] - reference_M)
-Z_diff = abs(calculated_properties['Z'] - reference_Z)
 
-print("Differences (should be very small due to numerical precision):")
-print(f"  Density difference: {rho_diff:.6f} kg/m3")
-print(f"  Molar mass difference: {M_diff:.6f} kg/kmol")
-print(f"  Compressibility factor difference: {Z_diff:.8f}")
+
+# Alternatively, the properties can be calculated by individual functions
+
+# Step 1: Calculate properties using composition, P, and T. 
+
+gerg = pvtlib.AGA8('GERG-2008')
+
+# Calculate properties using composition, P, and T and the GERG-2008 EOS
+gerg_properties = gerg.calculate_from_PT(
+    composition=composition,
+    pressure=P,
+    temperature=T,
+)
+
+# Step 2: Calculate properties from measured speed of sound
+
+molar_mass_from_sos = pvtlib.thermodynamics.molar_mass_from_sos_kappa(
+    measured_sos=measured_sos,
+    kappa= gerg_properties['kappa'],
+    Z=gerg_properties['z'],
+    temperature_C=T
+)
+
+density_from_sos_kappa = pvtlib.thermodynamics.density_from_sos_kappa(
+    measured_sos=measured_sos,
+    kappa=gerg_properties['kappa'],
+    Z=gerg_properties['z'],
+    temperature_C=T
+)
+
+Z_from_sos_kappa = pvtlib.thermodynamics.Z_from_sos_kappa(
+    measured_sos=measured_sos,
+    kappa=gerg_properties['kappa'],
+    Z=gerg_properties['z'],
+    temperature_C=T
+)
+
+print("Properties calculated from measured speed of sound (using kappa, Z, T):")
+print(f"  Molar mass from SOS: {molar_mass_from_sos:.3f} kg/kmol")
+print(f"  Density from SOS: {density_from_sos_kappa:.3f} kg/m3")
+print(f"  Compressibility factor from SOS: {Z_from_sos_kappa:.5f}")

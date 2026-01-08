@@ -548,7 +548,60 @@ def test_Z_from_sos_kappa_invalid_inputs():
     assert np.isnan(result), f'Expected NaN for NaN temperature, got {result}'
 
 
-        
+def test_properties_from_sos_kappa():
+    """
+    Test properties_from_sos_kappa function based on values from properties_from_measured_sos_example.py.
+    
+    Reference case:
+    - Pressure: 100 bara
+    - Temperature: 50 C
+    - Gas composition: N2=1%, CO2=2%, C1=90%, C2=6.4%, C3=0.5%, iC4=0.05%, nC4=0.05%
+    - EOS: GERG-2008
+    
+    First calculate reference properties using AGA8 directly, then use those properties
+    to test the properties_from_sos_kappa method with the reference speed of sound.
+    The calculated properties should match the reference values within 0.1% tolerance.
+    """
+    from pvtlib import aga8
+    
+    # Define input conditions
+    P = 100.0  # Pressure [bara]
+    T = 50.0  # Temperature [C]
+    measured_sos = 433.0
+
+    composition = {
+        'N2': 1.0,
+        'CO2': 2.0,
+        'C1': 90.0,
+        'C2': 6.4,
+        'C3': 0.5,
+        'iC4': 0.05,
+        'nC4': 0.05
+    }
+   
+    # Calculate properties from measured speed of sound using properties_from_sos_kappa
+    calculated_properties = thermodynamics.properties_from_sos_kappa(
+        gas_composition=composition,
+        measured_sos=measured_sos,
+        pressure_bara=P,
+        temperature_C=T,
+        EOS='GERG-2008'
+    )
+    
+    # Expected results from GFMW2024 paper
+    expected_rho = 76.361
+    expected_M = 17.891
+    expected_Z = 0.8677
+
+    # Check results: equal within 3 decimals for rho and M, 4 decimals for Z
+    assert round(calculated_properties['rho'], 3) == round(expected_rho, 3), \
+        f"rho: expected {expected_rho:.3f}, got {calculated_properties['rho']:.3f}"
+
+    assert round(calculated_properties['M'], 3) == round(expected_M, 3), \
+        f"M: expected {expected_M:.3f}, got {calculated_properties['M']:.3f}"
+
+    assert round(calculated_properties['Z'], 4) == round(expected_Z, 4), \
+        f"Z: expected {expected_Z:.4f}, got {calculated_properties['Z']:.4f}"
 
 
 

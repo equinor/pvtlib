@@ -354,7 +354,7 @@ def properties_from_sos_kappa(gas_composition, measured_sos, pressure_bara, temp
     
     # Extract the calculated properties from EOS
     kappa_eos = eos_properties['kappa']  # Isentropic exponent from EOS
-    Z_eos = eos_properties['Z']          # Compressibility factor from EOS
+    Z_eos = eos_properties['z']          # Compressibility factor from EOS
     M_eos = eos_properties['mm']         # Molar mass from EOS [g/mol], need to convert to kg/kmol
     
     # Calculate density from measured speed of sound and EOS kappa
