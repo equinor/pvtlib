@@ -50,7 +50,158 @@ def test_natural_gas_viscosity_Lee_et_al():
         relative_error=abs(utilities.calculate_relative_deviation(mu,case_dict['mu_expected']))
         
         assert relative_error<case_dict['criteria'], f'Natural gas viscosity calculation failed for {case_name}'
-        
+
+
+def test_density_from_sos_kappa():
+    """
+    Test density_from_sos_kappa function based on GFMW2024 paper.
+    
+    Reference case:
+    - Pressure: 100 bara
+    - Temperature: 50 C
+    - Properties from GERG-2008:
+      - rho: 75.9810 kg/m3
+      - sos: 434.0811 m/s
+      - M: 17.8016 kg/kmol
+      - Z: 0.8720
+      - kappa: 1.4317 (calculated from GERG-2008)
+    
+    When measured speed of sound is 433 m/s, expected density is 76.361 kg/m3
+    """
+    # Input values
+    measured_sos = 433.0  # m/s
+    kappa = 1.4317  # From GERG-2008
+    pressure_bara = 100.0  # bara
+    
+    # Expected result from GFMW2024 paper
+    expected_rho = 76.361  # kg/m3
+    
+    # Calculate density
+    calculated_rho = thermodynamics.density_from_sos_kappa(
+        measured_sos=measured_sos,
+        kappa=kappa,
+        pressure_bara=pressure_bara
+    )
+    
+    # Calculate relative error (tolerance: 0.1%)
+    relative_error = abs(utilities.calculate_relative_deviation(calculated_rho, expected_rho))
+    
+    assert relative_error < 0.01, f'Density from speed of sound calculation failed. Expected: {expected_rho:.3f}, Got: {calculated_rho:.3f}, Error: {relative_error:.2f}%'
+
+
+def test_sos_from_rho_kappa():
+    """
+    Test sos_from_rho_kappa function based on GFMW2024 paper.
+    
+    Reference case:
+    - Pressure: 100 bara
+    - Temperature: 50 C
+    - Properties from GERG-2008:
+      - rho: 75.9810 kg/m3
+      - sos: 434.0811 m/s
+      - M: 17.8016 kg/kmol
+      - Z: 0.8720
+      - kappa: 1.4317 (calculated from GERG-2008)
+    
+    When measured density is 75 kg/m3, expected speed of sound is 436.91 m/s
+    """
+    # Input values
+    measured_rho = 75.0  # kg/m3
+    kappa = 1.4317  # From GERG-2008
+    pressure_bara = 100.0  # bara
+    
+    # Expected result from GFMW2024 paper
+    expected_sos = 436.91  # m/s
+    
+    # Calculate speed of sound
+    calculated_sos = thermodynamics.sos_from_rho_kappa(
+        measured_rho=measured_rho,
+        kappa=kappa,
+        pressure_bara=pressure_bara
+    )
+    
+    # Calculate relative error (tolerance: 0.1%)
+    relative_error = abs(utilities.calculate_relative_deviation(calculated_sos, expected_sos))
+    
+    assert relative_error < 0.01, f'Speed of sound from density calculation failed. Expected: {expected_sos:.2f}, Got: {calculated_sos:.2f}, Error: {relative_error:.2f}%'
+
+
+def test_molar_mass_from_sos_kappa():
+    """
+    Test molar_mass_from_sos_kappa function based on GFMW2024 paper.
+    
+    Reference case:
+    - Pressure: 100 bara
+    - Temperature: 50 C
+    - Properties from GERG-2008:
+      - rho: 75.9810 kg/m3
+      - sos: 434.0811 m/s
+      - M: 17.8016 kg/kmol
+      - Z: 0.8720
+      - kappa: 1.4317 (calculated from GERG-2008)
+    
+    When measured speed of sound is 433 m/s, expected molar mass is 17.891 g/mol (17.891 kg/kmol)
+    """
+    # Input values
+    measured_sos = 433.0  # m/s
+    kappa = 1.4317  # From GERG-2008
+    Z = 0.8720  # From GERG-2008
+    temperature_C = 50.0  # C
+    
+    # Expected result from GFMW2024 paper
+    expected_M = 17.891  # kg/kmol (same as g/mol)
+    
+    # Calculate molar mass
+    calculated_M = thermodynamics.molar_mass_from_sos_kappa(
+        measured_sos=measured_sos,
+        kappa=kappa,
+        Z=Z,
+        temperature_C=temperature_C
+    )
+    
+    # Calculate relative error (tolerance: 0.1%)
+    relative_error = abs(utilities.calculate_relative_deviation(calculated_M, expected_M))
+    
+    assert relative_error < 0.01, f'Molar mass from speed of sound calculation failed. Expected: {expected_M:.3f}, Got: {calculated_M:.3f}, Error: {relative_error:.2f}%'
+
+
+def test_Z_from_sos_kappa():
+    """
+    Test Z_from_sos_kappa function based on GFMW2024 paper.
+    
+    Reference case:
+    - Pressure: 100 bara
+    - Temperature: 50 C
+    - Properties from GERG-2008:
+      - rho: 75.9810 kg/m3
+      - sos: 434.0811 m/s
+      - M: 17.8016 kg/kmol
+      - Z: 0.8720
+      - kappa: 1.4317 (calculated from GERG-2008)
+    
+    When measured speed of sound is 433 m/s, expected compressibility factor Z is 0.8677
+    """
+    # Input values
+    measured_sos = 433.0  # m/s
+    kappa = 1.4317  # From GERG-2008
+    molar_mass = 17.8016  # kg/kmol (from GERG-2008)
+    temperature_C = 50.0  # C
+    
+    # Expected result from GFMW2024 paper
+    expected_Z = 0.8677
+    
+    # Calculate compressibility factor
+    calculated_Z = thermodynamics.Z_from_sos_kappa(
+        measured_sos=measured_sos,
+        kappa=kappa,
+        molar_mass=molar_mass,
+        temperature_C=temperature_C
+    )
+    
+    # Calculate relative error (tolerance: 0.1%)
+    relative_error = abs(utilities.calculate_relative_deviation(calculated_Z, expected_Z))
+    
+    assert relative_error < 0.01, f'Compressibility factor from speed of sound calculation failed. Expected: {expected_Z:.4f}, Got: {calculated_Z:.4f}, Error: {relative_error:.2f}%'
 
 
         
