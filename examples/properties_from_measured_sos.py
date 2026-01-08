@@ -47,7 +47,7 @@ calculated_properties = pvtlib.thermodynamics.properties_from_sos_kappa(
     EOS='GERG-2008'
 )
 
-print("Properties calculated from measured speed of sound:")
+print("Properties calculated from measured speed of sound: (using the properties_from_sos_kappa method)")
 print(f"  Density: {calculated_properties['rho']:.3f} kg/m3")
 print(f"  Molar mass: {calculated_properties['M']:.3f} kg/kmol")
 print(f"  Compressibility factor: {calculated_properties['Z']:.5f}")
@@ -72,26 +72,25 @@ gerg_properties = gerg.calculate_from_PT(
 
 molar_mass_from_sos = pvtlib.thermodynamics.molar_mass_from_sos_kappa(
     measured_sos=measured_sos,
-    kappa= gerg_properties['kappa'],
-    Z=gerg_properties['z'],
-    temperature_C=T
-)
-
-density_from_sos_kappa = pvtlib.thermodynamics.density_from_sos_kappa(
-    measured_sos=measured_sos,
     kappa=gerg_properties['kappa'],
     Z=gerg_properties['z'],
     temperature_C=T
 )
 
-Z_from_sos_kappa = pvtlib.thermodynamics.Z_from_sos_kappa(
+density_from_sos = pvtlib.thermodynamics.density_from_sos_kappa(
     measured_sos=measured_sos,
     kappa=gerg_properties['kappa'],
-    Z=gerg_properties['z'],
+    pressure_bara=P
+)
+
+Z_from_sos = pvtlib.thermodynamics.Z_from_sos_kappa(
+    measured_sos=measured_sos,
+    kappa=gerg_properties['kappa'],
+    molar_mass=gerg_properties['mm'],
     temperature_C=T
 )
 
-print("Properties calculated from measured speed of sound (using kappa, Z, T):")
+print("Properties calculated from measured speed of sound (using individual functions):")
+print(f"  Density from SOS: {density_from_sos:.3f} kg/m3")
 print(f"  Molar mass from SOS: {molar_mass_from_sos:.3f} kg/kmol")
-print(f"  Density from SOS: {density_from_sos_kappa:.3f} kg/m3")
-print(f"  Compressibility factor from SOS: {Z_from_sos_kappa:.5f}")
+print(f"  Compressibility factor from SOS: {Z_from_sos:.5f}")
