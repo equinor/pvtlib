@@ -189,6 +189,7 @@ def GDM_SOScorr_dens(rho, tau, c_cal, c_gas, K=2.1e4):
     Speed of sound density correction. The correction is performed to take into account the difference in properties between the calibration gas and the actual process gas.
     The correction factor is given by equation E7 in the Installation and Maintenance Manual for Micro Motion 7812 (P/N MMI-20018377, Rev. AC April 2012) [1_]. 
     The equation originates from "Velocity of Sound Effect on Gas Density Transducers - The theory, measurement results and methods of correction", by Stansfeld, J W (NSFMW 1986) [2_].
+    The same equation is also available in ISO 15970:2014 [3_], at a slighly different format. 
 
     Parameters
     ----------
@@ -199,7 +200,7 @@ def GDM_SOScorr_dens(rho, tau, c_cal, c_gas, K=2.1e4):
     c_cal : float
         Speed of sound of calibration gas [m/s]
         The conditions of this values are not specified in the manual, however, after checking with both Micro Motion and Kiwa, and they both say that they believe the following:
-        The speed of sound of the calibration gas should be at the same density (or time period) as during calibration (according to Micro Motion: email from Rik Gerritsen 2023-12-18)
+        The speed of sound of the calibration gas should be given at the same density condition (or time period) as during calibration, according to ISO 15970 [3_].
     c_gas : float
         Speed of sound of measured gas [m/s] at measured conditions (also confirmed by vendor).
     K : float, optional
@@ -210,10 +211,18 @@ def GDM_SOScorr_dens(rho, tau, c_cal, c_gas, K=2.1e4):
     rho_vos : float
         Measured density from GDM, corrected for speed of sound [kg/m3]
 
+    Notes
+    -----
+    There are sometimes confusion about the conditions to be used for the speed of sound of the calibration gas, as this is not explicitly stated in the manual, the ISO, nor the original paper by Stansfeld.
+    But from the derivation of the equation, it can be inferred that the speed of sound should be given at the same conditions as the corresponding density (or time period) during calibration.
+    For example, if a meter (calibrated on nitrogen at 20 °C) measures a gas density (when installed in the process) of 75 kg/m3 (657 μs), the speed of sound of the calibration gas (c_cal) used in the calculation
+    should be the speed of sound of nitrogen at 20 °C and 75 kg/m3, independent of the pressure and temperature of the process gas.  
+
     References
     ----------
     .. [1] Micro Motion® Installation and Maintenance Manual - 7812 Gas Density Meter. 2012
     .. [2] Stansfeld, J W (NSFMW 1986) "Velocity of Sound Effect on Gas Density Transducers - The theory, measurement results and methods of correction"
+    .. [3] ISO 15970: Natural gas - Measurement of properties, Volumetric properties: density, pressure, temperature and compression factor, 2014 
     '''
     
     if tau==0 or c_cal==0 or c_gas==0:
