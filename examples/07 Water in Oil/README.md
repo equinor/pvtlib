@@ -13,7 +13,7 @@ The example shows three common calculations:
 These calculations are important for oil metering stations where:
 - A Coriolis meter measures the density of the oil-water mixture
 - A water cut meter measures the water fraction
-- You need to correct flowrates and densities for accurate custody transfer
+- You wish to estimate flowrates and densities without the presence of the contaminant
 
 ## Usage
 

@@ -1,6 +1,6 @@
 # Gas Properties from AGA8
 
-This example demonstrates how to calculate gas properties using the AGA8 equation of state (GERG-2008 and DETAIL implementations).
+This example demonstrates how to calculate gas properties using the AGA8 equations of state (GERG-2008 and DETAIL implementations).
 
 ## Description
 
