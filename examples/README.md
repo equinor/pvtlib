@@ -54,6 +54,11 @@ Calculate overread correction for wet gas venturi meters using the Reader-Harris
 
 **Required packages**: pvtlib, numpy, pandas, matplotlib
 
+### 09 Gas Density Meter Corrections
+Apply corrections to gas density meter (GDM) measurements for Emerson Micro Motion Gas Density Meters. Demonstrates temperature correction, speed of sound correction, and flowrate calculation. Includes examples at different density ranges.
+
+**Required packages**: pvtlib only
+
 ## Usage
 
 Each example is contained in its own numbered folder with:
