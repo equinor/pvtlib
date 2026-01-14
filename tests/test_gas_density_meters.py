@@ -21,9 +21,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import sys
-import os
-
 from pvtlib.metering import gas_density_meters
 
 def test_GDM_uncorr_dens():
@@ -132,3 +129,142 @@ def test_GDM_Q():
         )
     
     assert round(Q,5) == 2.19089, 'Error in GDM Q'
+
+
+# Tests for invalid input handling (divide by zero protection)
+
+def test_gas_spesific_gravity_zero_MW_air():
+    '''Test that gas_spesific_gravity returns NaN when MW_air is zero'''
+    import numpy as np
+    
+    SG = gas_density_meters.gas_spesific_gravity(
+        MW_gas=20.0, 
+        MW_air=0.0
+        )
+    
+    assert np.isnan(SG), 'gas_spesific_gravity should return NaN when MW_air is zero'
+
+
+def test_GDM_G_zero_Cp_Cv():
+    '''Test that GDM_G returns NaN when Cp_Cv is zero'''
+    import numpy as np
+    
+    G = gas_density_meters.GDM_G(
+        SG=0.7, 
+        Cp_Cv=0.0
+        )
+    
+    assert np.isnan(G), 'GDM_G should return NaN when Cp_Cv is zero'
+
+
+def test_GDM_VOScorr_dens_zero_DT_plus_K4():
+    '''Test that GDM_VOScorr_dens returns NaN when (DT + K4) is zero'''
+    import numpy as np
+    
+    DV = gas_density_meters.GDM_VOScorr_dens(
+        DT=10.0, 
+        K3=100.0, 
+        K4=-10.0,  # This makes DT + K4 = 0
+        G=0.5, 
+        t=20.0
+        )
+    
+    assert np.isnan(DV), 'GDM_VOScorr_dens should return NaN when (DT + K4) is zero'
+
+
+def test_GDM_VOScorr_dens_zero_t_plus_273():
+    '''Test that GDM_VOScorr_dens returns NaN when (t + 273) is zero'''
+    import numpy as np
+    
+    DV = gas_density_meters.GDM_VOScorr_dens(
+        DT=50.0, 
+        K3=100.0, 
+        K4=10.0, 
+        G=0.5, 
+        t=-273.0  # Absolute zero in Celsius
+        )
+    
+    assert np.isnan(DV), 'GDM_VOScorr_dens should return NaN when (t + 273) is zero'
+
+
+def test_GDM_SOScorr_dens_zero_tau():
+    '''Test that GDM_SOScorr_dens returns NaN when tau is zero'''
+    import numpy as np
+    
+    Dvos = gas_density_meters.GDM_SOScorr_dens(
+        rho=50.0, 
+        tau=0.0,  # Zero time period
+        c_cal=350.0, 
+        c_gas=400.0, 
+        K=2.1e4
+        )
+    
+    assert np.isnan(Dvos), 'GDM_SOScorr_dens should return NaN when tau is zero'
+
+
+def test_GDM_SOScorr_dens_zero_c_cal():
+    '''Test that GDM_SOScorr_dens returns NaN when c_cal is zero'''
+    import numpy as np
+    
+    Dvos = gas_density_meters.GDM_SOScorr_dens(
+        rho=50.0, 
+        tau=600.0, 
+        c_cal=0.0,  # Zero speed of sound for calibration gas
+        c_gas=400.0, 
+        K=2.1e4
+        )
+    
+    assert np.isnan(Dvos), 'GDM_SOScorr_dens should return NaN when c_cal is zero'
+
+
+def test_GDM_SOScorr_dens_zero_c_gas():
+    '''Test that GDM_SOScorr_dens returns NaN when c_gas is zero'''
+    import numpy as np
+    
+    Dvos = gas_density_meters.GDM_SOScorr_dens(
+        rho=50.0, 
+        tau=600.0, 
+        c_cal=350.0, 
+        c_gas=0.0,  # Zero speed of sound for process gas
+        K=2.1e4
+        )
+    
+    assert np.isnan(Dvos), 'GDM_SOScorr_dens should return NaN when c_gas is zero'
+
+
+def test_GDM_Q_zero_rho():
+    '''Test that GDM_Q returns NaN when rho is zero'''
+    import numpy as np
+    
+    Q = gas_density_meters.GDM_Q(
+        dP=200.0, 
+        rho=0.0,  # Zero density
+        K=0.6
+        )
+    
+    assert np.isnan(Q), 'GDM_Q should return NaN when rho is zero'
+
+
+def test_GDM_Q_negative_dP():
+    '''Test that GDM_Q handles negative differential pressure (reverse flow)'''
+    
+    Q = gas_density_meters.GDM_Q(
+        dP=-200.0,  # Negative dP
+        rho=15.0, 
+        K=0.6
+        )
+    
+    # Should return negative flow
+    assert round(Q,5) == -2.19089, 'GDM_Q should handle negative dP for reverse flow'
+
+
+def test_GDM_Q_zero_dP():
+    '''Test that GDM_Q returns zero when dP is zero'''
+    
+    Q = gas_density_meters.GDM_Q(
+        dP=0.0,  # Zero differential pressure
+        rho=15.0, 
+        K=0.6
+        )
+    
+    assert Q == 0.0, 'GDM_Q should return zero when dP is zero'
