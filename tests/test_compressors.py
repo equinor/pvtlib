@@ -290,6 +290,50 @@ def test_work_coefficient_zero_sigma():
     assert np.isnan(work_coefficient(1000, 0)), "Zero sigma_u_squared"
 
 
+# === Array Tests ===
+
+def test_poly_exp_with_arrays():
+    """Test poly_exp with numpy arrays."""
+    p_suction = np.array([1.5, 2.0, 2.5])
+    p_discharge = np.array([5.0, 6.0, 7.0])
+    rho_suction = np.array([6.0, 7.0, 8.0])
+    rho_discharge = np.array([12.0, 13.0, 14.0])
+    
+    result = poly_exp(p_suction, p_discharge, rho_suction, rho_discharge)
+    
+    assert isinstance(result, np.ndarray), "Result should be numpy array"
+    assert len(result) == 3, "Result should have 3 elements"
+    assert not np.any(np.isnan(result)), "No NaN values for valid inputs"
+
+
+def test_poly_head_with_arrays():
+    """Test poly_head with numpy arrays."""
+    poly_exp_val = np.array([1.25, 1.30, 1.35])
+    p_suction = np.array([1.0, 1.5, 2.0])
+    p_discharge = np.array([5.0, 6.0, 7.0])
+    rho_suction = np.array([10, 11, 12])
+    rho_discharge = np.array([40, 42, 44])
+    
+    result = poly_head(poly_exp_val, p_suction, p_discharge, rho_suction, rho_discharge)
+    
+    assert isinstance(result, np.ndarray), "Result should be numpy array"
+    assert len(result) == 3, "Result should have 3 elements"
+    assert not np.any(np.isnan(result)), "No NaN values for valid inputs"
+
+
+def test_flow_coeff_with_arrays():
+    """Test flow_coeff with numpy arrays."""
+    Q = np.array([10.0, 12.0, 14.0])
+    N = np.array([3000, 3200, 3400])
+    D = np.array([0.5, 0.52, 0.54])
+    
+    result = flow_coeff(Q, N, D, DefType='MAN')
+    
+    assert isinstance(result, np.ndarray), "Result should be numpy array"
+    assert len(result) == 3, "Result should have 3 elements"
+    assert not np.any(np.isnan(result)), "No NaN values for valid inputs"
+
+
 # === Integration Tests ===
 
 def test_compression_calculation_chain():
