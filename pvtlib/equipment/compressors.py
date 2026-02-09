@@ -21,7 +21,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import math
 import numpy as np
 
 
@@ -65,18 +64,22 @@ def poly_exp(p_suction, p_discharge, rho_suction, rho_discharge):
     >>> poly_exp(0, 5.0, 6.0, 12.0)
     nan
     """
-    if p_discharge == 0:
-        return np.nan
-    if rho_discharge == 0:
-        return np.nan
-    if p_suction == 0:
-        return np.nan
-    if rho_suction == 0:
-        return np.nan
+    # Convert to arrays for consistent handling
+    p_suction = np.asarray(p_suction, dtype=float)
+    p_discharge = np.asarray(p_discharge, dtype=float)
+    rho_suction = np.asarray(rho_suction, dtype=float)
+    rho_discharge = np.asarray(rho_discharge, dtype=float)
     
-    poly_exp = math.log(p_discharge / p_suction) / math.log(rho_discharge / rho_suction)
+    # Calculate with numpy (handles arrays)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        result = np.log(p_discharge / p_suction) / np.log(rho_discharge / rho_suction)
     
-    return poly_exp
+    # Set NaN where inputs are zero
+    mask = (p_discharge == 0) | (rho_discharge == 0) | (p_suction == 0) | (rho_suction == 0)
+    result = np.where(mask, np.nan, result)
+    
+    # Return scalar if input was scalar
+    return result.item() if result.ndim == 0 else result
 
 
 def poly_head(poly_exp_val, p_suction, p_discharge, rho_suction, rho_discharge):
@@ -124,15 +127,24 @@ def poly_head(poly_exp_val, p_suction, p_discharge, rho_suction, rho_discharge):
     >>> poly_head(1.25, 1.0, 5.0, 0, 40)
     nan
     """
-    if rho_discharge == 0:
-        return np.nan
-    if rho_suction == 0:
-        return np.nan
+    # Convert to arrays for consistent handling
+    poly_exp_val = np.asarray(poly_exp_val, dtype=float)
+    p_suction = np.asarray(p_suction, dtype=float)
+    p_discharge = np.asarray(p_discharge, dtype=float)
+    rho_suction = np.asarray(rho_suction, dtype=float)
+    rho_discharge = np.asarray(rho_discharge, dtype=float)
     
-    poly_head = 100 * (poly_exp_val / (poly_exp_val - 1)) * (
-                (p_discharge / rho_discharge) - (p_suction / rho_suction))
+    # Calculate with numpy (handles arrays)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        result = 100 * (poly_exp_val / (poly_exp_val - 1)) * (
+                    (p_discharge / rho_discharge) - (p_suction / rho_suction))
     
-    return poly_head
+    # Set NaN where densities are zero
+    mask = (rho_discharge == 0) | (rho_suction == 0)
+    result = np.where(mask, np.nan, result)
+    
+    # Return scalar if input was scalar
+    return result.item() if result.ndim == 0 else result
 
 
 def poly_eff(poly_head_val, dh_val):
@@ -171,12 +183,20 @@ def poly_eff(poly_head_val, dh_val):
     >>> poly_eff(80.0, 0)
     nan
     """
-    if dh_val == 0:
-        return np.nan
+    # Convert to arrays for consistent handling
+    poly_head_val = np.asarray(poly_head_val, dtype=float)
+    dh_val = np.asarray(dh_val, dtype=float)
     
-    poly_eff = poly_head_val / dh_val
+    # Calculate with numpy (handles arrays)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        result = poly_head_val / dh_val
     
-    return poly_eff
+    # Set NaN where dh is zero
+    mask = (dh_val == 0)
+    result = np.where(mask, np.nan, result)
+    
+    # Return scalar if input was scalar
+    return result.item() if result.ndim == 0 else result
 
 
 def dh(mass_enthalpy_1, mass_enthalpy_2):
@@ -274,6 +294,11 @@ def flow_coeff(Q, N, D, DefType='MAN'):
     elif DefType == 'ISO 5389':
         numerator = 4 * Q
     
+    # Convert to arrays for consistent handling
+    Q = np.asarray(Q, dtype=float)
+    N = np.asarray(N, dtype=float)
+    D = np.asarray(D, dtype=float)
+    
     # Calculate denominator
     U = D * np.pi * N / 60  # Tip speed
     
@@ -282,13 +307,16 @@ def flow_coeff(Q, N, D, DefType='MAN'):
     elif DefType == 'ISO 5389':
         denominator = np.pi * D**2 * U
     
-    # Check for invalid measurement values - return np.nan
-    if denominator == 0:
-        return np.nan
+    # Calculate with numpy (handles arrays)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        result = numerator / denominator
     
-    flow_coeff = numerator / denominator
+    # Set NaN where denominator is zero
+    mask = (denominator == 0)
+    result = np.where(mask, np.nan, result)
     
-    return flow_coeff
+    # Return scalar if input was scalar
+    return result.item() if result.ndim == 0 else result
 
 
 def impeller_tang_vel(N, D):
@@ -394,12 +422,20 @@ def poly_head_coeff(poly_head_val, sigma_u_squared_val):
     >>> poly_head_coeff(500, 0)
     nan
     """
-    if sigma_u_squared_val == 0:
-        return np.nan
+    # Convert to arrays for consistent handling
+    poly_head_val = np.asarray(poly_head_val, dtype=float)
+    sigma_u_squared_val = np.asarray(sigma_u_squared_val, dtype=float)
     
-    poly_head_coeff = (1000 * poly_head_val) / sigma_u_squared_val
+    # Calculate with numpy (handles arrays)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        result = (1000 * poly_head_val) / sigma_u_squared_val
     
-    return poly_head_coeff
+    # Set NaN where sigma_u_squared is zero
+    mask = (sigma_u_squared_val == 0)
+    result = np.where(mask, np.nan, result)
+    
+    # Return scalar if input was scalar
+    return result.item() if result.ndim == 0 else result
 
 
 def work_coefficient(dh_val, sigma_u_squared_val):
@@ -440,9 +476,17 @@ def work_coefficient(dh_val, sigma_u_squared_val):
     >>> work_coefficient(1000, 0)
     nan
     """
-    if sigma_u_squared_val == 0:
-        return np.nan
+    # Convert to arrays for consistent handling
+    dh_val = np.asarray(dh_val, dtype=float)
+    sigma_u_squared_val = np.asarray(sigma_u_squared_val, dtype=float)
     
-    work_coefficient = (1000 * dh_val) / sigma_u_squared_val
+    # Calculate with numpy (handles arrays)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        result = (1000 * dh_val) / sigma_u_squared_val
     
-    return work_coefficient
+    # Set NaN where sigma_u_squared is zero
+    mask = (sigma_u_squared_val == 0)
+    result = np.where(mask, np.nan, result)
+    
+    # Return scalar if input was scalar
+    return result.item() if result.ndim == 0 else result
