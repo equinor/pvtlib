@@ -1,0 +1,448 @@
+"""MIT License
+
+Copyright (c) 2025 Christian Hågenvik
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""
+
+import math
+import numpy as np
+
+
+def poly_exp(p_suction, p_discharge, rho_suction, rho_discharge):
+    """
+    Calculate the polytropic exponent.
+
+    Parameters
+    ----------
+    p_suction : float
+        Suction pressure in bara. Must be positive.
+    p_discharge : float
+        Discharge pressure in bara. Must be positive.
+    rho_suction : float
+        Suction density in kg/m^3. Must be positive.
+    rho_discharge : float
+        Discharge density in kg/m^3. Must be positive.
+
+    Returns
+    -------
+    float
+        The polytropic exponent in [-], or np.nan if any input is zero.
+
+    Notes
+    -----
+    Returns np.nan for invalid measurement values (zero pressures or densities)
+    to prevent crashes during batch processing of measurement data.
+
+    Examples
+    --------
+    >>> p_suction = 1.5
+    >>> p_discharge = 5.0
+    >>> rho_suction = 6.0
+    >>> rho_discharge = 12.0
+    >>> n = poly_exp(p_suction, p_discharge, rho_suction, rho_discharge)
+    >>> print(n)
+    1.7369655941662063
+    
+    Invalid measurements return NaN:
+    
+    >>> poly_exp(0, 5.0, 6.0, 12.0)
+    nan
+    """
+    if p_discharge == 0:
+        return np.nan
+    if rho_discharge == 0:
+        return np.nan
+    if p_suction == 0:
+        return np.nan
+    if rho_suction == 0:
+        return np.nan
+    
+    poly_exp = math.log(p_discharge / p_suction) / math.log(rho_discharge / rho_suction)
+    
+    return poly_exp
+
+
+def poly_head(poly_exp_val, p_suction, p_discharge, rho_suction, rho_discharge):
+    """
+    Calculate the polytropic head of a compressor.
+
+    Parameters
+    ----------
+    poly_exp_val : float
+        The polytropic exponent of the compressor in [-]. Must be positive.
+    p_suction : float
+        Suction pressure in bara. Must be positive.
+    p_discharge : float
+        Discharge pressure in bara. Must be positive.
+    rho_suction : float
+        Suction density in kg/m^3. Must be positive.
+    rho_discharge : float
+        Discharge density in kg/m^3. Must be positive.
+
+    Returns
+    -------
+    float
+        The polytropic head in kJ/kg, or np.nan if density values are zero.
+
+    Notes
+    -----
+    Returns np.nan for invalid measurement values (zero densities) to prevent
+    crashes during batch processing of measurement data.
+
+    Examples
+    --------
+    Calculate the polytropic head for given parameters:
+
+    >>> poly_exp_val = 1.25
+    >>> p_suction = 1.0
+    >>> p_discharge = 5.0
+    >>> rho_suction = 10
+    >>> rho_discharge = 40
+    >>> result = poly_head(poly_exp_val, p_suction, p_discharge, rho_suction, rho_discharge)
+    >>> print(result)
+    480.0
+    
+    Invalid measurements return NaN:
+    
+    >>> poly_head(1.25, 1.0, 5.0, 0, 40)
+    nan
+    """
+    if rho_discharge == 0:
+        return np.nan
+    if rho_suction == 0:
+        return np.nan
+    
+    poly_head = 100 * (poly_exp_val / (poly_exp_val - 1)) * (
+                (p_discharge / rho_discharge) - (p_suction / rho_suction))
+    
+    return poly_head
+
+
+def poly_eff(poly_head_val, dh_val):
+    """
+    Calculate the polytropic efficiency of the stage.
+
+    Parameters
+    ----------
+    poly_head_val : float
+        The polytropic head of the stage in kJ/kg. Must be positive.
+    dh_val : float
+        The specific mass enthalpy rise over the stage in kJ/kg. Must be non-zero.
+
+    Returns
+    -------
+    float
+        The polytropic efficiency in [-], or np.nan if dh is zero.
+
+    Notes
+    -----
+    Returns np.nan for invalid measurement values (zero enthalpy rise) to prevent
+    crashes during batch processing of measurement data.
+
+    Examples
+    --------
+    Calculate the polytropic efficiency for given parameters:
+
+    >>> poly_head_val = 80.0
+    >>> dh_val = 100.0
+    >>> result = poly_eff(poly_head_val, dh_val)
+    >>> print(result)
+    0.8
+    
+    Invalid measurements return NaN:
+    
+    >>> poly_eff(80.0, 0)
+    nan
+    """
+    if dh_val == 0:
+        return np.nan
+    
+    poly_eff = poly_head_val / dh_val
+    
+    return poly_eff
+
+
+def dh(mass_enthalpy_1, mass_enthalpy_2):
+    """
+    Calculate the specific mass enthalpy rise of the compressor.
+
+    Parameters
+    ----------
+    mass_enthalpy_1 : float
+        The inlet specific mass enthalpy in kJ/kg.
+    mass_enthalpy_2 : float
+        The discharge specific mass enthalpy in kJ/kg.
+
+    Returns
+    -------
+    float
+        The specific mass enthalpy rise in kJ/kg.
+
+    Examples
+    --------
+    Calculate the specific mass enthalpy rise for given parameters:
+
+    >>> mass_enthalpy_1 = 100.0
+    >>> mass_enthalpy_2 = 150.0
+    >>> result = dh(mass_enthalpy_1, mass_enthalpy_2)
+    >>> print(result)
+    50.0
+    """
+    dh = mass_enthalpy_2 - mass_enthalpy_1
+    
+    return dh
+
+
+def flow_coeff(Q, N, D, DefType='MAN'):
+    """
+    Calculate the flow coefficient of a compressor.
+
+    Parameters
+    ----------
+    Q : float
+        Fluid volumetric flow at compressor inlet in m^3/s.
+    N : float
+        Compressor speed in rpm.
+    D : float
+        First impeller diameter in m.
+    DefType : str, optional
+        Definition type for flow coefficient calculation. Must be either 'MAN' 
+        or 'ISO 5389'. Default is 'MAN'.
+
+    Returns
+    -------
+    float
+        Flow coefficient in [-], or np.nan if denominator is zero.
+
+    Raises
+    ------
+    ValueError
+        If DefType is not 'MAN' or 'ISO 5389'.
+
+    Notes
+    -----
+    Returns np.nan for invalid measurement values (zero denominator) to prevent
+    crashes during batch processing of measurement data.
+    
+    The function supports two definition types:
+    - 'MAN': Manufacturer's definition
+    - 'ISO 5389': ISO standard definition
+
+    Examples
+    --------
+    Calculate flow coefficient using manufacturer's definition:
+
+    >>> Q = 10.0
+    >>> N = 3000
+    >>> D = 0.5
+    >>> result = flow_coeff(Q, N, D, DefType='MAN')
+    >>> isinstance(result, float)
+    True
+    
+    Invalid DefType raises ValueError:
+    
+    >>> flow_coeff(10.0, 3000, 0.5, DefType='INVALID')  # doctest: +SKIP
+    Traceback (most recent call last):
+        ...
+    ValueError: DefType must be one of ['MAN', 'ISO 5389'], got 'INVALID'
+    """
+    # Validate DefType parameter - raise exception for programming error
+    valid_types = ['MAN', 'ISO 5389']
+    if DefType not in valid_types:
+        raise ValueError(f"DefType must be one of {valid_types}, got '{DefType}'")
+    
+    # Calculate numerator based on definition type
+    if DefType == 'MAN':
+        numerator = Q
+    elif DefType == 'ISO 5389':
+        numerator = 4 * Q
+    
+    # Calculate denominator
+    U = D * np.pi * N / 60  # Tip speed
+    
+    if DefType == 'MAN':
+        denominator = D**2 * U
+    elif DefType == 'ISO 5389':
+        denominator = np.pi * D**2 * U
+    
+    # Check for invalid measurement values - return np.nan
+    if denominator == 0:
+        return np.nan
+    
+    flow_coeff = numerator / denominator
+    
+    return flow_coeff
+
+
+def impeller_tang_vel(N, D):
+    """
+    Calculate impeller tangential velocity.
+
+    Parameters
+    ----------
+    N : float
+        Compressor speed in rpm.
+    D : float
+        Impeller outer diameter in m.
+
+    Returns
+    -------
+    float
+        Impeller tangential velocity in m/s.
+
+    Examples
+    --------
+    Calculate impeller tangential velocity:
+
+    >>> N = 3000
+    >>> D = 0.5
+    >>> result = impeller_tang_vel(N, D)
+    >>> isinstance(result, float)
+    True
+    """
+    impeller_tang_vel = 2 * np.pi * N * D / (2 * 60)
+    
+    return impeller_tang_vel
+
+
+def sigma_u_squared(tipSpeedArray):
+    """
+    Calculate the sigma U squared of the compressor.
+
+    Parameters
+    ----------
+    tipSpeedArray : numpy.ndarray or float
+        Tip speeds in m/s.
+
+    Returns
+    -------
+    float
+        The sigma U squared in m^2/s^2 (J/kg).
+
+    Notes
+    -----
+    This function calculates the sum of squared tip speeds, which is used in
+    compressor performance calculations.
+
+    Examples
+    --------
+    Calculate the sigma U squared for given parameters:
+
+    >>> import numpy as np
+    >>> tipSpeedArray = np.array([3, 4, 5, 3, 4, 5])
+    >>> result = sigma_u_squared(tipSpeedArray)
+    >>> print(result)
+    100
+    """
+    sigma_u_squared = np.sum(tipSpeedArray ** 2)
+    
+    return sigma_u_squared
+
+
+def poly_head_coeff(poly_head_val, sigma_u_squared_val):
+    """
+    Calculate the polytropic head coefficient of the compressor.
+
+    Parameters
+    ----------
+    poly_head_val : float
+        The polytropic head of the compressor in kJ/kg.
+    sigma_u_squared_val : float
+        Sigma U^2 in J/kg (m^2/s^2). Must be non-zero.
+
+    Returns
+    -------
+    float
+        The polytropic head coefficient in [-], or np.nan if sigma_u_squared is zero.
+
+    Notes
+    -----
+    Returns np.nan for invalid measurement values (zero sigma_u_squared) to prevent
+    crashes during batch processing of measurement data.
+    
+    This function calculates the polytropic head coefficient using the provided parameters.
+
+    Examples
+    --------
+    Calculate the polytropic head coefficient for given parameters:
+
+    >>> poly_head_val = 500
+    >>> sigma_u_squared_val = 900000
+    >>> result = poly_head_coeff(poly_head_val, sigma_u_squared_val)
+    >>> print(result)
+    0.5555555555555556
+    
+    Invalid measurements return NaN:
+    
+    >>> poly_head_coeff(500, 0)
+    nan
+    """
+    if sigma_u_squared_val == 0:
+        return np.nan
+    
+    poly_head_coeff = (1000 * poly_head_val) / sigma_u_squared_val
+    
+    return poly_head_coeff
+
+
+def work_coefficient(dh_val, sigma_u_squared_val):
+    """
+    Calculate the work coefficient of the compressor.
+
+    Parameters
+    ----------
+    dh_val : float
+        The specific mass enthalpy rise of the compressor in kJ/kg.
+    sigma_u_squared_val : float
+        Sigma U^2 in J/kg (m^2/s^2). Must be non-zero.
+
+    Returns
+    -------
+    float
+        The work coefficient of the compressor in [-], or np.nan if sigma_u_squared is zero.
+
+    Notes
+    -----
+    Returns np.nan for invalid measurement values (zero sigma_u_squared) to prevent
+    crashes during batch processing of measurement data.
+    
+    This function calculates the work coefficient using the provided parameters.
+
+    Examples
+    --------
+    Calculate the work coefficient for given parameters:
+
+    >>> dh_val = 1000
+    >>> sigma_u_squared_val = 2000000.0
+    >>> result = work_coefficient(dh_val, sigma_u_squared_val)
+    >>> print(result)
+    0.5
+    
+    Invalid measurements return NaN:
+    
+    >>> work_coefficient(1000, 0)
+    nan
+    """
+    if sigma_u_squared_val == 0:
+        return np.nan
+    
+    work_coefficient = (1000 * dh_val) / sigma_u_squared_val
+    
+    return work_coefficient
