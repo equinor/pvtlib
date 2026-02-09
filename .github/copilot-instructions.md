@@ -5,7 +5,9 @@ Python library for oil & gas thermodynamics, fluid mechanics, and metering. Wrap
 
 ## Critical Patterns
 
-**Error handling**: Return `np.nan` for invalid inputs, never raise exceptions (used in large-scale analysis)
+**Error handling**: Two distinct approaches depending on error type:
+- Return `np.nan` for real-world invalid measurements (negative pressures, divide by zero, non-physical values) - prevents crashes during large-scale analysis
+- Raise exceptions (`ValueError`, etc.) for programming errors where the user makes a mistake (wrong units, malformed inputs, incorrect function usage)
 
 **Function returns**: Always return dictionaries with descriptive keys, never tuples:
 ```python
