@@ -82,13 +82,13 @@ def poly_exp(p_suction, p_discharge, rho_suction, rho_discharge):
     return result.item() if result.ndim == 0 else result
 
 
-def poly_head(poly_exp_val, p_suction, p_discharge, rho_suction, rho_discharge):
+def poly_head(n, p_suction, p_discharge, rho_suction, rho_discharge):
     """
     Calculate the polytropic head of a compressor.
 
     Parameters
     ----------
-    poly_exp_val : float
+    n : float
         The polytropic exponent of the compressor in [-]. Must be positive.
     p_suction : float
         Suction pressure in bara. Must be positive.
@@ -113,12 +113,12 @@ def poly_head(poly_exp_val, p_suction, p_discharge, rho_suction, rho_discharge):
     --------
     Calculate the polytropic head for given parameters:
 
-    >>> poly_exp_val = 1.25
+    >>> n = 1.25
     >>> p_suction = 1.0
     >>> p_discharge = 5.0
     >>> rho_suction = 10
     >>> rho_discharge = 40
-    >>> result = poly_head(poly_exp_val, p_suction, p_discharge, rho_suction, rho_discharge)
+    >>> result = poly_head(n, p_suction, p_discharge, rho_suction, rho_discharge)
     >>> print(result)
     480.0
     
@@ -128,7 +128,7 @@ def poly_head(poly_exp_val, p_suction, p_discharge, rho_suction, rho_discharge):
     nan
     """
     # Convert to arrays for consistent handling
-    poly_exp_val = np.asarray(poly_exp_val, dtype=float)
+    n = np.asarray(n, dtype=float)
     p_suction = np.asarray(p_suction, dtype=float)
     p_discharge = np.asarray(p_discharge, dtype=float)
     rho_suction = np.asarray(rho_suction, dtype=float)
@@ -136,7 +136,7 @@ def poly_head(poly_exp_val, p_suction, p_discharge, rho_suction, rho_discharge):
     
     # Calculate with numpy (handles arrays)
     with np.errstate(divide='ignore', invalid='ignore'):
-        result = 100 * (poly_exp_val / (poly_exp_val - 1)) * (
+        result = 100 * (n / (n - 1)) * (
                     (p_discharge / rho_discharge) - (p_suction / rho_suction))
     
     # Set NaN where densities are zero
@@ -147,21 +147,21 @@ def poly_head(poly_exp_val, p_suction, p_discharge, rho_suction, rho_discharge):
     return result.item() if result.ndim == 0 else result
 
 
-def poly_eff(poly_head_val, dh_val):
+def poly_eff(head, enthalpy_rise):
     """
     Calculate the polytropic efficiency of the stage.
 
     Parameters
     ----------
-    poly_head_val : float
+    head : float
         The polytropic head of the stage in kJ/kg. Must be positive.
-    dh_val : float
+    enthalpy_rise : float
         The specific mass enthalpy rise over the stage in kJ/kg. Must be non-zero.
 
     Returns
     -------
     float
-        The polytropic efficiency in [-], or np.nan if dh is zero.
+        The polytropic efficiency in [-], or np.nan if enthalpy_rise is zero.
 
     Notes
     -----
@@ -172,9 +172,9 @@ def poly_eff(poly_head_val, dh_val):
     --------
     Calculate the polytropic efficiency for given parameters:
 
-    >>> poly_head_val = 80.0
-    >>> dh_val = 100.0
-    >>> result = poly_eff(poly_head_val, dh_val)
+    >>> head = 80.0
+    >>> enthalpy_rise = 100.0
+    >>> result = poly_eff(head, enthalpy_rise)
     >>> print(result)
     0.8
     
@@ -184,15 +184,15 @@ def poly_eff(poly_head_val, dh_val):
     nan
     """
     # Convert to arrays for consistent handling
-    poly_head_val = np.asarray(poly_head_val, dtype=float)
-    dh_val = np.asarray(dh_val, dtype=float)
+    head = np.asarray(head, dtype=float)
+    enthalpy_rise = np.asarray(enthalpy_rise, dtype=float)
     
     # Calculate with numpy (handles arrays)
     with np.errstate(divide='ignore', invalid='ignore'):
-        result = poly_head_val / dh_val
+        result = head / enthalpy_rise
     
-    # Set NaN where dh is zero
-    mask = (dh_val == 0)
+    # Set NaN where enthalpy_rise is zero
+    mask = (enthalpy_rise == 0)
     result = np.where(mask, np.nan, result)
     
     # Return scalar if input was scalar
@@ -384,25 +384,25 @@ def sigma_u_squared(tipSpeedArray):
     return sigma_u_squared
 
 
-def poly_head_coeff(poly_head_val, sigma_u_squared_val):
+def poly_head_coeff(head, sigma_u_sq):
     """
     Calculate the polytropic head coefficient of the compressor.
 
     Parameters
     ----------
-    poly_head_val : float
+    head : float
         The polytropic head of the compressor in kJ/kg.
-    sigma_u_squared_val : float
+    sigma_u_sq : float
         Sigma U^2 in J/kg (m^2/s^2). Must be non-zero.
 
     Returns
     -------
     float
-        The polytropic head coefficient in [-], or np.nan if sigma_u_squared is zero.
+        The polytropic head coefficient in [-], or np.nan if sigma_u_sq is zero.
 
     Notes
     -----
-    Returns np.nan for invalid measurement values (zero sigma_u_squared) to prevent
+    Returns np.nan for invalid measurement values (zero sigma_u_sq) to prevent
     crashes during batch processing of measurement data.
     
     This function calculates the polytropic head coefficient using the provided parameters.
@@ -411,9 +411,9 @@ def poly_head_coeff(poly_head_val, sigma_u_squared_val):
     --------
     Calculate the polytropic head coefficient for given parameters:
 
-    >>> poly_head_val = 500
-    >>> sigma_u_squared_val = 900000
-    >>> result = poly_head_coeff(poly_head_val, sigma_u_squared_val)
+    >>> head = 500
+    >>> sigma_u_sq = 900000
+    >>> result = poly_head_coeff(head, sigma_u_sq)
     >>> print(result)
     0.5555555555555556
     
@@ -423,40 +423,40 @@ def poly_head_coeff(poly_head_val, sigma_u_squared_val):
     nan
     """
     # Convert to arrays for consistent handling
-    poly_head_val = np.asarray(poly_head_val, dtype=float)
-    sigma_u_squared_val = np.asarray(sigma_u_squared_val, dtype=float)
+    head = np.asarray(head, dtype=float)
+    sigma_u_sq = np.asarray(sigma_u_sq, dtype=float)
     
     # Calculate with numpy (handles arrays)
     with np.errstate(divide='ignore', invalid='ignore'):
-        result = (1000 * poly_head_val) / sigma_u_squared_val
+        result = (1000 * head) / sigma_u_sq
     
-    # Set NaN where sigma_u_squared is zero
-    mask = (sigma_u_squared_val == 0)
+    # Set NaN where sigma_u_sq is zero
+    mask = (sigma_u_sq == 0)
     result = np.where(mask, np.nan, result)
     
     # Return scalar if input was scalar
     return result.item() if result.ndim == 0 else result
 
 
-def work_coefficient(dh_val, sigma_u_squared_val):
+def work_coefficient(enthalpy_rise, sigma_u_sq):
     """
     Calculate the work coefficient of the compressor.
 
     Parameters
     ----------
-    dh_val : float
+    enthalpy_rise : float
         The specific mass enthalpy rise of the compressor in kJ/kg.
-    sigma_u_squared_val : float
+    sigma_u_sq : float
         Sigma U^2 in J/kg (m^2/s^2). Must be non-zero.
 
     Returns
     -------
     float
-        The work coefficient of the compressor in [-], or np.nan if sigma_u_squared is zero.
+        The work coefficient of the compressor in [-], or np.nan if sigma_u_sq is zero.
 
     Notes
     -----
-    Returns np.nan for invalid measurement values (zero sigma_u_squared) to prevent
+    Returns np.nan for invalid measurement values (zero sigma_u_sq) to prevent
     crashes during batch processing of measurement data.
     
     This function calculates the work coefficient using the provided parameters.
@@ -465,9 +465,9 @@ def work_coefficient(dh_val, sigma_u_squared_val):
     --------
     Calculate the work coefficient for given parameters:
 
-    >>> dh_val = 1000
-    >>> sigma_u_squared_val = 2000000.0
-    >>> result = work_coefficient(dh_val, sigma_u_squared_val)
+    >>> enthalpy_rise = 1000
+    >>> sigma_u_sq = 2000000.0
+    >>> result = work_coefficient(enthalpy_rise, sigma_u_sq)
     >>> print(result)
     0.5
     
@@ -477,15 +477,15 @@ def work_coefficient(dh_val, sigma_u_squared_val):
     nan
     """
     # Convert to arrays for consistent handling
-    dh_val = np.asarray(dh_val, dtype=float)
-    sigma_u_squared_val = np.asarray(sigma_u_squared_val, dtype=float)
+    enthalpy_rise = np.asarray(enthalpy_rise, dtype=float)
+    sigma_u_sq = np.asarray(sigma_u_sq, dtype=float)
     
     # Calculate with numpy (handles arrays)
     with np.errstate(divide='ignore', invalid='ignore'):
-        result = (1000 * dh_val) / sigma_u_squared_val
+        result = (1000 * enthalpy_rise) / sigma_u_sq
     
-    # Set NaN where sigma_u_squared is zero
-    mask = (sigma_u_squared_val == 0)
+    # Set NaN where sigma_u_sq is zero
+    mask = (sigma_u_sq == 0)
     result = np.where(mask, np.nan, result)
     
     # Return scalar if input was scalar

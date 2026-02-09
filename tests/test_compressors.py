@@ -77,13 +77,13 @@ def test_poly_exp_realistic_values():
 
 def test_poly_head():
     """Test polytropic head calculation from docstring example."""
-    poly_exp_val = 1.36
+    n = 1.36
     p_suction = 51.0
     p_discharge = 81.0
     rho_suction = 40.7
     rho_discharge = 57.1
     
-    result = poly_head(poly_exp_val, p_suction, p_discharge, rho_suction, rho_discharge)
+    result = poly_head(n, p_suction, p_discharge, rho_suction, rho_discharge)
     expected = 62.51945306236031
     
     assert np.isclose(result, expected), f"Expected {expected}, got {result}"
@@ -99,10 +99,10 @@ def test_poly_head_zero_density():
 
 def test_poly_eff():
     """Test polytropic efficiency calculation from docstring example."""
-    poly_head_val = 80.0
-    dh_val = 100.0
+    head = 80.0
+    enthalpy_rise = 100.0
     
-    result = poly_eff(poly_head_val, dh_val)
+    result = poly_eff(head, enthalpy_rise)
     expected = 0.8
     
     assert np.isclose(result, expected), f"Expected {expected}, got {result}"
@@ -115,10 +115,10 @@ def test_poly_eff_zero_dh():
 
 def test_poly_eff_physical_limits():
     """Test that efficiency is between 0 and 1."""
-    poly_head_val = 80.0
-    dh_val = 100.0
+    head = 80.0
+    enthalpy_rise = 100.0
     
-    result = poly_eff(poly_head_val, dh_val)
+    result = poly_eff(head, enthalpy_rise)
     
     # Polytropic efficiency should be between 0 and 1
     assert 0 < result <= 1.0, f"Unrealistic efficiency: {result}"
@@ -258,10 +258,10 @@ def test_sigma_u_squared_single_element():
 
 def test_poly_head_coeff():
     """Test polytropic head coefficient calculation from docstring example."""
-    poly_head_val = 500
-    sigma_u_squared_val = 900000
+    head = 500
+    sigma_u_sq = 900000
     
-    result = poly_head_coeff(poly_head_val, sigma_u_squared_val)
+    result = poly_head_coeff(head, sigma_u_sq)
     expected = 0.5555555555555556
     
     assert np.isclose(result, expected), f"Expected {expected}, got {result}"
@@ -276,10 +276,10 @@ def test_poly_head_coeff_zero_sigma():
 
 def test_work_coefficient():
     """Test work coefficient calculation from docstring example."""
-    dh_val = 1000
-    sigma_u_squared_val = 2000000.0
+    enthalpy_rise = 1000
+    sigma_u_sq = 2000000.0
     
-    result = work_coefficient(dh_val, sigma_u_squared_val)
+    result = work_coefficient(enthalpy_rise, sigma_u_sq)
     expected = 0.5
     
     assert np.isclose(result, expected), f"Expected {expected}, got {result}"
@@ -308,13 +308,13 @@ def test_poly_exp_with_arrays():
 
 def test_poly_head_with_arrays():
     """Test poly_head with numpy arrays."""
-    poly_exp_val = np.array([1.25, 1.30, 1.35])
+    n = np.array([1.25, 1.30, 1.35])
     p_suction = np.array([1.0, 1.5, 2.0])
     p_discharge = np.array([5.0, 6.0, 7.0])
     rho_suction = np.array([10, 11, 12])
     rho_discharge = np.array([40, 42, 44])
     
-    result = poly_head(poly_exp_val, p_suction, p_discharge, rho_suction, rho_discharge)
+    result = poly_head(n, p_suction, p_discharge, rho_suction, rho_discharge)
     
     assert isinstance(result, np.ndarray), "Result should be numpy array"
     assert len(result) == 3, "Result should have 3 elements"
@@ -350,13 +350,13 @@ def test_compression_calculation_chain():
     n = poly_exp(p_suction, p_discharge, rho_suction, rho_discharge)
     assert not np.isnan(n), "Polytropic exponent should be valid"
     
-    poly_head_val = poly_head(n, p_suction, p_discharge, rho_suction, rho_discharge)
-    assert not np.isnan(poly_head_val), "Polytropic head should be valid"
-    assert poly_head_val > 0, "Polytropic head should be positive"
+    head = poly_head(n, p_suction, p_discharge, rho_suction, rho_discharge)
+    assert not np.isnan(head), "Polytropic head should be valid"
+    assert head > 0, "Polytropic head should be positive"
     
-    dh_val = dh(mass_enthalpy_1, mass_enthalpy_2)
-    assert dh_val == 100.0, "Enthalpy rise should match"
+    enthalpy_rise = dh(mass_enthalpy_1, mass_enthalpy_2)
+    assert enthalpy_rise == 100.0, "Enthalpy rise should match"
     
-    eff = poly_eff(poly_head_val, dh_val)
+    eff = poly_eff(head, enthalpy_rise)
     assert not np.isnan(eff), "Efficiency should be valid"
     assert 0 < eff <= 1.0, "Efficiency should be between 0 and 1"
