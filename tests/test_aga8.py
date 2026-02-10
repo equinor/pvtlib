@@ -609,6 +609,31 @@ def test_mix_negative_total_mass_error():
         aga8.mix([gas_A, gas_B], [50, -100], check_input=True)
 
 
+def test_mix_negative_amount_returns_only_input_components():
+    """Test that NaN error returns only include components present in the input, not all 21 AGA8 components."""
+    from pvtlib import AGA8
+    import numpy as np
+    
+    aga8 = AGA8('GERG-2008')
+    
+    # Mix gases with only 3 components: N2, CO2, C1
+    gas_1 = {'N2': 50, 'CO2': 50}
+    gas_2 = {'N2': 50, 'C1': 50}
+    
+    # Create a negative amount situation by excessive subtraction
+    result = aga8.mix([gas_1, gas_2], [100, -200], check_input=False)
+    
+    # Check that total mass is NaN
+    assert np.isnan(result['total_mass'])
+    
+    # Check that composition only contains the 3 components present in inputs, not all 21
+    expected_components = {'N2', 'CO2', 'C1'}
+    assert set(result['composition'].keys()) == expected_components
+    
+    # Check that all returned components are NaN
+    assert all(np.isnan(v) for v in result['composition'].values())
+
+
 def test_mix_performance():
     """Test mix function performance by running 1000 iterations."""
     from pvtlib import AGA8
