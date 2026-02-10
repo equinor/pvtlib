@@ -607,3 +607,99 @@ def test_mix_negative_total_mass_error():
     # Subtract more mass than available - will trigger negative moles or negative mass error
     with raises(ValueError):
         aga8.mix([gas_A, gas_B], [50, -100], check_input=True)
+
+
+def test_mix_performance():
+    """Test mix function performance by running 1000 iterations."""
+    from pvtlib import AGA8
+    import time
+    
+    aga8 = AGA8('GERG-2008')
+    
+    # Use a mix of different complexities
+    gas_A = {'N2': 2, 'C1': 90, 'C2': 5, 'C3': 3}
+    gas_B = {'N2': 100}
+    gas_C = {'CO2': 50, 'C1': 50}
+    gas_D = {'N2': 10, 'C1': 80, 'C2': 5, 'C3': 5}
+    
+    # Warm up (ensure AGA8 is fully initialized)
+    _ = aga8.mix([gas_A, gas_D], [50, 50])
+    
+    # Time 1000 iterations
+    n_iterations = 1000
+    start_time = time.perf_counter()
+    
+    for _ in range(n_iterations):
+        result = aga8.mix([gas_A, gas_D], [50, 50])
+    
+    end_time = time.perf_counter()
+    elapsed_time = end_time - start_time
+    avg_time_ms = (elapsed_time / n_iterations) * 1000
+    
+    # Print timing results
+    print(f"\n{n_iterations} mix operations completed in {elapsed_time:.3f} seconds")
+    print(f"Average time per mix: {avg_time_ms:.3f} ms")
+    
+    # Assert reasonable performance (should be very fast with numpy vectorization)
+    assert avg_time_ms < 1.0, f"Mix operation too slow: {avg_time_ms:.3f} ms per operation"
+
+
+def test_gerg_gas1_properties():
+    """Test GERG-2008 calculation for Gas 1 composition against expected reference values."""
+    from pvtlib import AGA8
+    
+    # Initialize GERG-2008
+    gerg = AGA8('GERG-2008')
+    
+    # Gas 1 composition and conditions
+    composition = {
+        'N2': 1,
+        'CO2': 2,
+        'C1': 90,
+        'C2': 6,
+        'C3': 0.9,
+        'iC4': 0.05,
+        'nC4': 0.05
+    }
+    
+    pressure = 150  # bara
+    temperature = 50  # °C
+    
+    # Calculate properties
+    result = gerg.calculate_from_PT(
+        composition=composition,
+        pressure=pressure,
+        temperature=temperature,
+        pressure_unit='bara',
+        temperature_unit='C'
+    )
+    
+    # Expected values (reference from other software)
+    expected = {
+        'rho': 118.40011648,      # Density [kg/m³]
+        'w': 457.29319197,        # Speed of sound [m/s]
+        'mm': 17.85766318,        # Molar mass [g/mol]
+        'z': 0.84202487,          # Compressibility factor [-]
+        'kappa': 1.65063231,      # Isentropic exponent [-]
+        'cp': 55.12684554,        # Isobaric heat capacity [J/(mol·K)]
+        'cv': 31.96913688         # Isochoric heat capacity [J/(mol·K)]
+    }
+    
+    # Verify results with appropriate tolerance
+    # Use relative tolerance for better precision across different magnitudes
+    relative_tolerance = 1e-6  # 0.0001% relative error
+    
+    print("\nGERG-2008 Properties for Gas 1:")
+    print(f"{'Property':<20} {'Calculated':<15} {'Expected':<15} {'Match':<10}")
+    print("-" * 60)
+    
+    for prop, expected_value in expected.items():
+        calculated_value = result[prop]
+        relative_error = abs((calculated_value - expected_value) / expected_value)
+        matches = relative_error < relative_tolerance
+        status = "✓" if matches else "✗"
+        print(f"{prop:<20} {calculated_value:<15.8f} {expected_value:<15.8f} {status:<10}")
+        
+        assert relative_error < relative_tolerance, \
+            f"{prop}: calculated {calculated_value:.8f}, expected {expected_value:.8f}, relative error {relative_error:.2e}"
+

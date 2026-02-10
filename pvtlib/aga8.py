@@ -573,9 +573,8 @@ class AGA8:
             else:
                 return results_error
         
-        # Normalize to mole fractions (avoid division by zero with where)
-        comp_matrix_normalized = np.divide(comp_matrix, comp_sums[:, np.newaxis], 
-                                           where=comp_sums[:, np.newaxis] != 0)
+        # Normalize to mole fractions (safe to divide since we checked for zeros above)
+        comp_matrix_normalized = comp_matrix / comp_sums[:, np.newaxis]
         
         # Calculate average molecular weight for each composition (vectorized)
         avg_mw_array = np.dot(comp_matrix_normalized, self.molecular_weights)
