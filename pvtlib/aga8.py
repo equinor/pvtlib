@@ -23,9 +23,9 @@ SOFTWARE.
 The code is based upon the python library pyaga8, which is again based upon the open source rust package aga8 (https://crates.io/crates/aga8)
 """
 
+import numpy as np
 import pyaga8
 from scipy import optimize
-from numpy import nan, isnan
 
 class AGA8:
     """
@@ -61,6 +61,10 @@ class AGA8:
 
         elif self.equation == 'DETAIL':
             self.adapter = pyaga8.Detail()
+        
+        # Initialize molecular weights for AGA8 components
+        # These are stored to ensure consistency with the equation of state being used
+        self._initialize_molecular_weights()
 
     def _get_properties(self):
         properties = {}
@@ -73,6 +77,69 @@ class AGA8:
 
         return properties
 
+    def _initialize_molecular_weights(self):
+        """
+        Initialize molecular weights for all AGA8 components.
+        These values are from official AGA8 standards and differ between GERG-2008 and DETAIL equations.
+        """
+        # Component list in consistent order
+        self.aga8_components = ['C1', 'N2', 'CO2', 'C2', 'C3', 'iC4', 'nC4', 'iC5', 'nC5', 
+                                'nC6', 'nC7', 'nC8', 'nC9', 'nC10', 'H2', 'O2', 'CO', 
+                                'H2O', 'H2S', 'He', 'Ar']
+        
+        # Molecular weights from official AGA8 NIST github repo [g/mol]
+        if self.equation == 'GERG-2008':
+            self.molecular_weights = np.array([
+                16.04246,   # C1 - methane
+                28.0134,    # N2 - nitrogen
+                44.0095,    # CO2 - carbon dioxide
+                30.06904,   # C2 - ethane
+                44.09562,   # C3 - propane
+                58.1222,    # iC4 - isobutane
+                58.1222,    # nC4 - n-butane
+                72.14878,   # iC5 - isopentane
+                72.14878,   # nC5 - n-pentane
+                86.17536,   # nC6 - hexane
+                100.20194,  # nC7 - heptane
+                114.22852,  # nC8 - octane
+                128.2551,   # nC9 - nonane
+                142.28168,  # nC10 - decane
+                2.01588,    # H2 - hydrogen
+                31.9988,    # O2 - oxygen
+                28.0101,    # CO - carbon monoxide
+                18.01528,   # H2O - water
+                34.08088,   # H2S - hydrogen sulfide
+                4.002602,   # He - helium
+                39.948      # Ar - argon
+            ], dtype=np.float64)
+        elif self.equation == 'DETAIL':
+            self.molecular_weights = np.array([
+                16.043,     # C1 - methane
+                28.0135,    # N2 - nitrogen
+                44.01,      # CO2 - carbon dioxide
+                30.07,      # C2 - ethane
+                44.097,     # C3 - propane
+                58.123,     # iC4 - isobutane
+                58.123,     # nC4 - n-butane
+                72.15,      # iC5 - isopentane
+                72.15,      # nC5 - n-pentane
+                86.177,     # nC6 - hexane
+                100.204,    # nC7 - heptane
+                114.231,    # nC8 - octane
+                128.258,    # nC9 - nonane
+                142.285,    # nC10 - decane
+                2.0159,     # H2 - hydrogen
+                31.9988,    # O2 - oxygen
+                28.01,      # CO - carbon monoxide
+                18.0153,    # H2O - water
+                34.082,     # H2S - hydrogen sulfide
+                4.0026,     # He - helium
+                39.948      # Ar - argon
+            ], dtype=np.float64)
+        
+        # Create component index mapping for fast lookup
+        self.component_indices = {comp: idx for idx, comp in enumerate(self.aga8_components)}
+    
     def _calculate_density(self):
         if self.equation == 'GERG-2008':
             self.adapter.calc_density(0)
@@ -175,12 +242,12 @@ class AGA8:
         
         # Check if any input is nan, including composition values. In case any values are nan, return a dictionary with all properties as nan
         if (
-            isnan(pressure_kPa)
-            or isnan(temperature_K)
-            or any(isnan(v) for v in composition.values())
+            np.isnan(pressure_kPa)
+            or np.isnan(temperature_K)
+            or any(np.isnan(v) for v in composition.values())
         ):
                     # get properties
-            results = {key: nan for key in self._get_properties().keys()}
+            results = {key: np.nan for key in self._get_properties().keys()}
         else:
 
             self.adapter.set_composition(Aga8fluid)
@@ -242,12 +309,12 @@ class AGA8:
 
         # Check if any input is nan, including composition values and mass_density
         if (
-            isnan(mass_density)
-            or isnan(temperature_K)
-            or any(isnan(v) for v in composition.values())
+            np.isnan(mass_density)
+            or np.isnan(temperature_K)
+            or any(np.isnan(v) for v in composition.values())
         ):
             # get properties
-            results = {key: nan for key in self._get_properties().keys()}
+            results = {key: np.nan for key in self._get_properties().keys()}
             # Add gas composition to results
             results['gas_composition'] = Aga8fluidDict
             return results
@@ -320,13 +387,13 @@ class AGA8:
             pressure_unit=pressure_unit
         )
         if (
-            isnan(pressure_kPa)
-            or isnan(enthalpy)
-            or any(isnan(v) for v in composition.values())
+            np.isnan(pressure_kPa)
+            or np.isnan(enthalpy)
+            or any(np.isnan(v) for v in composition.values())
         ):
             # get properties
             Aga8fluid, Aga8fluidDict = to_aga8_composition(composition)
-            results = {key: nan for key in self._get_properties().keys()}
+            results = {key: np.nan for key in self._get_properties().keys()}
             results['gas_composition'] = Aga8fluidDict
             return results
 
@@ -374,13 +441,13 @@ class AGA8:
             pressure_unit=pressure_unit
         )
         if (
-            isnan(pressure_kPa)
-            or isnan(entropy)
-            or any(isnan(v) for v in composition.values())
+            np.isnan(pressure_kPa)
+            or np.isnan(entropy)
+            or any(np.isnan(v) for v in composition.values())
         ):
             # get properties
             Aga8fluid, Aga8fluidDict = to_aga8_composition(composition)
-            results = {key: nan for key in self._get_properties().keys()}
+            results = {key: np.nan for key in self._get_properties().keys()}
             results['gas_composition'] = Aga8fluidDict
             return results
 
@@ -395,6 +462,177 @@ class AGA8:
         temperature_solution = optimize.fsolve(residual, x0=[temperature_guess])
         temperature_scalar = temperature_solution.item() if hasattr(temperature_solution, 'item') else float(temperature_solution[0])
         results = self.calculate_from_PT(composition, pressure, temperature_scalar, pressure_unit, temperature_unit, molar_mass)
+        return results
+
+    def mix(self, compositions: list, mix_weights: list, check_input: bool = False):
+        """
+        Mix fluids consisting of components from the AGA8 component list, based on their masses.
+        Uses molecular weights from the initialized AGA8 equation of state.
+        The function can take any number of compositions and corresponding masses, and will return the resulting composition and total mass of the mixture.
+
+        Parameters
+        ----------
+        compositions : list
+            A list of composition dictionaries, where each dictionary contains component names as keys 
+            and mole percent or mole fraction as values. Components should be from the AGA8 component list:
+            C1, N2, CO2, C2, C3, iC4, nC4, iC5, nC5, nC6, nC7, nC8, nC9, nC10, H2, O2, CO, H2O, H2S, He, Ar.
+        mix_weights : list
+            A list of masses [kg] corresponding to each composition. Must be the same length as compositions.
+            Can include negative values for subtraction operations.
+        check_input : bool, optional
+            If True, raises exceptions for invalid inputs. If False, returns NaN values for invalid inputs.
+            Default is False.
+
+        Returns
+        -------
+        results : dict
+            Dictionary containing:
+            - 'composition': Dictionary with component names as keys and mole percent (0-100) as values.
+            - 'total_mass': Total mass of the mixture [kg].
+
+        Raises
+        ------
+        ValueError
+            If check_input is True and any of the following occur:
+            - Length of compositions and mix_weights lists don't match
+            - Any component moles become negative after mixing (non-physical)
+            - Total mass becomes negative after mixing
+            - Invalid component names in compositions
+
+        Examples
+        --------
+        >>> aga8 = AGA8('GERG-2008')
+        >>> comp1 = {'C1': 90, 'C2': 10}
+        >>> comp2 = {'C1': 80, 'C3': 20}
+        >>> result = aga8.mix([comp1, comp2], [100, 50])
+        >>> result['composition']
+        {'C1': 86.67, 'C2': 6.67, 'C3': 6.67}
+        >>> result['total_mass']
+        150.0
+
+        References
+        ----------
+        .. [1] AGA Report No. 8, Thermodynamic Properties of Natural Gas and Related Gases.
+        """
+        
+        # Use molecular weights and component list from class initialization
+        n_components = len(self.aga8_components)
+        
+        # Error return dictionary
+        results_error = {
+            'composition': {comp: np.nan for comp in self.aga8_components},
+            'total_mass': np.nan
+        }
+        
+        # Input validation
+        n_compositions = len(compositions)
+        n_weights = len(mix_weights)
+        
+        if check_input:
+            if n_compositions != n_weights:
+                raise ValueError('Length of compositions and mix_weights lists must be equal.')
+            if n_compositions == 0:
+                raise ValueError('At least one composition must be provided.')
+        else:
+            if n_compositions != n_weights:
+                return results_error
+            if n_compositions == 0:
+                return results_error
+        
+        # Convert mix_weights to numpy array for vectorized operations
+        mix_weights_array = np.array(mix_weights, dtype=np.float64)
+        
+        # Initialize numpy array to track moles of each component
+        component_moles = np.zeros(n_components, dtype=np.float64)
+        
+        # Create composition matrix (n_compositions x n_components)
+        comp_matrix = np.zeros((n_compositions, n_components), dtype=np.float64)
+        
+        # Fill composition matrix
+        for i, comp_dict in enumerate(compositions):
+            # Validate all components first
+            for component in comp_dict.keys():
+                if component not in self.component_indices:
+                    if check_input:
+                        raise ValueError(f'Invalid component: {component}. Must be one of the AGA8 components.')
+                    else:
+                        return results_error
+            
+            # Fill row in matrix
+            for component, value in comp_dict.items():
+                idx = self.component_indices[component]
+                comp_matrix[i, idx] = value
+        
+        # Normalize each composition to mole fractions (vectorized)
+        comp_sums = np.sum(comp_matrix, axis=1)
+        
+        # Check for zero sums
+        if np.any(comp_sums == 0.0):
+            if check_input:
+                raise ValueError('Composition sum cannot be zero.')
+            else:
+                return results_error
+        
+        # Normalize to mole fractions (safe to divide since we checked for zeros above)
+        comp_matrix_normalized = comp_matrix / comp_sums[:, np.newaxis]
+        
+        # Calculate average molecular weight for each composition (vectorized)
+        avg_mw_array = np.dot(comp_matrix_normalized, self.molecular_weights)
+        
+        # Calculate total moles for each composition (vectorized)
+        # Convert kg to g, then divide by g/mol
+        total_moles_array = (mix_weights_array * 1000) / avg_mw_array
+        
+        # Calculate moles of each component for each composition (vectorized)
+        moles_matrix = comp_matrix_normalized * total_moles_array[:, np.newaxis]
+        
+        # Sum moles across all compositions (vectorized)
+        component_moles = np.sum(moles_matrix, axis=0)
+        
+        # Calculate total mass
+        total_mass = np.sum(mix_weights_array)
+        
+        # Check for negative moles (non-physical)
+        if check_input:
+            if np.any(component_moles < 0):
+                negative_indices = np.where(component_moles < 0)[0]
+                negative_components = [self.aga8_components[i] for i in negative_indices]
+                raise ValueError(f'Negative moles detected for components: {negative_components}. This is non-physical.')
+            if total_mass < 0:
+                raise ValueError(f'Total mass is negative ({total_mass} kg). This is non-physical.')
+        else:
+            if np.any(component_moles < 0) or total_mass < 0:
+                return results_error
+        
+        # Calculate total moles
+        total_moles_sum = np.sum(component_moles)
+        
+        # Handle case where total moles is zero
+        if total_moles_sum == 0.0:
+            if check_input:
+                raise ValueError('Total moles is zero after mixing.')
+            else:
+                return results_error
+        
+        # Calculate mole fractions and convert to mole percent (vectorized)
+        mole_fractions = component_moles / total_moles_sum
+        mole_percents = mole_fractions * 100.0
+        
+        # Create result dictionary with only non-zero components
+        # Use numpy boolean indexing for speed
+        nonzero_mask = mole_percents > 0
+        nonzero_indices = np.where(nonzero_mask)[0]
+        
+        result_composition = {
+            self.aga8_components[idx]: float(mole_percents[idx]) 
+            for idx in nonzero_indices
+        }
+        
+        results = {
+            'composition': result_composition,
+            'total_mass': float(total_mass)
+        }
+        
         return results
 
 

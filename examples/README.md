@@ -59,6 +59,12 @@ Apply corrections to gas density meter (GDM) measurements for Emerson Micro Moti
 
 **Required packages**: pvtlib only
 
+### 10 Gas Mixing Calculation
+Calculate the resulting gas composition when mixing multiple streams with different compositions, pressures, and temperatures. Demonstrates conversion from volumetric to mass flowrate using GERG-2008 density calculations and the AGA8.mix() function for stream mixing and subtraction.
+
+**Required packages**: pvtlib, pandas, numpy  
+**Format**: Jupyter Notebook
+
 ## Usage
 
 Each example is contained in its own numbered folder with:
