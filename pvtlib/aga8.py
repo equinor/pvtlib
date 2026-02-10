@@ -518,9 +518,15 @@ class AGA8:
         # Use molecular weights and component list from class initialization
         n_components = len(self.aga8_components)
         
-        # Error return dictionary
+        # Collect all unique components from the input compositions
+        # This will be used for error return to only include components that were present in the inputs
+        unique_components = set()
+        for comp_dict in compositions:
+            unique_components.update(comp_dict.keys())
+        
+        # Error return dictionary - only includes components present in input compositions
         results_error = {
-            'composition': {comp: np.nan for comp in self.aga8_components},
+            'composition': {comp: np.nan for comp in unique_components},
             'total_mass': np.nan
         }
         
