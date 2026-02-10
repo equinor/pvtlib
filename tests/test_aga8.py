@@ -323,3 +323,287 @@ def test_aga8_calculation_speed():
         aga8.calculate_from_PS(composition=composition, pressure=10.0, entropy=10.0)
     elapsed = time.perf_counter() - start
     assert elapsed < 1.0, f"calculate_from_PS is too slow: {elapsed:.3f}s for 1000 calls"
+
+
+def test_mix_example1():
+    """Test mixing example 1: gas A (N2, C1, C2, C3) + gas D (N2, C1, C2, C3)."""
+    from pvtlib import AGA8
+    
+    aga8 = AGA8('GERG-2008')
+    
+    gas_A = {'N2': 2, 'C1': 90, 'C2': 5, 'C3': 3}
+    gas_D = {'N2': 10, 'C1': 80, 'C2': 5, 'C3': 5}
+    
+    result = aga8.mix([gas_A, gas_D], [50, 50])
+    
+    # Check total mass
+    assert result['total_mass'] == 100.0
+    
+    # Check composition (expected values with tolerance)
+    assert abs(result['composition']['N2'] - 5.837) < 0.01
+    assert abs(result['composition']['C1'] - 85.204) < 0.01
+    assert abs(result['composition']['C2'] - 5.000) < 0.01
+    assert abs(result['composition']['C3'] - 3.959) < 0.01
+    
+    # Check composition sums to 100%
+    total_percent = sum(result['composition'].values())
+    assert abs(total_percent - 100.0) < 0.01
+
+
+def test_mix_example1_mole_fractions():
+    """Test mixing with mole fractions instead of mole percent (based on example 1)."""
+    from pvtlib import AGA8
+    
+    aga8 = AGA8('GERG-2008')
+    
+    # Same as example 1 but using mole fractions (0-1) instead of mole percent (0-100)
+    gas_A = {'N2': 0.02, 'C1': 0.90, 'C2': 0.05, 'C3': 0.03}
+    gas_D = {'N2': 0.10, 'C1': 0.80, 'C2': 0.05, 'C3': 0.05}
+    
+    result = aga8.mix([gas_A, gas_D], [50, 50])
+    
+    # Check total mass
+    assert result['total_mass'] == 100.0
+    
+    # Check composition - should give same results as example 1
+    assert abs(result['composition']['N2'] - 5.837) < 0.01
+    assert abs(result['composition']['C1'] - 85.204) < 0.01
+    assert abs(result['composition']['C2'] - 5.000) < 0.01
+    assert abs(result['composition']['C3'] - 3.959) < 0.01
+    
+    # Check composition sums to 100%
+    total_percent = sum(result['composition'].values())
+    assert abs(total_percent - 100.0) < 0.01
+
+
+def test_mix_example2():
+    """Test mixing example 2: gas A (N2, C1, C2, C3) + gas B."""
+    from pvtlib import AGA8
+    
+    aga8 = AGA8('GERG-2008')
+    
+    gas_A = {'N2': 2, 'C1': 90, 'C2': 5, 'C3': 3}
+    gas_B = {'N2': 100}
+    
+    result = aga8.mix([gas_A, gas_B], [150, 200])
+    
+    # Check total mass
+    assert result['total_mass'] == 350.0
+    
+    # Check composition (expected values with tolerance)
+    assert abs(result['composition']['N2'] - 46.982) < 0.01
+    assert abs(result['composition']['C1'] - 48.690) < 0.01
+    assert abs(result['composition']['C2'] - 2.705) < 0.01
+    assert abs(result['composition']['C3'] - 1.623) < 0.01
+    
+    # Check composition sums to 100%
+    total_percent = sum(result['composition'].values())
+    assert abs(total_percent - 100.0) < 0.01
+
+
+def test_mix_example3():
+    """Test mixing example 3: gas B (pure N2) + gas C (CO2, C1)."""
+    from pvtlib import AGA8
+    
+    aga8 = AGA8('GERG-2008')
+    
+    gas_B = {'N2': 100}
+    gas_C = {'CO2': 50, 'C1': 50}
+    
+    result = aga8.mix([gas_B, gas_C], [500, 600])
+    
+    # Check total mass
+    assert result['total_mass'] == 1100.0
+    
+    # Check composition (expected values with tolerance)
+    assert abs(result['composition']['N2'] - 47.180) < 0.01
+    assert abs(result['composition']['CO2'] - 26.410) < 0.01
+    assert abs(result['composition']['C1'] - 26.410) < 0.01
+    
+    # Check composition sums to 100%
+    total_percent = sum(result['composition'].values())
+    assert abs(total_percent - 100.0) < 0.01
+
+
+def test_mix_example4():
+    """Test mixing example 4: gas A (N2, C1, C2, C3) + gas C (CO2, C1)."""
+    from pvtlib import AGA8
+    
+    aga8 = AGA8('GERG-2008')
+    
+    gas_A = {'N2': 2, 'C1': 90, 'C2': 5, 'C3': 3}
+    gas_C = {'CO2': 50, 'C1': 50}
+    
+    result = aga8.mix([gas_A, gas_C], [300, 200])
+    
+    # Check total mass
+    assert result['total_mass'] == 500.0
+    
+    # Check composition (expected values with tolerance)
+    assert abs(result['composition']['N2'] - 1.433) < 0.01
+    assert abs(result['composition']['CO2'] - 14.177) < 0.01
+    assert abs(result['composition']['C1'] - 78.658) < 0.01
+    assert abs(result['composition']['C2'] - 3.582) < 0.01
+    assert abs(result['composition']['C3'] - 2.149) < 0.01
+    
+    # Check composition sums to 100%
+    total_percent = sum(result['composition'].values())
+    assert abs(total_percent - 100.0) < 0.01
+
+
+def test_mix_example5():
+    """Test mixing example 5: Four gases - gas A, B (pure N2), C (CO2, C1), and D."""
+    from pvtlib import AGA8
+    
+    aga8 = AGA8('GERG-2008')
+    
+    gas_A = {'N2': 2, 'C1': 90, 'C2': 5, 'C3': 3}
+    gas_B = {'N2': 100}
+    gas_C = {'CO2': 50, 'C1': 50}
+    gas_D = {'N2': 10, 'C1': 80, 'C2': 5, 'C3': 5}
+    
+    result = aga8.mix([gas_A, gas_B, gas_C, gas_D], [10, 20, 30, 40])
+    
+    # Check total mass
+    assert result['total_mass'] == 100.0
+    
+    # Check composition (expected values with tolerance)
+    assert abs(result['composition']['N2'] - 21.464) < 0.01
+    assert abs(result['composition']['CO2'] - 11.506) < 0.01
+    assert abs(result['composition']['C1'] - 61.234) < 0.01
+    assert abs(result['composition']['C2'] - 3.027) < 0.01
+    assert abs(result['composition']['C3'] - 2.769) < 0.01
+    
+    # Check composition sums to 100%
+    total_percent = sum(result['composition'].values())
+    assert abs(total_percent - 100.0) < 0.01
+
+
+def test_mix_example6():
+    """Test mixing example 6: gas A + gas E (negative mass for subtraction)."""
+    from pvtlib import AGA8
+    
+    aga8 = AGA8('GERG-2008')
+    
+    gas_A = {'N2': 2, 'C1': 90, 'C2': 5, 'C3': 3}
+    gas_E = {'N2': 3, 'C1': 60, 'C2': 20, 'C3': 17}
+    
+    result = aga8.mix([gas_A, gas_E], [50, -10])
+    
+    # Check total mass
+    assert result['total_mass'] == 40.0
+    
+    # Check composition (expected values with tolerance)
+    assert abs(result['composition']['N2'] - 1.825) < 0.01
+    assert abs(result['composition']['C1'] - 95.240) < 0.01
+    assert abs(result['composition']['C2'] - 2.380) < 0.01
+    assert abs(result['composition']['C3'] - 0.555) < 0.01
+    
+    # Check composition sums to 100%
+    total_percent = sum(result['composition'].values())
+    assert abs(total_percent - 100.0) < 0.01
+
+
+def test_mix_Ar_H2():
+    """Test mixing gases with H2 and Ar."""
+    from pvtlib import AGA8
+    
+    aga8 = AGA8('GERG-2008')
+    
+    gas_H2 = {'H2': 100}
+    gas_Ar = {'Ar': 100}
+    
+    result = aga8.mix([gas_H2, gas_Ar], [10, 90])
+    
+    # Check total mass
+    assert result['total_mass'] == 100.0
+    
+    # Check composition sums to 100%
+    total_percent = sum(result['composition'].values())
+    assert abs(total_percent - 100.0) < 0.01
+    
+    # Should only contain H2 and Ar
+    assert 'H2' in result['composition']
+    assert 'Ar' in result['composition']
+    assert len(result['composition']) == 2
+    
+    # Check expected mol% with tolerance
+    assert abs(result['composition']['H2'] - 68.767) < 0.01
+    assert abs(result['composition']['Ar'] - 31.233) < 0.01
+
+
+def test_mix_unequal_list_lengths_error():
+    """Test that error is raised when compositions and mix_weights have different lengths."""
+    from pvtlib import AGA8
+    
+    aga8 = AGA8('GERG-2008')
+    
+    gas_A = {'N2': 2, 'C1': 90, 'C2': 5, 'C3': 3}
+    gas_B = {'N2': 100}
+    gas_C = {'CO2': 50, 'C1': 50}
+    
+    # Provide 3 compositions but only 2 masses - should raise error with check_input=True
+    with raises(ValueError, match='Length of compositions and mix_weights'):
+        aga8.mix([gas_A, gas_B, gas_C], [100, 50], check_input=True)
+
+
+def test_mix_unequal_list_lengths_nan():
+    """Test that NaN is returned when compositions and mix_weights have different lengths with check_input=False."""
+    from pvtlib import AGA8
+    import numpy as np
+    
+    aga8 = AGA8('GERG-2008')
+    
+    gas_A = {'N2': 2, 'C1': 90, 'C2': 5, 'C3': 3}
+    gas_B = {'N2': 100}
+    
+    # Provide 2 compositions but only 1 mass - should return NaN with check_input=False
+    result = aga8.mix([gas_A, gas_B], [100], check_input=False)
+    
+    assert np.isnan(result['total_mass'])
+    assert all(np.isnan(v) for v in result['composition'].values())
+
+
+def test_mix_excessive_subtraction_error():
+    """Test that error is raised when subtraction results in negative components."""
+    from pvtlib import AGA8
+    
+    aga8 = AGA8('GERG-2008')
+    
+    gas_A = {'N2': 2, 'C1': 90, 'C2': 5, 'C3': 3}
+    gas_E = {'N2': 3, 'C1': 60, 'C2': 20, 'C3': 17}
+    
+    # Subtract too much (60 kg instead of 10 kg) - should cause negative components
+    with raises(ValueError, match='Negative moles'):
+        aga8.mix([gas_A, gas_E], [50, -60], check_input=True)
+
+
+def test_mix_excessive_subtraction_nan():
+    """Test that NaN is returned when subtraction results in negative components with check_input=False."""
+    from pvtlib import AGA8
+    import numpy as np
+    
+    aga8 = AGA8('GERG-2008')
+    
+    gas_A = {'N2': 2, 'C1': 90, 'C2': 5, 'C3': 3}
+    gas_E = {'N2': 3, 'C1': 60, 'C2': 20, 'C3': 17}
+    
+    # Subtract too much - should return NaN with check_input=False
+    result = aga8.mix([gas_A, gas_E], [50, -60], check_input=False)
+    
+    assert np.isnan(result['total_mass'])
+    assert all(np.isnan(v) for v in result['composition'].values())
+
+
+def test_mix_negative_total_mass_error():
+    """Test that error is raised when total mass becomes negative."""
+    from pvtlib import AGA8
+    
+    aga8 = AGA8('GERG-2008')
+    
+    gas_A = {'N2': 2, 'C1': 90, 'C2': 5, 'C3': 3}
+    gas_B = {'N2': 100}
+    
+    # Subtract more mass than available - will trigger negative moles or negative mass error
+    with raises(ValueError):
+        aga8.mix([gas_A, gas_B], [50, -100], check_input=True)
