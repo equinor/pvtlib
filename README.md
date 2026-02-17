@@ -1,4 +1,4 @@
-<img src="https://github.com/equinor/pvtlib/blob/main/images/pvtlib.png" alt="pvtlib logo" width="600"/>
+<img src="https://raw.githubusercontent.com/equinor/pvtlib/main/images/pvtlib_klab.png" alt="pvtlib logo" width="600"/>
 
 `pvtlib` is a Python library that provides various tools in the categories of thermodynamics, fluid mechanics, metering and various process equipment. The library includes functions for calculating flow rates, gas properties, and other related calculations.
 
