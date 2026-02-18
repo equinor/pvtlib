@@ -57,10 +57,37 @@ gas_properties_detail = detail.calculate_from_PT(
     temperature=T,
 )
 
-# Print mass density from GERG-2008 and DETAIL
-print(f"Mass density from GERG-2008: {gas_properties['rho']:.3f} kg/m3")
-print(f"Mass density from DETAIL: {gas_properties_detail['rho']:.3f} kg/m3")
+# Print all properties in a table format
+print("\n" + "="*100)
+print(f"{'Property':<40} {'GERG-2008':>25} {'DETAIL':>25}")
+print("="*100)
 
-# Print speed of sound from GERG-2008 and DETAIL
-print(f"Speed of sound from GERG-2008: {gas_properties['w']:.3f} m/s")
-print(f"Speed of sound from DETAIL: {gas_properties_detail['w']:.3f} m/s")
+# Define properties to print with descriptions and units
+properties = [
+    ('pressure_bara', 'Pressure [bara]'),
+    ('temperature_C', 'Temperature [°C]'),
+    ('z', 'Compressibility factor [-]'),
+    ('rho', 'Mass density [kg/m³]'),
+    ('d', 'Molar density [mol/l]'),
+    ('mm', 'Molar mass [g/mol]'),
+    ('w', 'Speed of sound [m/s]'),
+    ('h', 'Enthalpy [J/mol]'),
+    ('s', 'Entropy [J/(mol·K)]'),
+    ('u', 'Internal energy [J/mol]'),
+    ('g', 'Gibbs energy [J/mol]'),
+    ('cp', 'Isobaric heat capacity [J/(mol·K)]'),
+    ('cv', 'Isochoric heat capacity [J/(mol·K)]'),
+    ('kappa', 'Isentropic exponent [-]'),
+    ('jt', 'Joule-Thomson coefficient [K/kPa]'),
+]
+
+for prop_key, prop_desc in properties:
+    gerg_value = gas_properties.get(prop_key, 'N/A')
+    detail_value = gas_properties_detail.get(prop_key, 'N/A')
+    
+    if isinstance(gerg_value, (int, float)) and isinstance(detail_value, (int, float)):
+        print(f"{prop_desc:<40} {gerg_value:>25.6f} {detail_value:>25.6f}")
+    else:
+        print(f"{prop_desc:<40} {str(gerg_value):>25} {str(detail_value):>25}")
+
+print("="*100)
