@@ -31,6 +31,10 @@ More examples are provided in the examples folder: https://github.com/equinor/pv
 - **Metering**: Metering functions
 - **aga8**: Equations for calculating gas properties (GERG-2008 and DETAIL) using the Rust port (https://crates.io/crates/aga8) of NIST's AGA8 code (https://github.com/usnistgov/AGA8)
 - **Unit converters**: Functions to convert between different units of measure
+- **Equipment**:
+  - **Compressors**: Compressor performance calculations (e.g. polytropic exponent, polytropic head and efficiency)
+  - **Separators**: Separator/scrubber sizing functions (e.g. K-value calculations)
+  - **Valves**: Valve flow calculations (e.g. Kv/Cv flow factor)
 
 ### Handling of invalid input
 This library is used for analyzing large amounts of data, as well as in live applications. In these applications it is desired that the functions return "nan" (using numpy nan) when invalid input are provided, or in case of certain errors (such as "divide by zero" errors). 
