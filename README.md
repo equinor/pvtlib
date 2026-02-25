@@ -35,6 +35,20 @@ More examples are provided in the examples folder: https://github.com/equinor/pv
 ### Handling of invalid input
 This library is used for analyzing large amounts of data, as well as in live applications. In these applications it is desired that the functions return "nan" (using numpy nan) when invalid input are provided, or in case of certain errors (such as "divide by zero" errors). 
 
+## Running Tests
+
+Tests are located in the `tests/` folder and use [pytest](https://docs.pytest.org/). Install it before running:
+
+```sh
+pip install pytest
+```
+
+Then run the tests from the project root:
+
+```sh
+pytest
+```
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](https://github.com/equinor/pvtlib/blob/main/LICENSE) file for details.

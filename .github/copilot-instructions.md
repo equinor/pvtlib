@@ -30,11 +30,11 @@ properties = gerg.calculate_from_PT(composition, pressure, temperature)
 
 **python-package-run-tests.yml**: Runs pytest on push/PR for Python 3.9-3.13
 
-**validate-version.yml**: Validates `setup.py` version - runs on releases (fails if mismatch), push/PR (warns only)
+**validate-version.yml**: Validates `pyproject.toml` version - runs on releases (fails if mismatch), push/PR (warns only)
 
 **build-and-distribute-test.yml**: Tests the build & distribution process on pre-releases (validates version, builds package, runs `twine check` - does NOT publish to PyPI)
 
 **build-and-distribute.yml**: Production release - waits for version validation, then publishes to PyPI on full releases
 
 ## Releases
-**CRITICAL**: Update `setup.py` version before creating GitHub releases - workflows validate version match before PyPI publish
+**CRITICAL**: Update `pyproject.toml` version before creating GitHub releases - workflows validate version match before PyPI publish
