@@ -2,6 +2,8 @@
 
 This example demonstrates how to calculate gas properties (density, molar mass, compressibility factor) from a measured speed of sound value.
 
+> **Note:** These calculations rely on AGA8 (GERG-2008/DETAIL), which is only valid for single-phase gas conditions. AGA8 does not check for phase state and will produce erroneous results if the operating point is in the two-phase or liquid region.
+
 ## Description
 
 The example shows two approaches:

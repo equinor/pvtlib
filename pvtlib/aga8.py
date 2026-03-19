@@ -42,6 +42,12 @@ class AGA8:
         Calculate gas properties using pressure, temperature, and composition as input.
     calculate_from_rhoT(composition, mass_density, temperature, temperature_unit='C', molar_mass=None)
         Calculate gas properties using mass density, temperature, and composition as input.
+
+    .. warning::
+        AGA8 is only valid for single-phase gas conditions. It does not check for phase state
+        and will produce erroneous results if applied in the two-phase or liquid region.
+        The user is responsible for ensuring that the operating conditions are within the
+        single-phase gas region before using these calculations.
     
     References
     ----------
@@ -193,6 +199,11 @@ class AGA8:
             Molar mass can be given as an optional input [kg/kmol]. If this is given, this molar mass will be used to calculate the mass density instead of the AGA8 calculated molar mass. 
             The default is None. In that case the AGA8 calculated molar mass will be used.
 
+        Notes
+        -----
+        Only valid for single-phase gas conditions. Results will be erroneous if the
+        operating point falls within the two-phase or liquid region. No phase check is performed.
+
         Returns
         -------
         results : TYPE
@@ -291,6 +302,11 @@ class AGA8:
         molar_mass : float, optional
             Molar mass can be given as an optional input [kg/kmol]. If this is given, this molar mass will be used to calculate the mass density instead of the AGA8 calculated molar mass. The default is None. In that case the AGA8 calculated molar mass will be used. 
         
+        Notes
+        -----
+        Only valid for single-phase gas conditions. Results will be erroneous if the
+        operating point falls within the two-phase or liquid region. No phase check is performed.
+
         Returns
         -------
         results : dict
@@ -372,7 +388,13 @@ class AGA8:
         pressure_unit : str, optional
             The unit of the pressure, by default 'bara'.
         molar_mass : float, optional
-            The molar mass of the gas mixture, by default None. If None, the AGA8 molar mass is used. 
+            The molar mass of the gas mixture, by default None. If None, the AGA8 molar mass is used.
+
+        Notes
+        -----
+        Only valid for single-phase gas conditions. Results will be erroneous if the
+        operating point falls within the two-phase or liquid region. No phase check is performed.
+
         Returns
         -------
         results : dict
@@ -426,7 +448,13 @@ class AGA8:
         pressure_unit : str, optional
             The unit of the pressure, by default 'bara'.
         molar_mass : float, optional
-            The molar mass of the gas mixture, by default None. If None, the AGA8 molar mass is used. 
+            The molar mass of the gas mixture, by default None. If None, the AGA8 molar mass is used.
+
+        Notes
+        -----
+        Only valid for single-phase gas conditions. Results will be erroneous if the
+        operating point falls within the two-phase or liquid region. No phase check is performed.
+
         Returns
         -------
         results : dict
