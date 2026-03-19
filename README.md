@@ -29,7 +29,7 @@ More examples are provided in the examples folder: https://github.com/equinor/pv
 - **Thermodynamics**: Thermodynamic functions
 - **Fluid Mechanics**: Fluid mechanic functions
 - **Metering**: Metering functions
-- **aga8**: Equations for calculating gas properties (GERG-2008 and DETAIL) using the Rust port (https://crates.io/crates/aga8) of NIST's AGA8 code (https://github.com/usnistgov/AGA8)
+- **aga8**: Equations for calculating gas properties (GERG-2008 and DETAIL) using the Rust port (https://crates.io/crates/aga8) of NIST's AGA8 code (https://github.com/usnistgov/AGA8). **Note: AGA8 is only valid for single-phase gas conditions. It does not check for phase state and will produce erroneous results in the two-phase or liquid region.**
 - **Unit converters**: Functions to convert between different units of measure
 - **Equipment**:
   - **Compressors**: Compressor performance calculations (e.g. polytropic exponent, polytropic head and efficiency)

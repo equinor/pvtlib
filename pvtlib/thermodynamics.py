@@ -309,6 +309,11 @@ def properties_from_sos_kappa(gas_composition, measured_sos, pressure_bara, temp
     EOS : str, optional
         Equation of state to use. Either 'GERG-2008' or 'DETAIL'. Default is 'GERG-2008'.
 
+    Notes
+    -----
+    Only valid for single-phase gas conditions. AGA8 does not check for phase state and
+    will produce erroneous results if the operating point is in the two-phase or liquid region.
+
     Returns
     -------
     output : dict
