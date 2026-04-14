@@ -95,10 +95,6 @@ def barg_to_Pa(barg, P_atm=1.01325):
     return Pa
 
 
-def barg_to_kPa(barg:float, atm=1.01325):
-    return (barg + atm) * 10 ** 5 / 1000
-
-
 def Pa_to_barg(Pa, P_atm=1.01325):
     barg = (Pa/100000)-P_atm
     return barg
