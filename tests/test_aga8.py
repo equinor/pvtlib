@@ -643,8 +643,8 @@ def test_mix_performance():
     
     # Use a mix of different complexities
     gas_A = {'N2': 2, 'C1': 90, 'C2': 5, 'C3': 3}
-    gas_B = {'N2': 100}
-    gas_C = {'CO2': 50, 'C1': 50}
+    # gas_B = {'N2': 100}
+    # gas_C = {'CO2': 50, 'C1': 50}
     gas_D = {'N2': 10, 'C1': 80, 'C2': 5, 'C3': 5}
     
     # Warm up (ensure AGA8 is fully initialized)
