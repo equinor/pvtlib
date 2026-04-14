@@ -79,7 +79,7 @@ def test_V_cone_calculation_1():
         dP=dP,
         rho1=14.35,
         C = 0.8259,
-        epsilon = epsilon
+        epsilon=epsilon
         )
     
     #Calculate relative deviation [%] in mass flow from reference
@@ -96,15 +96,15 @@ def test_V_cone_calculation_2():
     criteria = 0.1 # [%] Calculations resulted in 0.05% deviation from the value in datasheet due to number of decimals
     
     dP = 71.66675
-    epsilon = 0.9809
+    epsilon = 0.99212
     
     res = differential_pressure_flowmeters.calculate_flow_V_cone(
         D=0.024,  
         beta=0.55, 
         dP=dP,
         rho1=0.362,
-        C = 0.8389,
-        epsilon = 0.99212
+        C=0.8389,
+        epsilon=epsilon
         )
     
     #Calculate relative deviation [%] in mass flow from reference
@@ -149,8 +149,6 @@ def test_calculate_expansibility_Stewart_V_cone():
     '''
     
     beta = differential_pressure_flowmeters.calculate_beta_V_cone(D=0.073406, dc=0.0586486)
-    
-    criteria = 0.003 # %
     
     epsilon = differential_pressure_flowmeters.calculate_expansibility_Stewart_V_cone(
         beta=beta, 
