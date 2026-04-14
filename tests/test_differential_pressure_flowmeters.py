@@ -96,7 +96,7 @@ def test_V_cone_calculation_2():
     criteria = 0.1 # [%] Calculations resulted in 0.05% deviation from the value in datasheet due to number of decimals
     
     dP = 71.66675
-    epsilon = 0.9809
+    epsilon = 0.99212
     
     res = differential_pressure_flowmeters.calculate_flow_V_cone(
         D=0.024,  
@@ -104,7 +104,7 @@ def test_V_cone_calculation_2():
         dP=dP,
         rho1=0.362,
         C = 0.8389,
-        epsilon = 0.99212
+        epsilon = epsilon
         )
     
     #Calculate relative deviation [%] in mass flow from reference
