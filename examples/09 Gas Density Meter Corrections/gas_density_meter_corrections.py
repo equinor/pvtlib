@@ -37,7 +37,6 @@ from pvtlib.metering.gas_density_meters import (
     GDM_uncorr_dens,
     GDM_tempcorr_dens,
     GDM_SOScorr_dens,
-    GDM_Q,
     gas_spesific_gravity
 )
 from pvtlib import AGA8
