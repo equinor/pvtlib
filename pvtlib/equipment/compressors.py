@@ -293,12 +293,12 @@ def flow_coeff(Q, N, D, DefType='MAN'):
     N = np.asarray(N, dtype=float)
     D = np.asarray(D, dtype=float)
     
-    # Calculate numerator based on definition type
-    if DefType == 'MAN':
-        numerator = Q
-    elif DefType == 'ISO 5389':
-        numerator = 4 * Q
+    # Convert to arrays for consistent handling
+    Q = np.asarray(Q, dtype=float)
+    N = np.asarray(N, dtype=float)
+    D = np.asarray(D, dtype=float)
     
+    # Calculate numerator based on definition type
     # Calculate denominator
     U = D * np.pi * N / 60  # Tip speed
     
