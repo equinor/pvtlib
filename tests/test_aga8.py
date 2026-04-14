@@ -652,10 +652,10 @@ def test_mix_performance():
     n_iterations = 1000
     start_time = time.perf_counter()
     
-    for _ in range(n_iterations):
-        result = aga8.mix([gas_A, gas_D], [50, 50])
-    
+    for _ in range(n_iterations):    
         aga8.mix([gas_A, gas_D], [50, 50])
+    
+    end_time = time.perf_counter()
     elapsed_time = end_time - start_time
     avg_time_ms = (elapsed_time / n_iterations) * 1000
     
