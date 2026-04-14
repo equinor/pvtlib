@@ -120,6 +120,7 @@ def calculate_flow_venturi(D, d, dP, rho1, C=None, epsilon=None, check_input=Fal
         - 'Velocity': Flow velocity [m/s].
         - 'C': Discharge coefficient used.
         - 'epsilon': Expansion factor used.
+        - 'beta': Diameter ratio (d/D).
 
     Raises
     ------
@@ -137,7 +138,8 @@ def calculate_flow_venturi(D, d, dP, rho1, C=None, epsilon=None, check_input=Fal
         'VolFlow': np.nan,
         'Velocity': np.nan,
         'C': np.nan,
-        'epsilon': np.nan
+        'epsilon': np.nan,
+        'beta': np.nan
         }
     
     if check_input:
@@ -178,9 +180,10 @@ def calculate_flow_venturi(D, d, dP, rho1, C=None, epsilon=None, check_input=Fal
         rho1=rho1
         )
 
-    # Return epsilon used and discharge coefficient used
+    # Return epsilon used, discharge coefficient used, and beta
     results['C'] = C_used
     results['epsilon'] = epsilon_used
+    results['beta'] = beta
 
     return results
 
