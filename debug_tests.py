@@ -21,23 +21,23 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from tests.test_differential_pressure_flowmeters import *
-from tests.test_thermodynamics import *
+import tests.test_differential_pressure_flowmeters as dp_tests
+import tests.test_thermodynamics as thermo_tests
 
 if __name__ == '__main__':
-    test_calculate_flow_venturi()
-    test_calculate_beta_DP_meter()
-    test_calculate_expansibility_ventiruri()
-    test_calculate_beta_V_cone()
-    test_calculate_expansibility_Stewart_V_cone()
-    test_V_cone_calculation_1()
-    test_V_cone_calculation_2()
-    test_natural_gas_viscosity_Lee_et_al()
-    test_calculate_expansibility_orifice()
-    test_calculate_C_orifice_ReaderHarrisGallagher()
-    test_calculate_flow_orifice()
-    test_calculate_flow_orifice_without_C()
-    test_calculate_flow_orifice_vs_ISO5167_1_E1()
-    test_calculate_flow_orifice_invalid_inputs()
+    dp_tests.test_calculate_flow_venturi()
+    dp_tests.test_calculate_beta_DP_meter()
+    dp_tests.test_calculate_expansibility_ventiruri()
+    dp_tests.test_calculate_beta_V_cone()
+    dp_tests.test_calculate_expansibility_Stewart_V_cone()
+    dp_tests.test_V_cone_calculation_1()
+    dp_tests.test_V_cone_calculation_2()
+    thermo_tests.test_natural_gas_viscosity_Lee_et_al()
+    dp_tests.test_calculate_expansibility_orifice()
+    dp_tests.test_calculate_C_orifice_ReaderHarrisGallagher()
+    dp_tests.test_calculate_flow_orifice()
+    dp_tests.test_calculate_flow_orifice_without_C()
+    dp_tests.test_calculate_flow_orifice_vs_ISO5167_1_E1()
+    dp_tests.test_calculate_flow_orifice_invalid_inputs()
     
     print('All tests passed')
