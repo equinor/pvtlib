@@ -655,7 +655,7 @@ def test_mix_performance():
     start_time = time.perf_counter()
     
     for _ in range(n_iterations):
-        result = aga8.mix([gas_A, gas_D], [50, 50])
+        _result = aga8.mix([gas_A, gas_D], [50, 50]) #_result is kept for debug purposes
     
     end_time = time.perf_counter()
     elapsed_time = end_time - start_time

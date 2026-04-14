@@ -543,8 +543,6 @@ def test_calculate_flow_orifice_without_C():
     criteria = 0.0001 # [%] Allowable deviation
 
     for case, case_dict in cases.items():
-        # Calculate orifice beta
-        beta = differential_pressure_flowmeters.calculate_beta_DP_meter(D=case_dict['D'], d=case_dict['d'])
 
         res = differential_pressure_flowmeters.calculate_flow_orifice(
             D=case_dict['D'],
