@@ -150,8 +150,6 @@ def test_calculate_expansibility_Stewart_V_cone():
     
     beta = differential_pressure_flowmeters.calculate_beta_V_cone(D=0.073406, dc=0.0586486)
     
-    criteria = 0.003 # %
-    
     epsilon = differential_pressure_flowmeters.calculate_expansibility_Stewart_V_cone(
         beta=beta, 
         P1=18.0, 
