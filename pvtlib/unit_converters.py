@@ -372,11 +372,6 @@ def microOhm_to_Ohm(microOhm):
     return Ohm
 
 
-def microOhm_to_Ohm_new(microOhm):
-    Ohm = microOhm/1000000
-    return Ohm
-
-
 def VA_to_kVA(VA):
     kVA = VA/1000
     return kVA
