@@ -24,48 +24,130 @@ SOFTWARE.
 
 # Temperature
 def celsius_to_kelvin(celsius):
+    """Convert temperature from degrees Celsius to Kelvin.
+
+    Args:
+        celsius: Temperature in degrees Celsius.
+
+    Returns:
+        Temperature in Kelvin.
+    """
     kelvin = celsius+273.15
     return kelvin
 
 
 def kelvin_to_celsius(kelvin):
+    """Convert temperature from Kelvin to degrees Celsius.
+
+    Args:
+        kelvin: Temperature in Kelvin.
+
+    Returns:
+        Temperature in degrees Celsius.
+    """
     celsius = kelvin-273.15
     return celsius
 
 
 def fahrenheit_to_kelvin(fahrenheit):
+    """Convert temperature from degrees Fahrenheit to Kelvin.
+
+    Args:
+        fahrenheit: Temperature in degrees Fahrenheit.
+
+    Returns:
+        Temperature in Kelvin.
+    """
     kelvin = (fahrenheit+459.67)*5/9
     return kelvin
 
 
 def fahrenheit_to_celsius(fahrenheit):
+    """Convert temperature from degrees Fahrenheit to degrees Celsius.
+
+    Args:
+        fahrenheit: Temperature in degrees Fahrenheit.
+
+    Returns:
+        Temperature in degrees Celsius.
+    """
     celsius = (fahrenheit-32)*5/9
     return celsius
 
 def celsius_to_rankine(celsius):
+    """Convert temperature from degrees Celsius to degrees Rankine.
+
+    Args:
+        celsius: Temperature in degrees Celsius.
+
+    Returns:
+        Temperature in degrees Rankine.
+    """
     rankine = (celsius+273.15)*9/5
     return rankine
 
 # Pressure
 def barg_to_bara(barg, P_atm=1.01325):
+    """Convert gauge pressure in bar(g) to absolute pressure in bar(a).
+
+    Args:
+        barg: Gauge pressure in bar(g).
+        P_atm: Atmospheric pressure in bar(a). Defaults to 1.01325.
+
+    Returns:
+        Absolute pressure in bar(a).
+    """
     bara = barg + P_atm
     return bara
 
 
 def bara_to_barg(bara, P_atm=1.01325):
+    """Convert absolute pressure in bar(a) to gauge pressure in bar(g).
+
+    Args:
+        bara: Absolute pressure in bar(a).
+        P_atm: Atmospheric pressure in bar(a). Defaults to 1.01325.
+
+    Returns:
+        Gauge pressure in bar(g).
+    """
     barg = bara-P_atm
     return barg
 
 def bar_to_psi(bar):
+    """Convert pressure from bar to pounds per square inch (psi).
+
+    Args:
+        bar: Pressure in bar.
+
+    Returns:
+        Pressure in psi.
+    """
     psi = bar*14.503773773
     return psi
 
 def kPa_to_Pa(kPa):
+    """Convert pressure from kilopascals (kPa) to pascals (Pa).
+
+    Args:
+        kPa: Pressure in kilopascals.
+
+    Returns:
+        Pressure in pascals.
+    """
     Pa = kPa*1000
     return Pa
 
 
 def Pa_to_kPa(Pa):
+    """Convert pressure from pascals (Pa) to kilopascals (kPa).
+
+    Args:
+        Pa: Pressure in pascals.
+
+    Returns:
+        Pressure in kilopascals.
+    """
     kPa = Pa/1000
     return kPa
 
