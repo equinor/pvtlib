@@ -305,10 +305,6 @@ def test_microOhm_to_Ohm():
     assert microOhm_to_Ohm(1000000) == 1
     assert microOhm_to_Ohm(0) == 0
 
-def test_microOhm_to_Ohm_new():
-    assert microOhm_to_Ohm_new(1000000) == 1
-    assert microOhm_to_Ohm_new(0) == 0
-
 def test_VA_to_kVA():
     assert VA_to_kVA(1000) == 1
     assert VA_to_kVA(0) == 0

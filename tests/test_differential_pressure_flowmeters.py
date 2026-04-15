@@ -205,7 +205,7 @@ def test_calculate_beta_DP_meter():
     assert differential_pressure_flowmeters.calculate_beta_DP_meter(D=0.2, d=0.05)==0.25, 'Beta calculation failed'
 
 
-def test_calculate_expansibility_ventiruri():
+def test_calculate_expansibility_venturi():
     '''
     The function has been tested on a number of known cases. 
     Then these test cases have been generated, to cover a wider range of possible inputs.
