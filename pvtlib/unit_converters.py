@@ -21,6 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+import math
 
 # Temperature
 def celsius_to_kelvin(celsius):
@@ -372,11 +373,6 @@ def microOhm_to_Ohm(microOhm):
     return Ohm
 
 
-def microOhm_to_Ohm_new(microOhm):
-    Ohm = microOhm/1000000
-    return Ohm
-
-
 def VA_to_kVA(VA):
     kVA = VA/1000
     return kVA
@@ -481,11 +477,11 @@ def milesPerHour_to_metersPerSecond(milesPerHour):
 
 
 def radians_to_degrees(radians):
-    degrees = radians*180/3.14159265359
+    degrees = radians*180/math.pi
     return degrees
 
 def degrees_to_radians(degrees):
-    radians = degrees/180*3.14159265359
+    radians = degrees/180*math.pi
     return radians
 
 
