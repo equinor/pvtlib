@@ -71,7 +71,7 @@ def test_linear_interpolation_xvalues_not_sorted():
         linear_interpolation(200, X_unsorted, Y)
         assert False, "Expected ValueError when x_values are not sorted in ascending order"
     except ValueError as e:
-        assert str(e) == "x_values must be sorted in ascending order."
+        assert str(e) == "x_values must be strictly increasing (no duplicate values allowed)."
 
 def test_linear_interpolation_on_exact_points():
     # Test interpolation when x matches exactly an x_value

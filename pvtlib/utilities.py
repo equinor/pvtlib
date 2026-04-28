@@ -55,8 +55,8 @@ def linear_interpolation(x, x_values, y_values):
     if len(x_values) != len(y_values):
         raise ValueError("x_values and y_values must have the same length.")
     # Check if x_values is sorted in ascending order
-    if any(x_values[i] > x_values[i + 1] for i in range(len(x_values) - 1)):
-        raise ValueError("x_values must be sorted in ascending order.")
+    if any(x_values[i] >= x_values[i + 1] for i in range(len(x_values) - 1)):
+        raise ValueError("x_values must be strictly increasing (no duplicate values allowed).")
 
     if x < x_values[0]:
         y = y_values[0]
