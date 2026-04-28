@@ -674,3 +674,96 @@ def test_lockhart_martinelli_parameter_liquid_flow_zero():
         density_gas=100
     )
     assert X == 0.0, f"Lockhart-Martinelli parameter should be 0.0 when liquid flow is zero, got {X}"
+
+
+def test_reynolds_number_laminar():
+    """
+    Test reynolds_number in the laminar regime (Re < 2300).
+    rho=1000 kg/m3, v=0.01 m/s, D=0.1 m, mu=0.001 Pa·s → Re = 1000
+    """
+    Re = fluid_mechanics.reynolds_number(rho=1000, v=0.01, D=0.1, mu=0.001)
+    assert np.isclose(Re, 1000.0), f'reynolds_number laminar case failed: {Re} != 1000.0'
+
+
+def test_reynolds_number_turbulent():
+    """
+    Test reynolds_number in the turbulent regime (Re > 4000).
+    rho=1000 kg/m3, v=1.0 m/s, D=0.1 m, mu=0.001 Pa·s → Re = 100000
+    """
+    Re = fluid_mechanics.reynolds_number(rho=1000, v=1.0, D=0.1, mu=0.001)
+    assert np.isclose(Re, 100000.0), f'reynolds_number turbulent case failed: {Re} != 100000.0'
+
+
+def test_reynolds_number_invalid_inputs():
+    """
+    Test reynolds_number returns np.nan for non-positive inputs.
+    """
+    assert np.isnan(fluid_mechanics.reynolds_number(rho=0, v=1.0, D=0.1, mu=0.001)), 'rho<=0 should return nan'
+    assert np.isnan(fluid_mechanics.reynolds_number(rho=1000, v=0, D=0.1, mu=0.001)), 'v<=0 should return nan'
+    assert np.isnan(fluid_mechanics.reynolds_number(rho=1000, v=1.0, D=0, mu=0.001)), 'D<=0 should return nan'
+    assert np.isnan(fluid_mechanics.reynolds_number(rho=1000, v=1.0, D=0.1, mu=0)), 'mu<=0 should return nan'
+
+
+def test_superficial_velocity_typical():
+    """
+    Test superficial_velocity with typical inputs.
+    Q_phase=1.0 m3/h, D=0.1 m → Us = (1/3600) / (pi*(0.05)^2)
+    """
+    from math import pi
+    Q, D = 1.0, 0.1
+    expected = (Q / 3600) / (pi * (D / 2) ** 2)
+    result = fluid_mechanics.superficial_velocity(Q_phase=Q, D=D)
+    assert np.isclose(result, expected), f'superficial_velocity typical case failed: {result} != {expected}'
+
+
+def test_superficial_velocity_zero_diameter():
+    """
+    Test superficial_velocity returns np.nan when D=0 (pipe area is zero).
+    """
+    result = fluid_mechanics.superficial_velocity(Q_phase=1.0, D=0)
+    assert np.isnan(result), f'superficial_velocity D=0 should return nan, got {result}'
+
+
+def test_liquid_holdup_from_density_above_liquid():
+    """
+    Test liquid_holdup_from_density when measured density exceeds liquid density.
+    Should return 1.0.
+    """
+    result = fluid_mechanics.liquid_holdup_from_density(
+        measured_density=900, liquid_density=800, gas_density=100
+    )
+    assert result == 1.0, f'liquid holdup above liquid density should be 1.0, got {result}'
+
+
+def test_liquid_holdup_from_density_below_gas():
+    """
+    Test liquid_holdup_from_density when measured density is below gas density.
+    Should return 0.0.
+    """
+    result = fluid_mechanics.liquid_holdup_from_density(
+        measured_density=50, liquid_density=800, gas_density=100
+    )
+    assert result == 0.0, f'liquid holdup below gas density should be 0.0, got {result}'
+
+
+def test_liquid_holdup_from_density_midpoint():
+    """
+    Test liquid_holdup_from_density at a midpoint value.
+    gas=100, liquid=800, measured=450 → (450-100)/(800-100) = 0.5
+    """
+    result = fluid_mechanics.liquid_holdup_from_density(
+        measured_density=450, liquid_density=800, gas_density=100
+    )
+    expected = (450 - 100) / (800 - 100)
+    assert np.isclose(result, expected), f'liquid holdup midpoint failed: {result} != {expected}'
+
+
+def test_liquid_holdup_from_density_equal_densities():
+    """
+    Test liquid_holdup_from_density when liquid_density == gas_density.
+    Should return np.nan (undefined).
+    """
+    result = fluid_mechanics.liquid_holdup_from_density(
+        measured_density=500, liquid_density=500, gas_density=500
+    )
+    assert np.isnan(result), f'liquid holdup equal densities should return nan, got {result}'

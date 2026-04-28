@@ -604,6 +604,83 @@ def test_properties_from_sos_kappa():
         f"z: expected {expected_z:.4f}, got {calculated_properties['z']:.4f}"
 
 
+def test_energy_rate_balance_typical():
+    """
+    Test energy_rate_balance with typical inputs.
+    h_in=500, h_out=400 kJ/kg, massflow=10 kg/s, vel_in=5, vel_out=3 m/s
+    """
+    result = thermodynamics.energy_rate_balance(
+        h_in=500, h_out=400, massflow=10, vel_in=5, vel_out=3
+    )
+    # energy_rate_in  = 10*(500*1000 + 5^2/2)/1000 = 5000.125 kW
+    # energy_rate_out = 10*(400*1000 + 3^2/2)/1000 = 4000.045 kW
+    expected = 5000.125 - 4000.045
+    assert np.isclose(result, expected), f'energy_rate_balance typical case failed: {result} != {expected}'
 
-        
 
+def test_energy_rate_balance_zero_velocities():
+    """
+    Test energy_rate_balance with zero velocities.
+    Result should equal massflow * (h_in - h_out).
+    """
+    result = thermodynamics.energy_rate_balance(
+        h_in=500, h_out=400, massflow=10, vel_in=0, vel_out=0
+    )
+    expected = 10 * (500 - 400)  # 1000.0 kW
+    assert np.isclose(result, expected), f'energy_rate_balance zero velocities failed: {result} != {expected}'
+
+
+def test_energy_rate_balance_equal_enthalpy_and_velocity():
+    """
+    Test energy_rate_balance when h_in == h_out and vel_in == vel_out.
+    Result should be 0.
+    """
+    result = thermodynamics.energy_rate_balance(
+        h_in=500, h_out=500, massflow=10, vel_in=5, vel_out=5
+    )
+    assert result == 0.0, f'energy_rate_balance equal inputs should return 0, got {result}'
+
+
+def test_energy_rate_difference_cases():
+    """
+    Test energy_rate_difference with A > B, A < B, A == B, and negative inputs.
+    """
+    # A > B
+    assert np.isclose(thermodynamics.energy_rate_difference(100, 50), 50.0)
+    # A < B
+    assert np.isclose(thermodynamics.energy_rate_difference(50, 100), -50.0)
+    # A == B
+    assert thermodynamics.energy_rate_difference(75, 75) == 0.0
+    # Negative inputs — absolute values are taken
+    assert np.isclose(thermodynamics.energy_rate_difference(-100, -80), 20.0)
+
+
+def test_energy_rate_diffperc_equal():
+    """
+    Test energy_rate_diffperc when A == B, should return 0%.
+    """
+    result = thermodynamics.energy_rate_diffperc(100, 100)
+    assert result == 0.0, f'energy_rate_diffperc equal inputs should be 0, got {result}'
+
+
+def test_energy_rate_diffperc_typical():
+    """
+    Test energy_rate_diffperc with typical values.
+    Formula: 100*(|A|-|B|) / ((|A|+|B|)/2)
+    """
+    A, B = 100.0, 80.0
+    expected = 100 * (abs(A) - abs(B)) / ((abs(A) + abs(B)) / 2)
+    result = thermodynamics.energy_rate_diffperc(A, B)
+    assert np.isclose(result, expected), f'energy_rate_diffperc typical case failed: {result} != {expected}'
+
+
+def test_energy_rate_diffperc_both_zero():
+    """
+    Test energy_rate_diffperc when both A and B are 0.
+    Documents current behavior: raises ZeroDivisionError (unhandled divide-by-zero).
+    """
+    try:
+        thermodynamics.energy_rate_diffperc(0, 0)
+        assert False, 'Expected ZeroDivisionError for both-zero inputs'
+    except ZeroDivisionError:
+        pass  # Current (known) behaviour — divide-by-zero is not guarded

@@ -549,7 +549,7 @@ def calculate_flow_orifice(D, d, dP, rho1, mu=None, C=None, epsilon=None, tappin
         max_iter = 100
 
         # Criteria for convergence
-        criteria = 1e-100
+        criteria = 1e-10
 
         # Initial guess for discharge coefficient
         C_init = 0.5

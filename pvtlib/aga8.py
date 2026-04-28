@@ -310,7 +310,7 @@ class AGA8:
         Returns
         -------
         results : dict
-            Dictionary with properties from AGA8 (same as for the calculatcalculate_from_PT method)
+            Dictionary with properties from AGA8 (same as for the calculate_from_PT method)
         '''
         #Convert temperature to K
         temperature_K = _temperature_unit_conversion(
@@ -346,8 +346,9 @@ class AGA8:
         if molar_mass !=0:
             molar_density = mass_density / molar_mass #kg/m3 / kg/kmol --> kmol/m3 --> mol/l
         else:
-            #Return blank dictionary of molar mass is 0, to avoid division by zero error
-            return {}
+            results = {key: np.nan for key in self._get_properties().keys()}
+            results['gas_composition'] = Aga8fluidDict
+            return results
         
         self.adapter.d = molar_density
         self.adapter.temperature = temperature_K
@@ -398,7 +399,7 @@ class AGA8:
         Returns
         -------
         results : dict
-            Dictionary with properties from AGA8 (same as for the calculatcalculate_from_PT method)
+            Dictionary with properties from AGA8 (same as for the calculate_from_PT method)
         """
 
         temperature_unit = 'C'
@@ -458,7 +459,7 @@ class AGA8:
         Returns
         -------
         results : dict
-            Dictionary with properties from AGA8 (same as for the calculatcalculate_from_PT method)
+            Dictionary with properties from AGA8 (same as for the calculate_from_PT method)
         """
 
         temperature_unit = 'C'
@@ -700,7 +701,7 @@ def _pressure_unit_conversion(pressure_value, pressure_unit = 'bara'):
     elif pressure_unit.lower() == 'psi':
         pressure = pressure_value * 6.89476
     elif pressure_unit.lower() == 'psia':
-        pressure = (pressure_value + 14.6959488) * 6.89476
+        pressure = pressure_value * 6.89476
     elif pressure_unit.lower() == 'psig':
         pressure = pressure_value * 6.89476 + 101.325
     elif pressure_unit.lower() == 'barg':
