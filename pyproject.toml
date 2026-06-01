@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pvtlib"
-version = "1.14.5"
+version = "1.14.6"
 authors = [
     {name = "Christian Hågenvik", email = "chaagen2013@gmail.com"},
 ]
