@@ -25,6 +25,11 @@ SOFTWARE.
 def coriolis_dens_corr_pres(rho_meas, P_act, PCd, P_cal):
     """Correct Coriolis measured density for pressure effect.
 
+    These equations are validated for Emerson Micro Motion Coriolis flowmeters
+    using process-pressure-effect values from the ELITE process data sheet (PDS).
+    They can also be used for other Coriolis meters if the factors are aligned
+    with the definitions below.
+
     Parameters
     ----------
     rho_meas : float
@@ -32,8 +37,8 @@ def coriolis_dens_corr_pres(rho_meas, P_act, PCd, P_cal):
     P_act : float
         Actual process pressure [bara].
     PCd : float
-        Density correction factor [kg/m3/bar]. This is the opposite sign of
-        the process-pressure effect published in the meter datasheet.
+        Density correction factor [kg/m3/bar]. This must be the opposite sign of
+        the process-pressure effect published in the meter process data sheet.
     P_cal : float
         Meter calibration pressure [bara].
 
@@ -48,6 +53,11 @@ def coriolis_dens_corr_pres(rho_meas, P_act, PCd, P_cal):
 def coriolis_massflow_corr_pres(m_meas, P_act, PCm, P_cal):
     """Correct Coriolis measured mass flow for pressure effect.
 
+    These equations are validated for Emerson Micro Motion Coriolis flowmeters
+    using process-pressure-effect values from the ELITE process data sheet (PDS).
+    They can also be used for other Coriolis meters if the factors are aligned
+    with the definitions below.
+
     Parameters
     ----------
     m_meas : float
@@ -55,8 +65,8 @@ def coriolis_massflow_corr_pres(m_meas, P_act, PCm, P_cal):
     P_act : float
         Actual process pressure [bara].
     PCm : float
-        Mass-flow correction factor [%/bar]. This is the opposite sign of
-        the process-pressure effect published in the meter datasheet.
+        Mass-flow correction factor [%/bar]. This must be the opposite sign of
+        the process-pressure effect published in the meter process data sheet.
     P_cal : float
         Meter calibration pressure [bara].
 

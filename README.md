@@ -44,8 +44,9 @@ More examples are provided in the examples folder: https://github.com/equinor/pv
 ### Coriolis pressure correction
 `pvtlib.metering.coriolis_flowmeters` contains pressure-correction equations for Coriolis mass flow and density.
 
-- Inputs `PCm` (`%/bar`) and `PCd` (`kg/m3/bar`) are the **correction factors**, i.e. opposite sign of the process-pressure effect listed in meter datasheets.
-- Validated using example data for Micro Motion ELITE Coriolis meters from Emerson PDS:
+- Equations are validated for **Emerson Micro Motion Coriolis flowmeters** and can also be used for other Coriolis meters when factors are aligned with the equation definitions.
+- Inputs `PCm` (`%/bar`) and `PCd` (`kg/m3/bar`) are the **correction factors**, i.e. opposite sign of the process-pressure effect listed in the meter process data sheet (PDS).
+- Tests validate equation behavior using the process-pressure-effect coefficients from the Micro Motion ELITE Emerson PDS:
   https://www.emerson.com/is/content/emerson/en/measurement-instrumentation/technical/products/flow-coriolis/documents/doc-micro-motion-mmelite-pds-ps00374an.pdf
 
 ### Handling of invalid input
