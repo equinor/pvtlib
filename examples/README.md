@@ -65,6 +65,17 @@ Calculate the resulting gas composition when mixing multiple streams with differ
 **Required packages**: pvtlib, pandas, numpy  
 **Format**: Jupyter Notebook
 
+### 11 Compressor Performance Calculations
+Compressor performance example calculations, including key compressor equations used for process engineering analyses.
+
+**Required packages**: pvtlib, pandas, numpy
+
+### 12 Coriolis Pressure Correction
+Demonstrates Coriolis mass-flow pressure correction using a real CMF300H calibration case, including before/after error (%) relative to reference.
+
+**Required packages**: pvtlib, pandas  
+**Format**: Jupyter Notebook
+
 ## Usage
 
 Each example is contained in its own numbered folder with:
