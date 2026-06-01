@@ -4,41 +4,63 @@ from pvtlib.metering import coriolis_flowmeters
 def test_coriolis_pressure_corrections_from_micromotion_process_pressure_effects():
     """Validate equations using Micro Motion ELITE PDS process-pressure effects.
 
-    Note: This test validates the equation/sign convention with PDS pressure-effect
-    coefficients. It does not claim that corrected mass flow and density values are
-    tabulated reference output points in the PDS.
-
-    The equations are valid for Emerson Micro Motion Coriolis flowmeters and can
-    be used for other Coriolis meters if PCm/PCd are defined exactly as in the
-    equation docstrings (opposite sign of datasheet process-pressure effect).
+    The equations are applicable to the Emerson Micro Motion Coriolis flowmeters. 
+    The test cases are derived from the process-pressure effect values provided in the Micro Motion ELITE PDS (PS-00374, Rev AO, December 2024).
+    The correction factors (PCm for mass flow and PCd for density) are provided
+    directly in each test case.
     """
     p_act = 25.0  # bara
     p_cal = 1.0   # bara
 
     cases = [
-        # model, m_meas[kg/h], rho_meas[kg/m3],
-        # PDS mass effect[%/bar], PDS density effect[kg/m3/bar],
-        # expected m_corr[kg/h], expected rho_corr[kg/m3]
-        ("CMF025H", 500.0, 800.0, 0.0, 0.058, 500.0, 798.608),
-        ("CMF050H", 2000.0, 800.0, 0.0, -0.029, 2000.0, 800.696),
-        ("CMF100H", 10000.0, 800.0, -0.003, -0.087, 10007.2, 802.088),
-        ("CMF300H", 80000.0, 800.0, -0.006, 0.0029, 80115.2, 799.9304),
-        ("CMF400H", 200000.0, 800.0, -0.012, -0.145, 200576.0, 803.48),
+        {
+            "model": "CMF025H",
+            "inputs": {"m_meas": 500.0, "rho_meas": 800.0},
+            "correction_factors": {"PCm": 0.0, "PCd": -0.058},
+            "expected": {"m_corr": 500.0, "rho_corr": 798.608},
+        },
+        {
+            "model": "CMF050H",
+            "inputs": {"m_meas": 2000.0, "rho_meas": 800.0},
+            "correction_factors": {"PCm": 0.0, "PCd": 0.029},
+            "expected": {"m_corr": 2000.0, "rho_corr": 800.696},
+        },
+        {
+            "model": "CMF100H",
+            "inputs": {"m_meas": 10000.0, "rho_meas": 800.0},
+            "correction_factors": {"PCm": 0.003, "PCd": 0.087},
+            "expected": {"m_corr": 10007.2, "rho_corr": 802.088},
+        },
+        {
+            "model": "CMF300H",
+            "inputs": {"m_meas": 80000.0, "rho_meas": 800.0},
+            "correction_factors": {"PCm": 0.006, "PCd": -0.0029},
+            "expected": {"m_corr": 80115.2, "rho_corr": 799.9304},
+        },
+        {
+            "model": "CMF400H",
+            "inputs": {"m_meas": 200000.0, "rho_meas": 800.0},
+            "correction_factors": {"PCm": 0.012, "PCd": 0.145},
+            "expected": {"m_corr": 200576.0, "rho_corr": 803.48},
+        },
     ]
 
-    for _, m_meas, rho_meas, pds_mass_effect, pds_density_effect, m_expected, rho_expected in cases:
-        # Equation inputs PCm/PCd are opposite sign of PDS process-pressure effect.
-        p_cm = -pds_mass_effect
-        p_cd = -pds_density_effect
+    for case in cases:
         m_corr = coriolis_flowmeters.coriolis_massflow_corr_pres(
-            m_meas=m_meas, P_act=p_act, PCm=p_cm, P_cal=p_cal
+            m_meas=case["inputs"]["m_meas"],
+            P_act=p_act,
+            PCm=case["correction_factors"]["PCm"],
+            P_cal=p_cal,
         )
         rho_corr = coriolis_flowmeters.coriolis_dens_corr_pres(
-            rho_meas=rho_meas, P_act=p_act, PCd=p_cd, P_cal=p_cal
+            rho_meas=case["inputs"]["rho_meas"],
+            P_act=p_act,
+            PCd=case["correction_factors"]["PCd"],
+            P_cal=p_cal,
         )
 
-        assert abs(m_corr - m_expected) < 1e-9
-        assert abs(rho_corr - rho_expected) < 1e-9
+        assert abs(m_corr - case["expected"]["m_corr"]) < 1e-9
+        assert abs(rho_corr - case["expected"]["rho_corr"]) < 1e-9
 
 
 def test_coriolis_massflow_cut_off():
