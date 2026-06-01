@@ -66,3 +66,7 @@ def test_coriolis_pressure_corrections_from_micromotion_process_pressure_effects
 def test_coriolis_massflow_cut_off():
     assert coriolis_flowmeters.coriolis_massflow_cut_off(12.5, 10.0) == 12.5
     assert coriolis_flowmeters.coriolis_massflow_cut_off(10.0, 10.0) == 0.0
+    assert coriolis_flowmeters.coriolis_massflow_cut_off(5.0, 10.0) == 0.0
+    assert coriolis_flowmeters.coriolis_massflow_cut_off(-5.0, 10.0) == 0.0
+    assert coriolis_flowmeters.coriolis_massflow_cut_off(-155.0, 10.0) == 0.0
+    assert coriolis_flowmeters.coriolis_massflow_cut_off(20000, 10.0) == 20000.0
