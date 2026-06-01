@@ -28,6 +28,7 @@ print(result)
 ```
 
 More examples are provided in the examples folder: https://github.com/equinor/pvtlib/tree/main/examples
+- Coriolis pressure correction example notebook: `examples/13 Coriolis Pressure Correction/coriolis_pressure_correction_example.ipynb`
 
 ## Features
 
@@ -40,6 +41,7 @@ More examples are provided in the examples folder: https://github.com/equinor/pv
   - **Compressors**: Compressor performance calculations (e.g. polytropic exponent, polytropic head and efficiency)
   - **Separators**: Separator/scrubber sizing functions (e.g. K-value calculations)
   - **Valves**: Valve flow calculations (e.g. Kv/Cv flow factor)
+
 
 ### Handling of invalid input
 This library is used for analyzing large amounts of data, as well as in live applications. In these applications it is desired that the functions return "nan" (using numpy nan) when invalid input are provided, or in case of certain errors (such as "divide by zero" errors). 
