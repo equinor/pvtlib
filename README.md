@@ -41,13 +41,6 @@ More examples are provided in the examples folder: https://github.com/equinor/pv
   - **Separators**: Separator/scrubber sizing functions (e.g. K-value calculations)
   - **Valves**: Valve flow calculations (e.g. Kv/Cv flow factor)
 
-### Coriolis pressure correction
-`pvtlib.metering.coriolis_flowmeters` contains pressure-correction equations for Coriolis mass flow and density.
-
-- Equations are validated for **Emerson Micro Motion Coriolis flowmeters** and can also be used for other Coriolis meters when factors are aligned with the equation definitions.
-- Inputs `PCm` (`%/bar`) and `PCd` (`kg/m3/bar`) are the **correction factors**, i.e. opposite sign of the process-pressure effect listed in the meter process data sheet (PDS).
-- Tests validate equation behavior using the process-pressure-effect coefficients from the Micro Motion ELITE Emerson PDS:
-  https://www.emerson.com/is/content/emerson/en/measurement-instrumentation/technical/products/flow-coriolis/documents/doc-micro-motion-mmelite-pds-ps00374an.pdf
 
 ### Handling of invalid input
 This library is used for analyzing large amounts of data, as well as in live applications. In these applications it is desired that the functions return "nan" (using numpy nan) when invalid input are provided, or in case of certain errors (such as "divide by zero" errors). 
