@@ -28,6 +28,7 @@ print(result)
 ```
 
 More examples are provided in the examples folder: https://github.com/equinor/pvtlib/tree/main/examples
+- Coriolis pressure correction example notebook: `examples/11 Coriolis Pressure Correction/coriolis_pressure_correction_example.ipynb`
 
 ## Features
 
