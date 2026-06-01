@@ -28,7 +28,8 @@ print(result)
 ```
 
 More examples are provided in the examples folder: https://github.com/equinor/pvtlib/tree/main/examples
-- Coriolis pressure correction example notebook: `examples/13 Coriolis Pressure Correction/coriolis_pressure_correction_example.ipynb`
+- Coriolis pressure correction example notebook: `examples/12 Coriolis Pressure Correction/coriolis_pressure_correction_example.ipynb`
+  (CMF300H real calibration case with before/after pressure-correction error table)
 
 ## Features
 
