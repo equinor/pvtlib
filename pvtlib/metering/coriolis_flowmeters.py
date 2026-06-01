@@ -25,10 +25,23 @@ SOFTWARE.
 def coriolis_dens_corr_pres(rho_meas, P_act, PCd, P_cal):
     """Correct Coriolis measured density for pressure effect.
 
-    These equations are validated for Emerson Micro Motion Coriolis flowmeters
-    using process-pressure-effect values from the ELITE process data sheet (PDS).
+    These equations are applicable for Emerson Micro Motion Coriolis flowmeters
+    using process-pressure-effect values from the ELITE product data sheet (PDS).
     They can also be used for other Coriolis meters if the factors are aligned
-    with the definitions below.
+    with the definitions below. 
+    Note that the Micro Motion datasheet provides values for the process-pressure effect on density, 
+    but the correction factor (PCd) has the opposite sign to correct for the effect. 
+
+    Reference
+    ---------
+    Emerson: Product Data Sheet - Micro Motion ELITE Coriolis Flow and Density
+    Meters.
+    Product Data Sheet
+    PS-00374, Rev AO
+    December 2024
+    https://www.emerson.com/is/content/emerson/en/measurement-instrumentation/
+    technical/products/flow-coriolis/documents/doc-micro-motion-mmelite-pds-
+    ps00374an.pdf
 
     Parameters
     ----------
@@ -37,8 +50,7 @@ def coriolis_dens_corr_pres(rho_meas, P_act, PCd, P_cal):
     P_act : float
         Actual process pressure [bara].
     PCd : float
-        Density correction factor [kg/m3/bar]. This must be the opposite sign of
-        the process-pressure effect published in the meter process data sheet.
+        Density correction factor [kg/m3/bar]. 
     P_cal : float
         Meter calibration pressure [bara].
 
@@ -53,10 +65,22 @@ def coriolis_dens_corr_pres(rho_meas, P_act, PCd, P_cal):
 def coriolis_massflow_corr_pres(m_meas, P_act, PCm, P_cal):
     """Correct Coriolis measured mass flow for pressure effect.
 
-    These equations are validated for Emerson Micro Motion Coriolis flowmeters
-    using process-pressure-effect values from the ELITE process data sheet (PDS).
+    These equations are applicable for Emerson Micro Motion Coriolis flowmeters
+    using process-pressure-effect values from the ELITE product data sheet (PDS).
     They can also be used for other Coriolis meters if the factors are aligned
-    with the definitions below.
+    with the definitions below. Note that the Micro Motion datasheet provides values for the process-pressure effect on mass flow, 
+    but the correction factor (PCm) has the opposite sign to correct for the effect.
+
+    Reference
+    ---------
+    Emerson: Product Data Sheet - Micro Motion ELITE Coriolis Flow and Density
+    Meters.
+    Product Data Sheet
+    PS-00374, Rev AO
+    December 2024
+    https://www.emerson.com/is/content/emerson/en/measurement-instrumentation/
+    technical/products/flow-coriolis/documents/doc-micro-motion-mmelite-pds-
+    ps00374an.pdf
 
     Parameters
     ----------
@@ -65,8 +89,7 @@ def coriolis_massflow_corr_pres(m_meas, P_act, PCm, P_cal):
     P_act : float
         Actual process pressure [bara].
     PCm : float
-        Mass-flow correction factor [%/bar]. This must be the opposite sign of
-        the process-pressure effect published in the meter process data sheet.
+        Mass-flow correction factor [%/bar]. 
     P_cal : float
         Meter calibration pressure [bara].
 
