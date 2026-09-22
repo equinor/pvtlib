@@ -24,6 +24,8 @@ SOFTWARE.
 from math import pi
 import numpy as np
 
+GRAVITATIONAL_ACCELERATION = 9.80665  # Standard acceleration of free fall g_n [m/s2], NIST SP 811 Appendix B.8. https://www.nist.gov/pml/special-publication-811/nist-guide-si-appendix-b-conversion-factors/nist-guide-si-appendix-b8
+
 def reynolds_number(rho: float, v: float, D: float, mu: float) -> float:
     '''
     Calculate Reynolds number for a fluid flow.
@@ -216,6 +218,307 @@ def lockhart_martinelli_parameter(mass_flow_rate_liquid, mass_flow_rate_gas, den
     X = (mass_flow_rate_liquid / mass_flow_rate_gas) * ((density_gas / density_liquid) ** 0.5)
 
     return X
+
+
+def froude_number(v, D):
+    """
+    Calculate the ratio of flow velocity to the gravity-wave velocity scale.
+
+    Parameters
+    ----------
+    v : float
+        Non-negative characteristic velocity [m/s].
+    D : float
+        Positive characteristic length; inner diameter for pipe flow [m].
+
+    Returns
+    -------
+    Fr : float
+        Froude number, ``v / sqrt(g * D)`` [-]. NaN for non-finite or
+        non-physical input. Zero velocity gives zero.
+
+    Notes
+    -----
+    Uses the standard acceleration of free fall, g_n = 9.806 65 m/s2
+    exactly [1]_. This is the ordinary Froude number, not the
+    density-weighted Froude number used in gas-liquid flow correlations.
+
+    References
+    ----------
+    .. [1] NIST Special Publication 811, Appendix B.8, "acceleration of
+       free fall, standard (g_n)".
+       https://www.nist.gov/pml/special-publication-811/nist-guide-si-appendix-b-conversion-factors/nist-guide-si-appendix-b8
+    """
+    if not np.all(np.isfinite([v, D])) or v < 0 or D <= 0:
+        return np.nan
+
+    return v / np.sqrt(GRAVITATIONAL_ACCELERATION * D)
+
+
+def densimetric_froude_number(v, D, rho_phase, rho_other):
+    """
+    Calculate the lighter phase's density-weighted Froude number.
+
+    Compares inertia of the lighter phase with the buoyancy velocity scale.
+    The same definition is used by the wet-gas venturi and USM corrections.
+
+    Parameters
+    ----------
+    v : float
+        Non-negative superficial velocity of the lighter phase [m/s].
+    D : float
+        Positive inner pipe diameter [m].
+    rho_phase : float
+        Positive density of the lighter phase, normally gas [kg/m3].
+    rho_other : float
+        Density of the heavier phase, greater than ``rho_phase`` [kg/m3].
+
+    Returns
+    -------
+    Fr : float
+        ``v / sqrt(g * D) * sqrt(rho_phase / (rho_other - rho_phase))``
+        [-]. NaN for non-finite or non-physical input.
+
+    Notes
+    -----
+    Uses the standard acceleration of free fall, g_n = 9.806 65 m/s2
+    exactly [3]_. The velocity is superficial, not the in-situ phase
+    velocity. This definition does not cover a phase denser than its
+    surroundings; no absolute density difference is substituted.
+
+    References
+    ----------
+    .. [1] Reader-Harris and Graham, "An improved model for venturi-tube
+       overreading in wet gas", NSFMW, 2009.
+    .. [2] van Putten et al., "Ultrasonic Meters in Wet Gas Application",
+       North Sea Flow Measurement Workshop (NSFMW), 2015, Equation (7).
+       https://nfogm.no/wp-content/uploads/2019/02/2015-02-Ultrasonic-Meters-in-Wet-Gas-Application-van-Putten-DNV-GL.pdf
+    .. [3] NIST Special Publication 811, Appendix B.8, "acceleration of
+       free fall, standard (g_n)".
+       https://www.nist.gov/pml/special-publication-811/nist-guide-si-appendix-b-conversion-factors/nist-guide-si-appendix-b8
+    """
+    if (not np.all(np.isfinite([v, D, rho_phase, rho_other]))
+            or v < 0 or D <= 0 or rho_phase <= 0 or rho_other <= rho_phase):
+        return np.nan
+
+    # Apply the buoyancy density scaling to the ordinary Froude number.
+    return froude_number(v, D) * np.sqrt(rho_phase / (rho_other - rho_phase))
+
+
+def weber_number(rho, v, D, surface_tension):
+    """
+    Calculate the ratio of inertial to surface-tension effects.
+
+    Parameters
+    ----------
+    rho : float
+        Positive density of the phase [kg/m3].
+    v : float
+        Non-negative characteristic velocity [m/s].
+    D : float
+        Positive characteristic length [m].
+    surface_tension : float
+        Positive interfacial tension [N/m].
+
+    Returns
+    -------
+    We : float
+        Weber number, ``rho * v**2 * D / surface_tension`` [-].
+        NaN for non-finite or non-physical input.
+
+    Notes
+    -----
+    For the gas-liquid pipe-flow definition used in the Van Putten model,
+    use gas density, superficial gas velocity and inner pipe diameter.
+    """
+    if (not np.all(np.isfinite([rho, v, D, surface_tension]))
+            or rho <= 0 or v < 0 or D <= 0 or surface_tension <= 0):
+        return np.nan
+
+    return rho * v**2 * D / surface_tension
+
+
+def ohnesorge_number(mu, rho, D, surface_tension):
+    """
+    Calculate the viscous-to-inertial/capillary scale ratio.
+
+    Parameters
+    ----------
+    mu : float
+        Positive dynamic viscosity of the phase [Pa.s].
+    rho : float
+        Positive density of the same phase [kg/m3].
+    D : float
+        Positive characteristic length [m].
+    surface_tension : float
+        Positive interfacial tension [N/m].
+
+    Returns
+    -------
+    Oh : float
+        Ohnesorge number, ``mu / sqrt(rho * surface_tension * D)``
+        [-]. NaN for non-finite or non-physical input.
+
+    Notes
+    -----
+    Independent of velocity. Equals ``sqrt(We) / Re`` when We and Re use
+    the same properties, length and non-zero velocity. Use gas properties
+    and inner pipe diameter for the Van Putten critical-Froude correlation.
+    """
+    if (not np.all(np.isfinite([mu, rho, D, surface_tension]))
+            or mu <= 0 or rho <= 0 or D <= 0 or surface_tension <= 0):
+        return np.nan
+
+    return mu / np.sqrt(rho * surface_tension * D)
+
+
+def density_ratio(rho_gas, rho_liquid):
+    """
+    Calculate the gas-to-liquid density ratio at the same conditions.
+
+    Parameters
+    ----------
+    rho_gas : float
+        Positive gas density [kg/m3].
+    rho_liquid : float
+        Positive liquid density [kg/m3].
+
+    Returns
+    -------
+    DR : float
+        ``rho_gas / rho_liquid`` [-]. NaN for non-finite or non-positive
+        densities. No pressure is inferred from this ratio.
+    """
+    if (not np.all(np.isfinite([rho_gas, rho_liquid]))
+            or rho_gas <= 0 or rho_liquid <= 0):
+        return np.nan
+
+    return rho_gas / rho_liquid
+
+
+def lockhart_martinelli_from_GVF(GVF, density_liquid, density_gas):
+    """
+    Calculate liquid loading X from the flowing gas volume fraction.
+
+    Parameters
+    ----------
+    GVF : float
+        ``Q_gas / (Q_gas + Q_liquid)`` at line conditions [-], in (0, 1].
+        This is a flow fraction, not the in-situ gas void fraction.
+    density_liquid : float
+        Positive liquid density at line conditions [kg/m3].
+    density_gas : float
+        Positive gas density at the same conditions [kg/m3].
+
+    Returns
+    -------
+    X : float
+        Lockhart-Martinelli parameter [-]. Zero for dry gas (GVF = 1).
+        NaN for non-finite or non-physical input.
+
+    Notes
+    -----
+    Equivalent to ``((1 - GVF) / GVF) * sqrt(density_liquid / density_gas)``.
+    Reuses the mass-flow definition rather than maintaining a second X
+    correlation for volume-based meters.
+
+    See Also
+    --------
+    lockhart_martinelli_parameter : Mass-flow definition of X.
+    GVF_from_lockhart_martinelli : Inverse conversion.
+    """
+    if (not np.all(np.isfinite([GVF, density_liquid, density_gas]))
+            or not 0 < GVF <= 1 or density_liquid <= 0 or density_gas <= 0):
+        return np.nan
+
+    # An arbitrary total volume flow of 1 m3/h gives the required mass ratio.
+    return lockhart_martinelli_parameter(
+        mass_flow_rate_liquid=(1 - GVF) * density_liquid,
+        mass_flow_rate_gas=GVF * density_gas,
+        density_liquid=density_liquid,
+        density_gas=density_gas,
+    )
+
+
+def GVF_from_lockhart_martinelli(X, density_liquid, density_gas):
+    """
+    Convert liquid loading X to the flowing gas volume fraction.
+
+    Parameters
+    ----------
+    X : float
+        Non-negative Lockhart-Martinelli parameter [-].
+    density_liquid : float
+        Positive liquid density at line conditions [kg/m3].
+    density_gas : float
+        Positive gas density at the same conditions [kg/m3].
+
+    Returns
+    -------
+    GVF : float
+        ``1 / (1 + X * sqrt(density_gas / density_liquid))`` [-].
+        NaN for non-finite or non-physical input.
+
+    See Also
+    --------
+    lockhart_martinelli_from_GVF : Forward conversion.
+    """
+    if (not np.all(np.isfinite([X, density_liquid, density_gas]))
+            or X < 0 or density_liquid <= 0 or density_gas <= 0):
+        return np.nan
+
+    return 1 / (1 + X * np.sqrt(density_gas / density_liquid))
+
+
+def gas_liquid_interfacial_tension_linear_mixing(WLR, surface_tension_oil, surface_tension_water):
+    """
+    Estimate gas-liquid interfacial tension by simplified volume-split weighting.
+
+    Parameters
+    ----------
+    WLR : float
+        Water volume flow / total oil-water volume flow [-], in [0, 1].
+        Volume flows must refer to the same line conditions.
+    surface_tension_oil : float
+        Positive gas-oil interfacial tension at line conditions [N/m].
+    surface_tension_water : float
+        Positive gas-water interfacial tension at the same conditions [N/m].
+
+    Returns
+    -------
+    surface_tension : float
+        Approximate gas-liquid interfacial tension [N/m], weighted by the
+        oil-water liquid volumetric-flow split.
+        NaN for non-finite or non-physical input.
+
+    Notes
+    -----
+    This is a simplified linear mixing rule, not a general method for
+    calculating the interfacial tension of an oil-water mixture against gas.
+    It implements the approximation in Equation (43) of [1]:
+
+    ``surface_tension = (1 - WLR) * surface_tension_oil + WLR * surface_tension_water``
+
+    The weights are the oil and water fractions of the total liquid volume
+    flow: ``1 - WLR`` and ``WLR``, respectively. They are not mass fractions
+    or in-situ liquid holdups. The rule assumes that the two supplied
+    gas-liquid interfacial tensions can be combined linearly; applicability
+    to the actual fluid system must be assessed separately.
+    Both supplied tensions must be positive, even at the pure-component
+    endpoints.
+
+    References
+    ----------
+    .. [1] van Putten et al., "Ultrasonic Meters in Wet Gas Application",
+       North Sea Flow Measurement Workshop (NSFMW), 2015, Equation (43).
+       https://nfogm.no/wp-content/uploads/2019/02/2015-02-Ultrasonic-Meters-in-Wet-Gas-Application-van-Putten-DNV-GL.pdf
+    """
+    if (not np.all(np.isfinite([WLR, surface_tension_oil, surface_tension_water]))
+            or not 0 <= WLR <= 1 or surface_tension_oil <= 0 or surface_tension_water <= 0):
+        return np.nan
+
+    # Weight the gas-oil and gas-water tensions by the liquid volumetric-flow split.
+    return (1 - WLR) * surface_tension_oil + WLR * surface_tension_water
 
 
 def liquid_holdup_from_density(measured_density, liquid_density, gas_density):
