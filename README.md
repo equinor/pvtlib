@@ -34,6 +34,9 @@ More examples are provided in the examples folder: https://github.com/equinor/pv
 - **Thermodynamics**: Thermodynamic functions
 - **Fluid Mechanics**: Fluid mechanic functions
 - **Metering**: Metering functions
+  - Ultrasonic wet-gas over-reading correction using van Putten et al. (NSFMW, 2015),
+    implementing the simplified model (Equations 29-30), not the full physical model
+    (Equation 28). See the [example notebook](examples/13%20Ultrasonic%20Wetgas%20Van%20Putten/README.md).
 - **aga8**: Equations for calculating gas properties (GERG-2008 and DETAIL) using the Rust port (https://crates.io/crates/aga8) of NIST's AGA8 code (https://github.com/usnistgov/AGA8). **Note: AGA8 is only valid for single-phase gas conditions. It does not check for phase state and will produce erroneous results in the two-phase or liquid region.**
 - **Unit converters**: Functions to convert between different units of measure
 - **Equipment**:
