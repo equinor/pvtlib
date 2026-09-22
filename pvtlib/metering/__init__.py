@@ -24,3 +24,4 @@ SOFTWARE.
 from . import differential_pressure_flowmeters
 from . import coriolis_flowmeters
 from . import level_measurement
+from . import ultrasonic_flowmeters
