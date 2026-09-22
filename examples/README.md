@@ -76,6 +76,14 @@ Demonstrates Coriolis mass-flow pressure correction using a real CMF300H calibra
 **Required packages**: pvtlib, pandas  
 **Format**: Jupyter Notebook
 
+### 13 Ultrasonic Wetgas Van Putten
+Correct the over-reading of an ultrasonic gas meter in wet gas using the Van Putten
+correction. Includes the over-reading surface and a case corrected with both
+critical gas Froude number variants (water-liquid ratio and gas Ohnesorge number).
+
+**Required packages**: pvtlib, numpy, pandas, matplotlib  
+**Format**: Jupyter Notebook
+
 ## Usage
 
 Each example is contained in its own numbered folder with:
