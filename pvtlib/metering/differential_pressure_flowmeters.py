@@ -27,6 +27,7 @@ from math import sqrt, pi, e
 from pvtlib.fluid_mechanics import (
     reynolds_number as _reynolds_number,
     superficial_velocity as _superficial_velocity,
+    densimetric_froude_number as _densimetric_froude_number,
     lockhart_martinelli_parameter as _lockhart_martinelli_parameter,
     GVF_to_GMF as _GVF_to_GMF
 )
@@ -727,35 +728,6 @@ def calculate_C_orifice_ReaderHarrisGallagher(D, beta, Re, tapping='corner', che
     return C
 
 
-def _gas_densiometric_Froude_number(massflow_gas, D, rho_g, rho_l):
-    """
-    Calculate the gas densiometric Froude number (Frg) for wet-gas flow in a venturi.
-
-    Parameters
-    ----------
-    massflow_gas : float
-        Gas mass flow rate [kg/s]
-    D : float
-        Upstream inner pipe diameter [m]
-    rho_g : float
-        Gas density [kg/m3]
-    rho_l : float
-        Liquid density [kg/m3]
-    
-    Returns
-    -------
-    Frg : float
-        Gas densiometric Froude number (Frg) [-]
-    """
-
-    if D <= 0.0 or rho_g <= 0.0 or rho_l <= 0.0 or massflow_gas < 0.0 or (rho_l - rho_g) == 0.0:
-        return np.nan
-
-    Fr_gas = (4*massflow_gas/(rho_g*pi*D**2*sqrt(9.81*D))) * sqrt(rho_g/(rho_l - rho_g))
-
-    return Fr_gas
-
-
 def calculate_C_wetgas_venturi_ReaderHarrisGraham(Fr_gas_th, X):
     """
     Calculate the discharge coefficient correction for wet-gas Venturi flow meters using the Reader-Harris/Graham correlation [1_].
@@ -962,12 +934,12 @@ def calculate_flow_wetgas_venturi_ReaderHarrisGraham(
         density_gas=rho_g
     )
 
-    # Calculate gas densiometric Froude number
-    Fr_gas = _gas_densiometric_Froude_number(
-        massflow_gas=MassFlow_gas_initial/3600, # Convert to kg/s
+    # Calculate gas densimetric Froude number
+    Fr_gas = _densimetric_froude_number(
+        v=_superficial_velocity(Q_phase=MassFlow_gas_initial/rho_g, D=D), # Convert to m3/h
         D=D,
-        rho_g=rho_g,
-        rho_l=rho_l
+        rho_phase=rho_g,
+        rho_other=rho_l
     )
 
     Fr_gas_th = Fr_gas / beta**2.5
@@ -997,12 +969,12 @@ def calculate_flow_wetgas_venturi_ReaderHarrisGraham(
     
     for iteration in range(max_iterations):
 
-        # Calculate gas densiometric Froude number
-        Fr_gas = _gas_densiometric_Froude_number(
-            massflow_gas=MassFlow_gas_corrected_new / 3600, # Convert to kg/s
+        # Calculate gas densimetric Froude number
+        Fr_gas = _densimetric_froude_number(
+            v=_superficial_velocity(Q_phase=MassFlow_gas_corrected_new/rho_g, D=D), # Convert to m3/h
             D=D,
-            rho_g=rho_g,
-            rho_l=rho_l
+            rho_phase=rho_g,
+            rho_other=rho_l
         )
 
         Fr_gas_th = Fr_gas / beta**2.5
