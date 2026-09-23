@@ -36,7 +36,7 @@ from pvtlib import fluid_mechanics as _fm
 # established independently; nothing is calibrated or inferred here.
 # https://nfogm.no/wp-content/uploads/2019/02/2015-02-Ultrasonic-Meters-in-Wet-Gas-Application-van-Putten-DNV-GL.pdf
 
-def gas_void_fraction_low_froude_VanPutten(X):
+def gas_void_fraction_low_froude_VanPutten_2015(X):
     """
     Calculate the gas void fraction below the critical gas Froude number.
 
@@ -76,7 +76,7 @@ def gas_void_fraction_low_froude_VanPutten(X):
     return alpha if np.isfinite(alpha) and 0 < alpha <= 1 else np.nan
 
 
-def critical_froude_from_WLR_VanPutten(WLR=0.0):
+def critical_froude_from_WLR_VanPutten_2015(WLR=0.0):
     """
     Estimate the stratified-to-dispersed transition Froude number from WLR.
 
@@ -96,7 +96,7 @@ def critical_froude_from_WLR_VanPutten(WLR=0.0):
 
     See Also
     --------
-    critical_froude_from_Ohnesorge_VanPutten : Fluid-property alternative.
+    critical_froude_from_Ohnesorge_VanPutten_2015 : Fluid-property alternative.
 
     References
     ----------
@@ -110,7 +110,7 @@ def critical_froude_from_WLR_VanPutten(WLR=0.0):
     return 1.2 + 0.3 * WLR
 
 
-def critical_froude_from_Ohnesorge_VanPutten(rho_g, mu_g, surface_tension, D):
+def critical_froude_from_Ohnesorge_VanPutten_2015(rho_g, mu_g, surface_tension, D):
     """
     Estimate the transition Froude number from gas properties and diameter.
 
@@ -157,7 +157,7 @@ def critical_froude_from_Ohnesorge_VanPutten(rho_g, mu_g, surface_tension, D):
     return Fr_gas_crit if np.isfinite(Fr_gas_crit) and Fr_gas_crit > 0 else np.nan
 
 
-def gas_void_fraction_VanPutten(X, Fr_gas, GVF, Fr_gas_crit=1.2):
+def gas_void_fraction_VanPutten_2015(X, Fr_gas, GVF, Fr_gas_crit=1.2):
     """
     Calculate gas void fraction across the low- and high-Froude branches.
 
@@ -203,7 +203,7 @@ def gas_void_fraction_VanPutten(X, Fr_gas, GVF, Fr_gas_crit=1.2):
             or X < 0 or Fr_gas < 0 or not 0 < GVF <= 1 or Fr_gas_crit <= 0):
         return np.nan
 
-    alpha_low = gas_void_fraction_low_froude_VanPutten(X)
+    alpha_low = gas_void_fraction_low_froude_VanPutten_2015(X)
     if not np.isfinite(alpha_low):
         return np.nan
 
@@ -215,9 +215,9 @@ def gas_void_fraction_VanPutten(X, Fr_gas, GVF, Fr_gas_crit=1.2):
     return (alpha_low - GVF) * np.exp(-0.4 * (Fr_gas - Fr_gas_crit)) + GVF
 
 
-def check_operating_point_DNV_wetgas_JIP_2015(GVF, X, DR, Fr_gas):
+def check_operating_point_DNV_USM_wetgas_JIP_2015(GVF, X, DR, Fr_gas):
     """
-    Check an operating point against the DNV wet-gas JIP ranges reported in 2015.
+    Check an operating point against the DNV USM wet-gas JIP ranges reported in 2015.
 
     Parameters
     ----------
@@ -307,7 +307,7 @@ def calculate_flow_wetgas_USM_VanPutten_2015(
     Fr_gas_crit : float, optional
         Positive critical gas Froude number [-]. If omitted, calculated
         from WLR, Equation (27). To use Equation (26), supply the result of
-        ``critical_froude_from_Ohnesorge_VanPutten`` explicitly.
+        ``critical_froude_from_Ohnesorge_VanPutten_2015`` explicitly.
     check_input : bool, optional
         If True, raise on invalid input or calculation failure. If False
         (default), return NaN numerical fields and a descriptive ``error``.
@@ -412,19 +412,19 @@ def calculate_flow_wetgas_USM_VanPutten_2015(
     if GVF is None:
         GVF = _fm.GMF_to_GVF(GMF, rho_g, rho_l)
     GMF = _fm.GVF_to_GMF(GVF, rho_g, rho_l)
-    X = _fm.lockhart_martinelli_from_GVF(GVF, rho_l, rho_g)
-    DR = _fm.density_ratio(rho_g, rho_l)
+    X = _fm.GVF_to_lockhart_martinelli(GVF, rho_l, rho_g)
+    DR = _fm.gas_liquid_density_ratio(rho_g, rho_l)
 
     # Use the WLR approximation unless the caller explicitly selected another Fr*.
     if Fr_gas_crit is None:
-        Fr_gas_crit = critical_froude_from_WLR_VanPutten(WLR)
+        Fr_gas_crit = critical_froude_from_WLR_VanPutten_2015(WLR)
 
     # Fr_gas requires the unknown actual flow; start with the indicated rate.
     corrected_flow = VolFlow_gas_measured
     for iteration in range(1, 101):
         velocity = _fm.superficial_velocity(corrected_flow, D)
         Fr_gas = _fm.densimetric_froude_number(velocity, D, rho_g, rho_l)
-        alpha_gas = gas_void_fraction_VanPutten(X, Fr_gas, GVF, Fr_gas_crit)
+        alpha_gas = gas_void_fraction_VanPutten_2015(X, Fr_gas, GVF, Fr_gas_crit)
 
         if not np.isfinite(alpha_gas):
             error = "Van Putten model produced a non-physical gas void fraction."
@@ -480,7 +480,7 @@ def calculate_flow_wetgas_USM_VanPutten_2015(
         return results
 
     # Check only the documented dimensionless ranges, not overall meter suitability.
-    checks = check_operating_point_DNV_wetgas_JIP_2015(GVF, X, DR, Fr_gas)
+    checks = check_operating_point_DNV_USM_wetgas_JIP_2015(GVF, X, DR, Fr_gas)
     results["within_JIP_envelope"] = all(checks.values())
     results["JIP_envelope_exceeded"] = tuple(name for name, inside in checks.items() if not inside)
     return results
