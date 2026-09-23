@@ -84,6 +84,13 @@ critical gas Froude number variants (water-liquid ratio and gas Ohnesorge number
 **Required packages**: pvtlib, numpy, pandas, matplotlib  
 **Format**: Jupyter Notebook
 
+### 14 Lockhart-Martinelli and Froude Numbers
+Plots the Lockhart-Martinelli parameter as a function of GVF and gas-to-liquid
+density ratio, the Froude number as a function of velocity for different pipe sizes,
+and the gas densimetric Froude number as a function of gas volume flow.
+
+**Required packages**: pvtlib, numpy, matplotlib
+
 ## Usage
 
 Each example is contained in its own numbered folder with:
