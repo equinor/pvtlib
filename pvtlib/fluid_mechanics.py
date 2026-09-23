@@ -305,39 +305,6 @@ def densimetric_froude_number(v, D, rho_phase, rho_other):
     return froude_number(v, D) * np.sqrt(rho_phase / (rho_other - rho_phase))
 
 
-def weber_number(rho, v, D, surface_tension):
-    """
-    Calculate the ratio of inertial to surface-tension effects.
-
-    Parameters
-    ----------
-    rho : float
-        Positive density of the phase [kg/m3].
-    v : float
-        Non-negative characteristic velocity [m/s].
-    D : float
-        Positive characteristic length [m].
-    surface_tension : float
-        Positive interfacial tension [N/m].
-
-    Returns
-    -------
-    We : float
-        Weber number, ``rho * v**2 * D / surface_tension`` [-].
-        NaN for non-finite or non-physical input.
-
-    Notes
-    -----
-    For the gas-liquid pipe-flow definition used in the Van Putten model,
-    use gas density, superficial gas velocity and inner pipe diameter.
-    """
-    if (not np.all(np.isfinite([rho, v, D, surface_tension]))
-            or rho <= 0 or v < 0 or D <= 0 or surface_tension <= 0):
-        return np.nan
-
-    return rho * v**2 * D / surface_tension
-
-
 def ohnesorge_number(mu, rho, D, surface_tension):
     """
     Calculate the viscous-to-inertial/capillary scale ratio.
@@ -372,7 +339,7 @@ def ohnesorge_number(mu, rho, D, surface_tension):
     return mu / np.sqrt(rho * surface_tension * D)
 
 
-def density_ratio(rho_gas, rho_liquid):
+def gas_liquid_density_ratio(rho_gas, rho_liquid):
     """
     Calculate the gas-to-liquid density ratio at the same conditions.
 
@@ -396,7 +363,7 @@ def density_ratio(rho_gas, rho_liquid):
     return rho_gas / rho_liquid
 
 
-def lockhart_martinelli_from_GVF(GVF, density_liquid, density_gas):
+def GVF_to_lockhart_martinelli(GVF, density_liquid, density_gas):
     """
     Calculate liquid loading X from the flowing gas volume fraction.
 
@@ -425,7 +392,7 @@ def lockhart_martinelli_from_GVF(GVF, density_liquid, density_gas):
     See Also
     --------
     lockhart_martinelli_parameter : Mass-flow definition of X.
-    GVF_from_lockhart_martinelli : Inverse conversion.
+    lockhart_martinelli_to_GVF : Inverse conversion.
     """
     if (not np.all(np.isfinite([GVF, density_liquid, density_gas]))
             or not 0 < GVF <= 1 or density_liquid <= 0 or density_gas <= 0):
@@ -440,7 +407,7 @@ def lockhart_martinelli_from_GVF(GVF, density_liquid, density_gas):
     )
 
 
-def GVF_from_lockhart_martinelli(X, density_liquid, density_gas):
+def lockhart_martinelli_to_GVF(X, density_liquid, density_gas):
     """
     Convert liquid loading X to the flowing gas volume fraction.
 
@@ -461,7 +428,7 @@ def GVF_from_lockhart_martinelli(X, density_liquid, density_gas):
 
     See Also
     --------
-    lockhart_martinelli_from_GVF : Forward conversion.
+    GVF_to_lockhart_martinelli : Forward conversion.
     """
     if (not np.all(np.isfinite([X, density_liquid, density_gas]))
             or X < 0 or density_liquid <= 0 or density_gas <= 0):
