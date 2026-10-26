@@ -148,9 +148,10 @@ def GMF_to_GVF(GMF, rho_gas, rho_liquid):
     Returns
     -------
     GVF : float
-        Gas volume fraction [-].
+        Gas volume fraction [-]. NaN for non-finite or non-physical input.
     '''
-    if GMF < 0 or GMF > 1 or rho_gas <= 0 or rho_liquid <= 0:
+    if (not np.all(np.isfinite([GMF, rho_gas, rho_liquid]))
+            or GMF < 0 or GMF > 1 or rho_gas <= 0 or rho_liquid <= 0):
         return np.nan
     if GMF == 0:
         return 0.0
@@ -176,9 +177,10 @@ def GVF_to_GMF(GVF, rho_gas, rho_liquid):
     Returns
     -------
     GMF : float
-        Gas mass fraction [-].
+        Gas mass fraction [-]. NaN for non-finite or non-physical input.
     '''
-    if GVF < 0 or GVF > 1 or rho_gas <= 0 or rho_liquid <= 0:
+    if (not np.all(np.isfinite([GVF, rho_gas, rho_liquid]))
+            or GVF < 0 or GVF > 1 or rho_gas <= 0 or rho_liquid <= 0):
         return np.nan
     if GVF == 0:
         return 0.0
@@ -209,10 +211,14 @@ def lockhart_martinelli_parameter(mass_flow_rate_liquid, mass_flow_rate_gas, den
     Returns
     -------
     X : float
-        Lockhart-Martinelli parameter [-].
+        Lockhart-Martinelli parameter [-]. Zero for zero liquid flow.
+        NaN for non-finite input, negative liquid flow, non-positive gas
+        flow or non-positive densities.
     '''
 
-    if mass_flow_rate_gas <= 0 or density_gas <= 0 or density_liquid <= 0:
+    if (not np.all(np.isfinite([mass_flow_rate_liquid, mass_flow_rate_gas, density_liquid, density_gas]))
+            or mass_flow_rate_liquid < 0 or mass_flow_rate_gas <= 0
+            or density_gas <= 0 or density_liquid <= 0):
         return np.nan
 
     X = (mass_flow_rate_liquid / mass_flow_rate_gas) * ((density_gas / density_liquid) ** 0.5)

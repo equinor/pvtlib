@@ -78,7 +78,7 @@ def test_gas_void_fraction_low_froude_VanPutten_2015():
 
     for name, case in cases.items():
         alpha = ultrasonic_flowmeters.gas_void_fraction_low_froude_VanPutten_2015(X=case['input']['X'])
-        assert np.isclose(alpha, case['expected'], rtol=1e-13), \
+        assert np.isclose(alpha, case['expected'], rtol=1e-13, atol=0), \
             f"{name}, input={case['input']}: got {alpha}, expected {case['expected']}"
 
     alpha_extrapolated = ultrasonic_flowmeters.gas_void_fraction_low_froude_VanPutten_2015(X=2.0)
@@ -148,7 +148,7 @@ def test_critical_froude_from_Ohnesorge_VanPutten_2015():
             D=case['input']['D']
         )
 
-        assert np.isclose(Fr_gas_crit, case['expected'], rtol=1e-13), \
+        assert np.isclose(Fr_gas_crit, case['expected'], rtol=1e-13, atol=0), \
             f"{name}, input={case['input']}: got {Fr_gas_crit}, expected {case['expected']}"
 
 
@@ -232,7 +232,7 @@ def test_gas_void_fraction_VanPutten_2015_both_branches():
             GVF=case['input']['GVF'],
             Fr_gas_crit=case['input']['Fr_gas_crit'],
         )
-        assert np.isclose(alpha, case['expected'], rtol=case['rtol']), \
+        assert np.isclose(alpha, case['expected'], rtol=case['rtol'], atol=0), \
             f"{name}, input={case['input']}: got {alpha}, expected {case['expected']}"
 
 
@@ -241,7 +241,7 @@ def test_gas_void_fraction_VanPutten_2015_second_high_froude_case():
     alpha_second_case = ultrasonic_flowmeters.gas_void_fraction_VanPutten_2015(
         X=0.1, Fr_gas=2.0, GVF=0.99, Fr_gas_crit=1.35)
     alpha_second_case_expected = 0.9046529370225384  # Gas void fraction [-]
-    assert np.isclose(alpha_second_case, alpha_second_case_expected, rtol=1e-13), \
+    assert np.isclose(alpha_second_case, alpha_second_case_expected, rtol=1e-13, atol=0), \
         f'X=0.1, Fr_gas=2.0, GVF=0.99, Fr_gas_crit=1.35: got {alpha_second_case}, ' \
         f'expected {alpha_second_case_expected}'
 
@@ -529,9 +529,9 @@ def test_calculate_flow_wetgas_USM_VanPutten_2015_low_froude():
 
     assert np.isclose(result['LockhartMartinelli'], expected['LockhartMartinelli']), \
         f"X: got {result['LockhartMartinelli']}, expected 0.25"
-    assert np.isclose(result['alpha_gas'], expected['alpha_gas'], rtol=1e-12), \
+    assert np.isclose(result['alpha_gas'], expected['alpha_gas'], rtol=1e-12, atol=0), \
         f"alpha_gas: got {result['alpha_gas']}, expected {expected['alpha_gas']}"
-    assert np.isclose(result['VolFlow_gas_corrected'], expected['VolFlow_gas_corrected'], rtol=1e-12), \
+    assert np.isclose(result['VolFlow_gas_corrected'], expected['VolFlow_gas_corrected'], rtol=1e-12, atol=0), \
         f"VolFlow_gas_corrected: got {result['VolFlow_gas_corrected']} m3/h"
     assert result['iterations'] == expected['iterations'], f"iterations: got {result['iterations']}, expected 2"
 
@@ -567,11 +567,11 @@ def test_calculate_flow_wetgas_USM_VanPutten_2015_high_froude():
         check_input=True
     )
 
-    assert np.isclose(result['VolFlow_gas_corrected'], VolFlow_gas_actual, rtol=2e-10), \
+    assert np.isclose(result['VolFlow_gas_corrected'], VolFlow_gas_actual, rtol=2e-10, atol=0), \
         f"VolFlow_gas_corrected: got {result['VolFlow_gas_corrected']}, expected {VolFlow_gas_actual} m3/h"
-    assert np.isclose(result['Fr_gas'], expected['Fr_gas'], rtol=2e-10), \
+    assert np.isclose(result['Fr_gas'], expected['Fr_gas'], rtol=2e-10, atol=0), \
         f"Fr_gas: got {result['Fr_gas']}, expected {expected['Fr_gas']}"
-    assert np.isclose(result['alpha_gas'], expected['alpha_gas'], rtol=2e-10), \
+    assert np.isclose(result['alpha_gas'], expected['alpha_gas'], rtol=2e-10, atol=0), \
         f"alpha_gas: got {result['alpha_gas']}, expected {expected['alpha_gas']}"
 
 
@@ -671,13 +671,13 @@ def test_calculate_flow_wetgas_USM_VanPutten_2015_result_consistency():
         assert 1 <= result['iterations'] <= 100, f"{name}: iterations {result['iterations']}"
         assert all(np.isfinite(result[key]) for key in NUMERICAL_KEYS), \
             f'{name}: non-finite value in {result}'
-        assert np.isclose(VolFlow_gas_corrected, VolFlow_gas_measured * alpha_recalculated, rtol=1e-10), \
+        assert np.isclose(VolFlow_gas_corrected, VolFlow_gas_measured * alpha_recalculated, rtol=1e-10, atol=0), \
             f'{name}: corrected flow rate is not the solution of the void fraction equation'
-        assert np.isclose(result['Fr_gas'], Fr_gas_recalculated, rtol=1e-13), \
+        assert np.isclose(result['Fr_gas'], Fr_gas_recalculated, rtol=1e-13, atol=0), \
             f"{name}: Fr_gas {result['Fr_gas']} does not match the corrected flow rate"
-        assert np.isclose(result['alpha_gas'], 1 / result['OverRead'], rtol=1e-13), \
+        assert np.isclose(result['alpha_gas'], 1 / result['OverRead'], rtol=1e-13, atol=0), \
             f'{name}: over-read is not the inverse of the gas void fraction'
-        assert np.isclose(VolFlow_gas_corrected, VolFlow_gas_measured / result['OverRead'], rtol=1e-13), \
+        assert np.isclose(VolFlow_gas_corrected, VolFlow_gas_measured / result['OverRead'], rtol=1e-13, atol=0), \
             f'{name}: corrected flow rate does not match the over-read'
         assert np.isclose(VolFlow_gas_corrected + result['VolFlow_liq'], result['VolFlow_tot']), \
             f'{name}: phase volume flow rates do not sum to the total'
@@ -783,7 +783,7 @@ def test_calculate_flow_wetgas_USM_VanPutten_2015_gas_fraction_and_critical_frou
     override = ultrasonic_flowmeters.calculate_flow_wetgas_USM_VanPutten_2015(
         **override_input, Fr_gas_crit=Fr_gas_crit_supplied, check_input=True)
 
-    assert np.isclose(from_GMF['VolFlow_gas_corrected'], from_GVF['VolFlow_gas_corrected'], rtol=1e-12), \
+    assert np.isclose(from_GMF['VolFlow_gas_corrected'], from_GVF['VolFlow_gas_corrected'], rtol=1e-12, atol=0), \
         f"GMF input gave {from_GMF['VolFlow_gas_corrected']} m3/h, GVF input gave {from_GVF['VolFlow_gas_corrected']} m3/h"
     assert both_fractions == from_GVF, 'GVF should take precedence when both GVF and GMF are supplied'
     assert override['Fr_gas_crit'] == Fr_gas_crit_supplied, \

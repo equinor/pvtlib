@@ -208,19 +208,29 @@ def calculate_expansibility_venturi(P1, dP, beta, kappa):
     -------
     epsilon : float
         Expansibility factor. [-]
+        Returns 1.0 for dP = 0, which is the limit of the formula as the pressure ratio tau approaches 1.
+        Returns NaN for non-finite input, P1 <= 0, dP < 0, dP >= P1 (non-positive downstream pressure),
+        beta outside (0, 1), kappa <= 0 or kappa = 1 (the formula is singular for kappa = 1).
     
     References
     ----------
     .. [1] ISO 5167-4:2022, Measurement of fluid flow by means of pressure differential devices inserted in circular cross-section conduits running full -- Part 4: Venturi tubes.
     '''
 
+    if not np.all(np.isfinite([P1, dP, beta, kappa])):
+        return np.nan
+    if P1 <= 0 or dP < 0 or not 0 < beta < 1 or kappa <= 0 or kappa == 1:
+        return np.nan
+
     # Calculate pressure ratio
     P2 = P1 - (dP/1000) # Convert dP from mbar to bar
+    if P2 <= 0:
+        return np.nan
     tau = P2/P1
 
-    # Isentropic exponent cannot be equal to 1, as it would result in division by zero. Return NaN in this case.
-    if kappa==1:
-        return np.nan
+    # The formula is 0/0 at tau = 1, where the limit is exactly 1
+    if tau == 1:
+        return 1.0
 
     # Calculate expansibility factor
     epsilon = sqrt((kappa*tau**(2/kappa)/(kappa-1))*((1-beta**4)/(1-beta**4*tau**(2/kappa)))*(((1-tau**((kappa-1)/kappa))/(1-tau))))
@@ -620,6 +630,8 @@ def calculate_expansibility_orifice(P1, dP, beta, kappa):
     -------
     epsilon : float
         Expansibility factor. [-]
+        Returns NaN for non-finite input, P1 <= 0, dP < 0, dP >= P1 (non-positive downstream pressure),
+        beta outside (0, 1) or kappa <= 0.
     
     References
     ----------
@@ -627,16 +639,16 @@ def calculate_expansibility_orifice(P1, dP, beta, kappa):
     .. [2] ISO 5167-2:2022, Measurement of fluid flow by means of pressure differential devices inserted in circular cross-section conduits running full -- Part 2: Orifice plates.
     '''
 
+    if not np.all(np.isfinite([P1, dP, beta, kappa])):
+        return np.nan
+    if P1 <= 0 or dP < 0 or not 0 < beta < 1 or kappa <= 0:
+        return np.nan
+
     # Calculate pressure ratio
     P2 = P1 - (dP/1000) # Convert dP from mbar to bar
-    tau = P2/P1
-
-    # Isentropic exponent cannot be equal to 1, as it would result in division by zero. Return NaN in this case.
-    if kappa==0:
+    if P2 <= 0:
         return np.nan
-    # P1 cannot be zero, as it would result in division by zero. Return NaN in this case.
-    if P1==0:
-        return np.nan  
+    tau = P2/P1
 
     # Calculate expansibility factor
     epsilon = 1-(0.351+0.256*(beta**4)+0.93*(beta**8))*(1-(tau**(1/kappa)))
@@ -742,7 +754,7 @@ def calculate_C_wetgas_venturi_ReaderHarrisGraham(Fr_gas_th, X):
     Returns
     -------
     C_wet : float
-        Wet gas discharge coefficient [-]
+        Wet gas discharge coefficient [-]. NaN for non-finite or negative input.
 
     References
     ----------
@@ -750,7 +762,8 @@ def calculate_C_wetgas_venturi_ReaderHarrisGraham(Fr_gas_th, X):
 
     """
 
-    if Fr_gas_th < 0.0 or X < 0.0:
+    # min(1, nan) returns 1 in Python, so non-finite X must be rejected explicitly
+    if not np.all(np.isfinite([Fr_gas_th, X])) or Fr_gas_th < 0.0 or X < 0.0:
         return np.nan
 
     C_wet = 1-0.0463*np.exp(-0.05*Fr_gas_th)*min(1,sqrt(X/0.016))
@@ -787,26 +800,27 @@ def calculate_flow_wetgas_venturi_ReaderHarrisGraham(
     d : float
         Throat diameter [m]
     P1 : float
-        Upstream pressure [bara]
+        Upstream pressure [bara]. Must be greater than zero.
     dP : float
-        Differential pressure [mbar]
+        Differential pressure [mbar]. Must be non-negative and smaller than P1 (after unit conversion).
+        dP = 0 gives zero flow rates.
     rho_g : float
-        Gas density [kg/m3]
+        Gas density [kg/m3]. Must be greater than zero.
     rho_l : float
-        Liquid density [kg/m3]
+        Liquid density [kg/m3]. Must be greater than rho_g.
     GMF : float, optional
         Gas mass fraction (by mass, 0 < GMF <= 1). Either GMF or GVF must be provided.
     GVF : float, optional
         Gas volume fraction (by volume, 0 < GVF <= 1). Either GMF or GVF must be provided.
     H : float, optional
-        Dimensionless fluid parameter (default 1, which is used for hydrocarbon liquids, 1.35 for water)
+        Dimensionless fluid parameter, greater than zero (default 1, which is used for hydrocarbon liquids, 1.35 for water)
     epsilon : float, optional
-        Expansion factor. If not provided, calculated from kappa.
+        Expansion factor, in the range (0, 1]. If not provided, calculated from kappa.
     kappa : float, optional
-        Isentropic exponent (required if epsilon is not provided)
+        Isentropic exponent, greater than zero and not equal to 1 (required if epsilon is not provided)
     check_input : bool, optional
-        If True, checks input validity and raises exceptions for invalid inputs.
-        If False, returns NaN results for invalid inputs.
+        If True, raises exceptions for invalid inputs and non-convergence.
+        If False, returns NaN results for invalid inputs and non-convergence.
 
     Returns
     -------
@@ -831,11 +845,22 @@ def calculate_flow_wetgas_venturi_ReaderHarrisGraham(
         
         If inputs are invalid and check_input=False, all values will be NaN.
 
+    Raises
+    ------
+    ValueError
+        If check_input=True and any input is non-finite or outside the ranges given above.
+    RuntimeError
+        If check_input=True and the iteration does not converge.
+
     Notes
     -----
     The iteration process continues until the relative change in corrected gas mass flow 
     is less than 1e-10 or until 100 iterations are reached. If convergence is not achieved
     and check_input=True, an exception is raised. If check_input=False, NaN results are returned.
+
+    The Lockhart-Martinelli parameter is calculated from the phase mass ratio (1 - GMF)/GMF and the densities.
+    It is therefore also defined for dP = 0, where all flow rates are zero and the correlation outputs
+    (C_wet, n, C_Ch, OverRead) are evaluated at a Froude number of zero.
 
     References
     ----------
@@ -864,36 +889,44 @@ def calculate_flow_wetgas_venturi_ReaderHarrisGraham(
     }
 
     # Input validation and GMF/GVF handling
-    if check_input:
-        if D <= 0.0:
-            raise Exception("Pipe diameter D must be greater than zero.")
-        if d <= 0.0:
-            raise Exception("Throat diameter d must be greater than zero.")
-        if d >= D:
-            raise Exception("Throat diameter d must be smaller than pipe diameter D.")
-        if P1 <= 0.0:
-            raise Exception("Upstream pressure P1 must be greater than zero.")
-        if dP < 0.0:
-            raise Exception("Differential pressure dP must be non-negative.")
-        if rho_g <= 0.0:
-            raise Exception("Gas density rho_g must be greater than zero.")
-        if rho_l <= 0.0:
-            raise Exception("Liquid density rho_l must be greater than zero.")
-        if GMF is None and GVF is None:
-            raise Exception("Either GMF or GVF must be provided.")
-        if GMF is not None and not (0 < GMF <= 1):
-            raise Exception("GMF must be in the range (0, 1].")
-        if GVF is not None and not (0 < GVF <= 1):
-            raise Exception("GVF must be in the range (0, 1].")
-    else:
-        if D <= 0.0 or d <= 0.0 or d >= D or P1 <= 0.0 or dP < 0.0 or rho_g <= 0.0 or rho_l <= 0.0:
-            return results
-        if GMF is None and GVF is None:
-            return results
-        if GMF is not None and not (0 < GMF <= 1):
-            return results
-        if GVF is not None and not (0 < GVF <= 1):
-            return results
+    error = None
+    if not np.all(np.isfinite([D, d, P1, dP, rho_g, rho_l, H])):
+        error = "D, d, P1, dP, rho_g, rho_l and H must be finite."
+    elif D <= 0.0:
+        error = "Pipe diameter D must be greater than zero."
+    elif d <= 0.0:
+        error = "Throat diameter d must be greater than zero."
+    elif d >= D:
+        error = "Throat diameter d must be smaller than pipe diameter D."
+    elif P1 <= 0.0:
+        error = "Upstream pressure P1 must be greater than zero."
+    elif dP < 0.0:
+        error = "Differential pressure dP must be non-negative."
+    elif dP/1000 >= P1:
+        error = "Differential pressure dP must be smaller than upstream pressure P1 (dP is in mbar, P1 in bara)."
+    elif rho_g <= 0.0:
+        error = "Gas density rho_g must be greater than zero."
+    elif rho_l <= rho_g:
+        error = "Liquid density rho_l must be greater than gas density rho_g."
+    elif H <= 0.0:
+        error = "H must be greater than zero."
+    elif GMF is None and GVF is None:
+        error = "Either GMF or GVF must be provided."
+    elif GMF is not None and (not np.isfinite(GMF) or not 0 < GMF <= 1):
+        error = "GMF must be finite and in the range (0, 1]."
+    elif GVF is not None and (not np.isfinite(GVF) or not 0 < GVF <= 1):
+        error = "GVF must be finite and in the range (0, 1]."
+    elif epsilon is None and kappa is None:
+        error = "Either epsilon or kappa must be provided."
+    elif epsilon is not None and (not np.isfinite(epsilon) or not 0 < epsilon <= 1):
+        error = "Expansibility epsilon must be finite and in the range (0, 1]."
+    elif epsilon is None and (not np.isfinite(kappa) or kappa <= 0 or kappa == 1):
+        error = "Isentropic exponent kappa must be finite, greater than zero and not equal to 1."
+
+    if error is not None:
+        if check_input:
+            raise ValueError(error)
+        return results
 
     # Convert GVF to GMF if needed
     if GMF is None:
@@ -912,7 +945,7 @@ def calculate_flow_wetgas_venturi_ReaderHarrisGraham(
     else:
         epsilon_used = epsilon
 
-    # Initial calculation of gas flowrates using gas density only
+    # Inputs are validated above, and calculate_flow_venturi with check_input=True would reject dP = 0
     venturi_results_gas = calculate_flow_venturi(
         D=D,
         d=d,
@@ -920,16 +953,15 @@ def calculate_flow_wetgas_venturi_ReaderHarrisGraham(
         rho1=rho_g,
         C=1.0,
         epsilon=epsilon_used,
-        check_input=check_input
+        check_input=False
     )
 
     MassFlow_gas_initial = venturi_results_gas['MassFlow'] # kg/h
-    MassFlow_liq_initial = (MassFlow_gas_initial*(1-GMF))/GMF # kg/h
 
-    # Calculate Lockhart-Martinelli parameter
+    # X depends only on the phase mass ratio (1 - GMF)/GMF, so it is also defined for zero flow
     X = _lockhart_martinelli_parameter(
-        mass_flow_rate_liquid=MassFlow_liq_initial/3600, # Convert to kg/s
-        mass_flow_rate_gas=MassFlow_gas_initial/3600, # Convert to kg/s
+        mass_flow_rate_liquid=1 - GMF,
+        mass_flow_rate_gas=GMF,
         density_liquid=rho_l,
         density_gas=rho_g
     )
@@ -997,7 +1029,10 @@ def calculate_flow_wetgas_venturi_ReaderHarrisGraham(
         # Calculate new corrected gas mass flow
         MassFlow_gas_corrected_new = (MassFlow_gas_initial / OR) * C_wet
 
-        # Check for convergence
+        # Check for convergence. Zero differential pressure gives zero flow in every iteration.
+        if MassFlow_gas_corrected_new == 0:
+            MassFlow_gas_corrected = MassFlow_gas_corrected_new
+            break
         relative_error = abs(MassFlow_gas_corrected_new - MassFlow_gas_corrected) / MassFlow_gas_corrected
         if relative_error < tolerance:
             MassFlow_gas_corrected = MassFlow_gas_corrected_new
@@ -1008,7 +1043,7 @@ def calculate_flow_wetgas_venturi_ReaderHarrisGraham(
     else:
         # If we reach here, iterations didn't converge
         if check_input:
-            raise Exception(f"Wet-gas Venturi calculation did not converge after {max_iterations} iterations")
+            raise RuntimeError(f"Wet-gas Venturi calculation did not converge after {max_iterations} iterations")
         else:
             return results
 
