@@ -767,3 +767,727 @@ def test_liquid_holdup_from_density_equal_densities():
         measured_density=500, liquid_density=500, gas_density=500
     )
     assert np.isnan(result), f'liquid holdup equal densities should return nan, got {result}'
+
+
+#%% Tests of dimensionless numbers and conversions used in wet-gas calculations
+
+def test_froude_number_wetgas():
+    """
+    Test the Froude number [-] for reference and boundary inputs.
+
+    Inputs are chosen so that the expected value is exact or a simple root, to
+    make the arithmetic easy to reproduce by hand. The Froude cases use a
+    diameter equal to the standard acceleration of free fall, 9.80665 m/s2,
+    so that the two cancel.
+    """
+    cases = {
+        'Froude number': {
+            'input': {
+                'v': 9.80665,  # Velocity [m/s]
+                'D': 9.80665,  # Pipe diameter [m]
+            },
+            'expected': 1.0},
+        'Froude number, wet-gas conditions': {
+            'input': {
+                'v': 15.0,  # Velocity [m/s]
+                'D': 0.15,  # Pipe diameter [m]
+            },
+            'expected': 12.367596045581745}, 
+        'Froude number, zero velocity': {
+            'input': {
+                'v': 0.0,  # Velocity [m/s]
+                'D': 0.1,  # Pipe diameter [m]
+            },
+            'expected': 0.0},
+    }
+
+    for name, case in cases.items():
+        result = fluid_mechanics.froude_number(**case['input'])
+        assert np.isclose(result, case['expected'], rtol=1e-12, atol=1e-14), \
+            f'{name}: got {result}, expected {case["expected"]}'
+
+
+def test_densimetric_froude_number_wetgas():
+    """Test the densimetric Froude number [-] for reference and boundary inputs."""
+    cases = {
+        'Densimetric Froude number': {
+            'input': {
+                'v': 9.80665,  # Velocity [m/s]
+                'D': 9.80665,  # Pipe diameter [m]
+                'rho_phase': 1.0,  # Flowing phase density [kg/m3]
+                'rho_other': 2.0,  # Other phase density [kg/m3]
+            },
+            'expected': 1.0}, 
+        'Densimetric Froude number, wet-gas conditions': {
+            'input': {
+                'v': 15.0,  # Velocity [m/s]
+                'D': 0.15,  # Pipe diameter [m]
+                'rho_phase': 20.0,  # Flowing phase density [kg/m3]
+                'rho_other': 915.0,  # Other phase density [kg/m3]
+            },
+            'expected': 1.8487950594895735}, 
+        'Densimetric Froude number, zero velocity': {
+            'input': {
+                'v': 0.0,  # Velocity [m/s]
+                'D': 0.1,  # Pipe diameter [m]
+                'rho_phase': 20.0,  # Flowing phase density [kg/m3]
+                'rho_other': 1000.0,  # Other phase density [kg/m3]
+            },
+            'expected': 0.0}, 
+    }
+
+    for name, case in cases.items():
+        result = fluid_mechanics.densimetric_froude_number(**case['input'])
+        assert np.isclose(result, case['expected'], rtol=1e-12, atol=1e-14), \
+            f'{name}: got {result}, expected {case["expected"]}'
+
+
+def test_ohnesorge_number_wetgas():
+    """Test the Ohnesorge number [-] for reference inputs."""
+    cases = {
+        'Ohnesorge number': {
+            'input': {
+                'mu': 0.02,  # Dynamic viscosity [Pa.s]
+                'rho': 4.0,  # Density [kg/m3]
+                'D': 0.25,  # Pipe diameter [m]
+                'surface_tension': 0.04,  # Surface tension [N/m]
+            },
+            'expected': 0.1}, 
+        'Ohnesorge number, wet-gas conditions': {
+            'input': {
+                'mu': 1.2e-5,  # Dynamic viscosity [Pa.s]
+                'rho': 20.0,  # Density [kg/m3]
+                'D': 0.15,  # Pipe diameter [m]
+                'surface_tension': 0.04,  # Surface tension [N/m]
+            },
+            'expected': 3.464101615137755e-05}, 
+    }
+
+    for name, case in cases.items():
+        result = fluid_mechanics.ohnesorge_number(**case['input'])
+        assert np.isclose(result, case['expected'], rtol=1e-12, atol=1e-14), \
+            f'{name}: got {result}, expected {case["expected"]}'
+
+
+def test_gas_liquid_density_ratio_wetgas():
+    """Test the gas-to-liquid density ratio [-], including inverted densities."""
+    cases = {
+        'Density ratio, gas over liquid': {
+            'input': {
+                'rho_gas': 20.0,  # Gas density [kg/m3]
+                'rho_liquid': 1000.0,  # Liquid density [kg/m3]
+            },
+            'expected': 0.02}, 
+        'Density ratio, oil-water mixture': {
+            'input': {
+                'rho_gas': 20.0,  # Gas density [kg/m3]
+                'rho_liquid': 915.0,  # Liquid density [kg/m3]
+            },
+            'expected': 0.02185792349726776}, 
+        'Density ratio, inverted densities': {
+            'input': {
+                'rho_gas': 1000.0,  # Gas density [kg/m3]
+                'rho_liquid': 20.0,  # Liquid density [kg/m3]
+            },
+            'expected': 50.0}, 
+    }
+
+    for name, case in cases.items():
+        result = fluid_mechanics.gas_liquid_density_ratio(**case['input'])
+        assert np.isclose(result, case['expected'], rtol=1e-12, atol=1e-14), \
+            f'{name}: got {result}, expected {case["expected"]}'
+
+
+def test_GVF_to_lockhart_martinelli_wetgas():
+    """Test the Lockhart-Martinelli parameter [-], including dry gas."""
+    cases = {
+        'Lockhart-Martinelli from GVF': {
+            'input': {
+                'GVF': 0.8,  # Gas volume fraction [-]
+                'density_liquid': 100.0,  # Liquid density [kg/m3]
+                'density_gas': 4.0,  # Gas density [kg/m3]
+            },
+            'expected': 1.25},
+        'Lockhart-Martinelli from GVF, wet-gas conditions': {
+            'input': {
+                'GVF': 0.99,  # Gas volume fraction [-]
+                'density_liquid': 915.0,  # Liquid density [kg/m3]
+                'density_gas': 20.0,  # Gas density [kg/m3]
+            },
+            'expected': 0.06832196595186203},
+        'Lockhart-Martinelli from GVF, dry gas': {
+            'input': {
+                'GVF': 1.0,  # Gas volume fraction [-]
+                'density_liquid': 100.0,  # Liquid density [kg/m3]
+                'density_gas': 4.0,  # Gas density [kg/m3]
+            },
+            'expected': 0.0}, 
+    }
+
+    for name, case in cases.items():
+        result = fluid_mechanics.GVF_to_lockhart_martinelli(**case['input'])
+        assert np.isclose(result, case['expected'], rtol=1e-12, atol=1e-14), \
+            f'{name}: got {result}, expected {case["expected"]}'
+
+
+def test_lockhart_martinelli_to_GVF_wetgas():
+    """Test the gas volume fraction [-], including dry gas."""
+    cases = {
+        'GVF from Lockhart-Martinelli': {
+            'input': {
+                'X': 1.25,  # Lockhart-Martinelli parameter [-]
+                'density_liquid': 100.0,  # Liquid density [kg/m3]
+                'density_gas': 4.0,  # Gas density [kg/m3]
+            },
+            'expected': 0.8}, 
+        'GVF from Lockhart-Martinelli, wet-gas conditions': {
+            'input': {
+                'X': 0.1,  # Lockhart-Martinelli parameter [-]
+                'density_liquid': 915.0,  # Liquid density [kg/m3]
+                'density_gas': 20.0,  # Gas density [kg/m3]
+            },
+            'expected': 0.9854309693283027}, 
+        'GVF from Lockhart-Martinelli, dry gas': {
+            'input': {
+                'X': 0.0,  # Lockhart-Martinelli parameter [-]
+                'density_liquid': 100.0,  # Liquid density [kg/m3]
+                'density_gas': 4.0,  # Gas density [kg/m3]
+            },
+            'expected': 1.0}, 
+    }
+
+    for name, case in cases.items():
+        result = fluid_mechanics.lockhart_martinelli_to_GVF(**case['input'])
+        assert np.isclose(result, case['expected'], rtol=1e-12, atol=1e-14), \
+            f'{name}: got {result}, expected {case["expected"]}'
+
+
+def test_gas_liquid_interfacial_tension_linear_mixing_wetgas():
+    """Test gas-liquid interfacial tension [N/m], including pure oil and water."""
+    cases = {
+        'Liquid mixture surface tension': {
+            'input': {
+                'WLR': 0.25,  # Water-to-liquid volume ratio [-]
+                'surface_tension_oil': 0.02,  # Gas-oil interfacial tension [N/m]
+                'surface_tension_water': 0.06,  # Gas-water interfacial tension [N/m]
+            },
+            'expected': 0.03}, 
+        'Liquid mixture surface tension, pure oil': {
+            'input': {
+                'WLR': 0.0,  # Water-to-liquid volume ratio [-]
+                'surface_tension_oil': 0.02,  # Gas-oil interfacial tension [N/m]
+                'surface_tension_water': 0.06,  # Gas-water interfacial tension [N/m]
+            },
+            'expected': 0.02},
+        'Liquid mixture surface tension, pure water': {
+            'input': {
+                'WLR': 1.0,  # Water-to-liquid volume ratio [-]
+                'surface_tension_oil': 0.02,  # Gas-oil interfacial tension [N/m]
+                'surface_tension_water': 0.06,  # Gas-water interfacial tension [N/m]
+            },
+            'expected': 0.06},
+    }
+
+    for name, case in cases.items():
+        result = fluid_mechanics.gas_liquid_interfacial_tension_linear_mixing(**case['input'])
+        assert np.isclose(result, case['expected'], rtol=1e-12, atol=1e-14), \
+            f'{name}: got {result}, expected {case["expected"]}'
+
+
+def test_froude_number_wetgas_invalid_inputs():
+    """Expect NaN for the Froude number [-] with non-physical inputs."""
+    cases = {
+        'Froude number, negative velocity': {
+            'input': {
+                'v': -1.0,  # Velocity [m/s]
+                'D': 0.1,  # Pipe diameter [m]
+            },
+            'expected': np.nan}, 
+        'Froude number, zero diameter': {
+            'input': {
+                'v': 1.0,  # Velocity [m/s]
+                'D': 0.0,  # Pipe diameter [m]
+            },
+            'expected': np.nan}, 
+    }
+
+    for name, case in cases.items():
+        result = fluid_mechanics.froude_number(**case['input'])
+        assert np.isnan(result), f'{name}: expected nan, got {result}'
+
+
+def test_densimetric_froude_number_wetgas_invalid_inputs():
+    """Expect NaN for the densimetric Froude number [-] with invalid inputs."""
+    cases = {
+        'Densimetric Froude number, negative velocity': {
+            'input': {
+                'v': -1.0,  # Velocity [m/s]
+                'D': 0.1,  # Pipe diameter [m]
+                'rho_phase': 20.0,  # Flowing phase density [kg/m3]
+                'rho_other': 1000.0,  # Other phase density [kg/m3]
+            },
+            'expected': np.nan}, 
+        'Densimetric Froude number, zero diameter': {
+            'input': {
+                'v': 1.0,  # Velocity [m/s]
+                'D': 0.0,  # Pipe diameter [m]
+                'rho_phase': 20.0,  # Flowing phase density [kg/m3]
+                'rho_other': 1000.0,  # Other phase density [kg/m3]
+            },
+            'expected': np.nan}, 
+        'Densimetric Froude number, zero phase density': {
+            'input': {
+                'v': 1.0,  # Velocity [m/s]
+                'D': 0.1,  # Pipe diameter [m]
+                'rho_phase': 0.0,  # Flowing phase density [kg/m3]
+                'rho_other': 1000.0,  # Other phase density [kg/m3]
+            },
+            'expected': np.nan}, 
+        'Densimetric Froude number, equal densities': {
+            'input': {
+                'v': 1.0,  # Velocity [m/s]
+                'D': 0.1,  # Pipe diameter [m]
+                'rho_phase': 20.0,  # Flowing phase density [kg/m3]
+                'rho_other': 20.0,  # Other phase density [kg/m3]
+            },
+            'expected': np.nan}, 
+        'Densimetric Froude number, heavier phase is lighter': {
+            'input': {
+                'v': 1.0,  # Velocity [m/s]
+                'D': 0.1,  # Pipe diameter [m]
+                'rho_phase': 20.0,  # Flowing phase density [kg/m3]
+                'rho_other': 10.0,  # Other phase density [kg/m3]
+            },
+            'expected': np.nan}, 
+    }
+
+    for name, case in cases.items():
+        result = fluid_mechanics.densimetric_froude_number(**case['input'])
+        assert np.isnan(result), f'{name}: expected nan, got {result}'
+
+
+def test_ohnesorge_number_wetgas_invalid_inputs():
+    """Expect NaN for the Ohnesorge number [-] with non-physical inputs."""
+    cases = {
+        'Ohnesorge number, zero viscosity': {
+            'input': {
+                'mu': 0.0,  # Dynamic viscosity [Pa.s]
+                'rho': 20.0,  # Density [kg/m3]
+                'D': 0.1,  # Pipe diameter [m]
+                'surface_tension': 0.04,  # Surface tension [N/m]
+            },
+            'expected': np.nan}, 
+        'Ohnesorge number, zero density': {
+            'input': {
+                'mu': 1e-5,  # Dynamic viscosity [Pa.s]
+                'rho': 0.0,  # Density [kg/m3]
+                'D': 0.1,  # Pipe diameter [m]
+                'surface_tension': 0.04,  # Surface tension [N/m]
+            },
+            'expected': np.nan}, 
+        'Ohnesorge number, zero diameter': {
+            'input': {
+                'mu': 1e-5,  # Dynamic viscosity [Pa.s]
+                'rho': 20.0,  # Density [kg/m3]
+                'D': 0.0,  # Pipe diameter [m]
+                'surface_tension': 0.04,  # Surface tension [N/m]
+            },
+            'expected': np.nan}, 
+        'Ohnesorge number, zero surface tension': {
+            'input': {
+                'mu': 1e-5,  # Dynamic viscosity [Pa.s]
+                'rho': 20.0,  # Density [kg/m3]
+                'D': 0.1,  # Pipe diameter [m]
+                'surface_tension': 0.0,  # Surface tension [N/m]
+            },
+            'expected': np.nan}, 
+    }
+
+    for name, case in cases.items():
+        result = fluid_mechanics.ohnesorge_number(**case['input'])
+        assert np.isnan(result), f'{name}: expected nan, got {result}'
+
+
+def test_gas_liquid_density_ratio_wetgas_invalid_inputs():
+    """Expect NaN for the gas-to-liquid density ratio [-] with zero densities."""
+    cases = {
+        'Density ratio, zero gas density': {
+            'input': {
+                'rho_gas': 0.0,  # Gas density [kg/m3]
+                'rho_liquid': 1000.0,  # Liquid density [kg/m3]
+            },
+            'expected': np.nan}, 
+        'Density ratio, zero liquid density': {
+            'input': {
+                'rho_gas': 20.0,  # Gas density [kg/m3]
+                'rho_liquid': 0.0,  # Liquid density [kg/m3]
+            },
+            'expected': np.nan}, 
+    }
+
+    for name, case in cases.items():
+        result = fluid_mechanics.gas_liquid_density_ratio(**case['input'])
+        assert np.isnan(result), f'{name}: expected nan, got {result}'
+
+
+def test_GVF_to_lockhart_martinelli_wetgas_invalid_inputs():
+    """Expect NaN for the Lockhart-Martinelli parameter [-] with invalid inputs."""
+    cases = {
+        'Lockhart-Martinelli from GVF, zero GVF': {
+            'input': {
+                'GVF': 0.0,  # Gas volume fraction [-]
+                'density_liquid': 1000.0,  # Liquid density [kg/m3]
+                'density_gas': 20.0,  # Gas density [kg/m3]
+            },
+            'expected': np.nan},
+        'Lockhart-Martinelli from GVF, GVF above one': {
+            'input': {
+                'GVF': 1.01,  # Gas volume fraction [-]
+                'density_liquid': 1000.0,  # Liquid density [kg/m3]
+                'density_gas': 20.0,  # Gas density [kg/m3]
+            },
+            'expected': np.nan},
+        'Lockhart-Martinelli from GVF, zero liquid density': {
+            'input': {
+                'GVF': 0.99,  # Gas volume fraction [-]
+                'density_liquid': 0.0,  # Liquid density [kg/m3]
+                'density_gas': 20.0,  # Gas density [kg/m3]
+            },
+            'expected': np.nan},
+        'Lockhart-Martinelli from GVF, zero gas density': {
+            'input': {
+                'GVF': 0.99,  # Gas volume fraction [-]
+                'density_liquid': 1000.0,  # Liquid density [kg/m3]
+                'density_gas': 0.0,  # Gas density [kg/m3]
+            },
+            'expected': np.nan},
+    }
+
+    for name, case in cases.items():
+        result = fluid_mechanics.GVF_to_lockhart_martinelli(**case['input'])
+        assert np.isnan(result), f'{name}: expected nan, got {result}'
+
+
+def test_lockhart_martinelli_to_GVF_wetgas_invalid_inputs():
+    """Expect NaN for the gas volume fraction [-] with non-physical inputs."""
+    cases = {
+        'GVF from Lockhart-Martinelli, negative X': {
+            'input': {
+                'X': -0.1,  # Lockhart-Martinelli parameter [-]
+                'density_liquid': 1000.0,  # Liquid density [kg/m3]
+                'density_gas': 20.0,  # Gas density [kg/m3]
+            },
+            'expected': np.nan},
+        'GVF from Lockhart-Martinelli, zero liquid density': {
+            'input': {
+                'X': 0.1,  # Lockhart-Martinelli parameter [-]
+                'density_liquid': 0.0,  # Liquid density [kg/m3]
+                'density_gas': 20.0,  # Gas density [kg/m3]
+            },
+            'expected': np.nan},
+        'GVF from Lockhart-Martinelli, zero gas density': {
+            'input': {
+                'X': 0.1,  # Lockhart-Martinelli parameter [-]
+                'density_liquid': 1000.0,  # Liquid density [kg/m3]
+                'density_gas': 0.0,  # Gas density [kg/m3]
+            },
+            'expected': np.nan},
+    }
+
+    for name, case in cases.items():
+        result = fluid_mechanics.lockhart_martinelli_to_GVF(**case['input'])
+        assert np.isnan(result), f'{name}: expected nan, got {result}'
+
+
+def test_gas_liquid_interfacial_tension_linear_mixing_wetgas_invalid_inputs():
+    """Expect NaN for gas-liquid interfacial tension [N/m] with invalid inputs."""
+    cases = {
+        'Liquid mixture surface tension, negative WLR': {
+            'input': {
+                'WLR': -0.1,  # Water-to-liquid volume ratio [-]
+                'surface_tension_oil': 0.02,  # Gas-oil interfacial tension [N/m]
+                'surface_tension_water': 0.06,  # Gas-water interfacial tension [N/m]
+            },
+            'expected': np.nan},
+        'Liquid mixture surface tension, WLR above one': {
+            'input': {
+                'WLR': 1.1,  # Water-to-liquid volume ratio [-]
+                'surface_tension_oil': 0.02,  # Gas-oil interfacial tension [N/m]
+                'surface_tension_water': 0.06,  # Gas-water interfacial tension [N/m]
+            },
+            'expected': np.nan},
+        'Liquid mixture surface tension, zero oil surface tension': {
+            'input': {
+                'WLR': 0.0,  # Water-to-liquid volume ratio [-]
+                'surface_tension_oil': 0.0,  # Gas-oil interfacial tension [N/m]
+                'surface_tension_water': 0.06,  # Gas-water interfacial tension [N/m]
+            },
+            'expected': np.nan},
+        'Liquid mixture surface tension, zero water surface tension': {
+            'input': {
+                'WLR': 1.0,  # Water-to-liquid volume ratio [-]
+                'surface_tension_oil': 0.02,  # Gas-oil interfacial tension [N/m]
+                'surface_tension_water': 0.0,  # Gas-water interfacial tension [N/m]
+            },
+            'expected': np.nan},
+    }
+
+    for name, case in cases.items():
+        result = fluid_mechanics.gas_liquid_interfacial_tension_linear_mixing(**case['input'])
+        assert np.isnan(result), f'{name}: expected nan, got {result}'
+
+
+def test_froude_number_wetgas_nonfinite_inputs():
+    """Expect NaN for the Froude number [-] when any input is NaN or infinite."""
+    valid_input = {
+        'v': 1.0,  # Velocity [m/s]
+        'D': 0.1,  # Pipe diameter [m]
+    }
+
+    for argument in valid_input:
+        for nonfinite in [np.nan, np.inf, -np.inf]:
+            invalid_input = dict(valid_input)
+            invalid_input[argument] = nonfinite
+            result = fluid_mechanics.froude_number(**invalid_input)
+            assert np.isnan(result), \
+                f'Froude number with {argument}={nonfinite}: expected nan, got {result}'
+
+
+def test_densimetric_froude_number_wetgas_nonfinite_inputs():
+    """Expect NaN for the densimetric Froude number [-] for nonfinite inputs."""
+    valid_input = {
+        'v': 1.0,  # Velocity [m/s]
+        'D': 0.1,  # Pipe diameter [m]
+        'rho_phase': 20.0,  # Flowing phase density [kg/m3]
+        'rho_other': 1000.0,  # Other phase density [kg/m3]
+    }
+
+    for argument in valid_input:
+        for nonfinite in [np.nan, np.inf, -np.inf]:
+            invalid_input = dict(valid_input)
+            invalid_input[argument] = nonfinite
+            result = fluid_mechanics.densimetric_froude_number(**invalid_input)
+            assert np.isnan(result), \
+                f'Densimetric Froude number with {argument}={nonfinite}: expected nan, got {result}'
+
+
+def test_ohnesorge_number_wetgas_nonfinite_inputs():
+    """Expect NaN for the Ohnesorge number [-] for nonfinite inputs."""
+    valid_input = {
+        'mu': 1e-5,  # Dynamic viscosity [Pa.s]
+        'rho': 20.0,  # Density [kg/m3]
+        'D': 0.1,  # Pipe diameter [m]
+        'surface_tension': 0.04,  # Surface tension [N/m]
+    }
+
+    for argument in valid_input:
+        for nonfinite in [np.nan, np.inf, -np.inf]:
+            invalid_input = dict(valid_input)
+            invalid_input[argument] = nonfinite
+            result = fluid_mechanics.ohnesorge_number(**invalid_input)
+            assert np.isnan(result), \
+                f'Ohnesorge number with {argument}={nonfinite}: expected nan, got {result}'
+
+
+def test_gas_liquid_density_ratio_wetgas_nonfinite_inputs():
+    """Expect NaN for the gas-to-liquid density ratio [-] for nonfinite inputs."""
+    valid_input = {
+        'rho_gas': 20.0,  # Gas density [kg/m3]
+        'rho_liquid': 1000.0,  # Liquid density [kg/m3]
+    }
+
+    for argument in valid_input:
+        for nonfinite in [np.nan, np.inf, -np.inf]:
+            invalid_input = dict(valid_input)
+            invalid_input[argument] = nonfinite
+            result = fluid_mechanics.gas_liquid_density_ratio(**invalid_input)
+            assert np.isnan(result), \
+                f'Density ratio with {argument}={nonfinite}: expected nan, got {result}'
+
+
+def test_GVF_to_lockhart_martinelli_wetgas_nonfinite_inputs():
+    """Expect NaN for the Lockhart-Martinelli parameter [-] for nonfinite inputs."""
+    valid_input = {
+        'GVF': 0.99,  # Gas volume fraction [-]
+        'density_liquid': 1000.0,  # Liquid density [kg/m3]
+        'density_gas': 20.0,  # Gas density [kg/m3]
+    }
+
+    for argument in valid_input:
+        for nonfinite in [np.nan, np.inf, -np.inf]:
+            invalid_input = dict(valid_input)
+            invalid_input[argument] = nonfinite
+            result = fluid_mechanics.GVF_to_lockhart_martinelli(**invalid_input)
+            assert np.isnan(result), \
+                f'Lockhart-Martinelli from GVF with {argument}={nonfinite}: expected nan, got {result}'
+
+
+def test_lockhart_martinelli_to_GVF_wetgas_nonfinite_inputs():
+    """Expect NaN for the gas volume fraction [-] for nonfinite inputs."""
+    valid_input = {
+        'X': 0.1,  # Lockhart-Martinelli parameter [-]
+        'density_liquid': 1000.0,  # Liquid density [kg/m3]
+        'density_gas': 20.0,  # Gas density [kg/m3]
+    }
+
+    for argument in valid_input:
+        for nonfinite in [np.nan, np.inf, -np.inf]:
+            invalid_input = dict(valid_input)
+            invalid_input[argument] = nonfinite
+            result = fluid_mechanics.lockhart_martinelli_to_GVF(**invalid_input)
+            assert np.isnan(result), \
+                f'GVF from Lockhart-Martinelli with {argument}={nonfinite}: expected nan, got {result}'
+
+
+def test_gas_liquid_interfacial_tension_linear_mixing_wetgas_nonfinite_inputs():
+    """Expect NaN for gas-liquid interfacial tension [N/m] for nonfinite inputs."""
+    valid_input = {
+        'WLR': 0.5,  # Water-to-liquid volume ratio [-]
+        'surface_tension_oil': 0.02,  # Gas-oil interfacial tension [N/m]
+        'surface_tension_water': 0.06,  # Gas-water interfacial tension [N/m]
+    }
+
+    for argument in valid_input:
+        for nonfinite in [np.nan, np.inf, -np.inf]:
+            invalid_input = dict(valid_input)
+            invalid_input[argument] = nonfinite
+            result = fluid_mechanics.gas_liquid_interfacial_tension_linear_mixing(**invalid_input)
+            assert np.isnan(result), \
+                f'Liquid mixture surface tension with {argument}={nonfinite}: expected nan, got {result}'
+
+
+def test_lockhart_martinelli_volume_and_mass_forms_are_equivalent():
+    """
+    Test that the Lockhart-Martinelli parameter calculated from GVF matches the
+    mass flow rate form, and that the conversion back to GVF is consistent.
+
+    A total volume flow rate of 100 m3/h is used to obtain the phase mass flow
+    rates in kg/h. The total flow rate cancels in the mass flow rate ratio.
+    """
+    rho_liquid = 800.0  # Liquid density [kg/m3]
+    rho_gas = 20.0  # Gas density [kg/m3]
+    VolFlow_tot = 100.0  # Total volume flow rate [m3/h]
+
+    for GVF in [
+        0.96,  # Gas volume fraction [-]
+        0.99,  # Gas volume fraction [-]
+        0.999,  # Gas volume fraction [-]
+        1.0,  # Gas volume fraction [-]
+    ]:
+        X = fluid_mechanics.GVF_to_lockhart_martinelli(
+            GVF=GVF, density_liquid=rho_liquid, density_gas=rho_gas)
+
+        X_from_mass_flow = fluid_mechanics.lockhart_martinelli_parameter(
+            mass_flow_rate_liquid=(1 - GVF) * VolFlow_tot * rho_liquid,
+            mass_flow_rate_gas=GVF * VolFlow_tot * rho_gas,
+            density_liquid=rho_liquid,
+            density_gas=rho_gas)
+
+        GVF_recalculated = fluid_mechanics.lockhart_martinelli_to_GVF(
+            X=X, density_liquid=rho_liquid, density_gas=rho_gas)
+
+        assert np.isclose(X, X_from_mass_flow, rtol=1e-12), \
+            f'GVF={GVF}: X from GVF {X} does not match X from mass flow rates {X_from_mass_flow}'
+        assert np.isclose(GVF_recalculated, GVF, rtol=1e-12), \
+            f'GVF={GVF}: GVF recalculated from X gave {GVF_recalculated}'
+
+
+def test_densimetric_Froude_number_wetgas_cases():
+    """
+    Test densimetric_froude_number [-] for ten wet-gas cases.
+
+    The gas mass flow rates are in kg/s and are converted to a superficial gas
+    velocity before the Froude number is calculated.
+
+    The expected values were calculated outside pvtlib using the decimal module
+    at 50 digit precision, with the standard acceleration of free fall
+    g_n = 9.80665 m/s2.
+    """
+    cases = {
+        1: { 
+            'massflow_gas': 7.5,  # Gas mass flow rate [kg/s]
+            'D': 0.2,  # Pipe diameter [m]
+            'rho_g': 50,  # Gas density [kg/m3]
+            'rho_l': 800.0,  # Liquid density [kg/m3]
+            'Frg_expected': 0.8802791617359484,  # Densimetric Froude number [-]
+        },
+        2: { 
+            'massflow_gas': 5.5,  # Gas mass flow rate [kg/s]
+            'D': 0.3,  # Pipe diameter [m]
+            'rho_g': 50,  # Gas density [kg/m3]
+            'rho_l': 800.0,  # Liquid density [kg/m3]
+            'Frg_expected': 0.234257605452225,  # Densimetric Froude number [-]
+        },
+        3: { 
+            'massflow_gas': 6.5,  # Gas mass flow rate [kg/s]
+            'D': 0.4,  # Pipe diameter [m]
+            'rho_g': 50,  # Gas density [kg/m3]
+            'rho_l': 1000.0,  # Liquid density [kg/m3]
+            'Frg_expected': 0.11983021936627286,  # Densimetric Froude number [-]
+        },
+        4: { 
+            'massflow_gas': 7.0,  # Gas mass flow rate [kg/s]
+            'D': 0.1,  # Pipe diameter [m]
+            'rho_g': 60,  # Gas density [kg/m3]
+            'rho_l': 850.0,  # Liquid density [kg/m3]
+            'Frg_expected': 4.133887466692981,  # Densimetric Froude number [-]
+        },
+        5: { 
+            'massflow_gas': 4.5,  # Gas mass flow rate [kg/s]
+            'D': 0.1,  # Pipe diameter [m]
+            'rho_g': 55,  # Gas density [kg/m3]
+            'rho_l': 600.0,  # Liquid density [kg/m3]
+            'Frg_expected': 3.341817267513907,  # Densimetric Froude number [-]
+        },
+        6: { 
+            'massflow_gas': 8.0,  # Gas mass flow rate [kg/s]
+            'D': 0.15,  # Pipe diameter [m]
+            'rho_g': 70,  # Gas density [kg/m3]
+            'rho_l': 950.0,  # Liquid density [kg/m3]
+            'Frg_expected': 1.5039079811568052,  # Densimetric Froude number [-]
+        },
+        7: { 
+            'massflow_gas': 3.0,  # Gas mass flow rate [kg/s]
+            'D': 0.05,  # Pipe diameter [m]
+            'rho_g': 40,  # Gas density [kg/m3]
+            'rho_l': 800.0,  # Liquid density [kg/m3]
+            'Frg_expected': 12.514376965656087,  # Densimetric Froude number [-]
+        },
+        8: { 
+            'massflow_gas': 9.5,  # Gas mass flow rate [kg/s]
+            'D': 0.12,  # Pipe diameter [m]
+            'rho_g': 65,  # Gas density [kg/m3]
+            'rho_l': 1000.0,  # Liquid density [kg/m3]
+            'Frg_expected': 3.1409265980080594,  # Densimetric Froude number [-]
+        },
+        9: { 
+            'massflow_gas': 5.5,  # Gas mass flow rate [kg/s]
+            'D': 0.1,  # Pipe diameter [m]
+            'rho_g': 75,  # Gas density [kg/m3]
+            'rho_l': 800.0,  # Liquid density [kg/m3]
+            'Frg_expected': 3.0325839725209764,  # Densimetric Froude number [-]
+        },
+        10: { 
+            'massflow_gas': 6.0,  # Gas mass flow rate [kg/s]
+            'D': 0.1,  # Pipe diameter [m]
+            'rho_g': 45,  # Gas density [kg/m3]
+            'rho_l': 700.0,  # Liquid density [kg/m3]
+            'Frg_expected': 4.493390102353033,  # Densimetric Froude number [-]
+        },
+    }
+
+    for i, case in cases.items():
+        velocity = fluid_mechanics.superficial_velocity(
+            Q_phase=case['massflow_gas'] * 3600 / case['rho_g'],  # Convert to m3/h
+            D=case['D']
+        )
+
+        Frg = fluid_mechanics.densimetric_froude_number(
+            v=velocity,
+            D=case['D'],
+            rho_phase=case['rho_g'],
+            rho_other=case['rho_l']
+        )
+
+        assert np.isclose(Frg, case['Frg_expected'], rtol=1e-8), \
+            f"Case {i}: Froude number mismatch: got {Frg}, expected {case['Frg_expected']}"
