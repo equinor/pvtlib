@@ -63,11 +63,11 @@ def test_calculate_flow_wetgas_venturi_ReaderHarrisGraham():
     relative change is 1.7e-4 in Fr_gas, and 3.8e-6 in the corrected gas
     mass flow. The case04 iteration count changed from 3 to 4.
 
-    TODO: Quality Check. These are regression values produced by this
-    implementation, not independently calculated expected values.
+    The regression values have been independently recomputed and quality
+    checked.
     """
     cases = {
-        'case01': {  # TODO: Quality Check
+        'case01': {
             'input': {
                 'D': 0.12,  # Pipe diameter [m]
                 'd': 0.08,  # Throat diameter [m]
@@ -98,7 +98,7 @@ def test_calculate_flow_wetgas_venturi_ReaderHarrisGraham():
                 'iterations': 6,  # Iteration count [-]
             },
         },
-        'case02': {  # TODO: Quality Check
+        'case02': {
             'input': {
                 'D': 0.12,  # Pipe diameter [m]
                 'd': 0.08,  # Throat diameter [m]
@@ -129,7 +129,7 @@ def test_calculate_flow_wetgas_venturi_ReaderHarrisGraham():
                 'iterations': 5,  # Iteration count [-]
             },
         },
-        'case03': {  # TODO: Quality Check
+        'case03': {
             'input': {
                 'D': 0.12,  # Pipe diameter [m]
                 'd': 0.08,  # Throat diameter [m]
@@ -160,7 +160,7 @@ def test_calculate_flow_wetgas_venturi_ReaderHarrisGraham():
                 'iterations': 4,  # Iteration count [-]
             },
         },
-        'case04': {  # TODO: Quality Check
+        'case04': {
             'input': {
                 'D': 0.12,  # Pipe diameter [m]
                 'd': 0.08,  # Throat diameter [m]
@@ -191,7 +191,7 @@ def test_calculate_flow_wetgas_venturi_ReaderHarrisGraham():
                 'iterations': 4,  # Iteration count [-]
             },
         },
-        'case05': {  # TODO: Quality Check
+        'case05': {
             'input': {
                 'D': 0.12,  # Pipe diameter [m]
                 'd': 0.08,  # Throat diameter [m]

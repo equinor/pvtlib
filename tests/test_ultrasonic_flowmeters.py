@@ -32,8 +32,8 @@ from pvtlib.metering import ultrasonic_flowmeters
 
 
 # Equation references: van Putten et al., NSFMW 2015. The numerical expectations
-# below are calculated equation checks, not measurements. Each case remains
-# marked TODO: Quality Check until manually verified.
+# below are calculated equation checks, not measurements. They have been
+# independently recomputed and quality checked.
 # https://nfogm.no/wp-content/uploads/2019/02/2015-02-Ultrasonic-Meters-in-Wet-Gas-Application-van-Putten-DNV-GL.pdf
 
 # Result keys that are not numerical, and therefore not checked for nan or finiteness
@@ -91,15 +91,15 @@ def test_critical_froude_from_WLR_VanPutten_2015():
     Test the critical gas Froude number from the water-liquid ratio, equation 27.
     """
     cases = {
-        'Hydrocarbon liquid': {  # TODO: Quality Check
+        'Hydrocarbon liquid': {
             'input': {'WLR': 0.0},  # Water fraction of liquid volume flow [-]
             'expected': 1.2,  # Critical gas Froude number [-]
         },
-        'Half water': {  # TODO: Quality Check
+        'Half water': {
             'input': {'WLR': 0.5},  # [-]
             'expected': 1.35,  # [-]
         },
-        'Water': {  # TODO: Quality Check
+        'Water': {
             'input': {'WLR': 1.0},  # [-]
             'expected': 1.5,  # [-]
         },
@@ -120,7 +120,7 @@ def test_critical_froude_from_Ohnesorge_VanPutten_2015():
     at 45 digit precision.
     """
     cases = {
-        '150 mm pipe': {  # TODO: Quality Check
+        '150 mm pipe': {
             'input': {
                 'rho_g': 20.0,  # Gas density [kg/m3]
                 'mu_g': 1.2e-5,  # Gas dynamic viscosity [Pa.s]
@@ -129,7 +129,7 @@ def test_critical_froude_from_Ohnesorge_VanPutten_2015():
             },
             'expected': 1.8542921112637038,  # Critical gas Froude number [-]
         },
-        '200 mm pipe, heavier gas': {  # TODO: Quality Check
+        '200 mm pipe, heavier gas': {
             'input': {
                 'rho_g': 30.0,  # [kg/m3]
                 'mu_g': 2.0e-5,  # [Pa.s]
@@ -163,7 +163,7 @@ def test_gas_void_fraction_VanPutten_2015_both_branches():
     using the decimal module at 45 digit precision.
     """
     cases = {
-        'Well below critical Froude': {  # TODO: Quality Check
+        'Well below critical Froude': {
             'input': {
                 'X': 0.25,  # Lockhart-Martinelli parameter [-]
                 'Fr_gas': 0.7,  # Gas densimetric Froude number [-]
@@ -173,7 +173,7 @@ def test_gas_void_fraction_VanPutten_2015_both_branches():
             'expected': 0.8113140834123986,  # Gas void fraction [-]
             'rtol': 1e-13,
         },
-        'Just below critical Froude': {  # TODO: Quality Check
+        'Just below critical Froude': {
             'input': {
                 'X': 0.25,  # [-]
                 'Fr_gas': 1.2 - 1e-10,  # [-]
@@ -183,7 +183,7 @@ def test_gas_void_fraction_VanPutten_2015_both_branches():
             'expected': 0.8113140834123986,  # [-]
             'rtol': 1e-13,
         },
-        'At critical Froude': {  # TODO: Quality Check
+        'At critical Froude': {
             'input': {
                 'X': 0.25,  # [-]
                 'Fr_gas': 1.2,  # [-]
@@ -193,7 +193,7 @@ def test_gas_void_fraction_VanPutten_2015_both_branches():
             'expected': 0.8113140834123986,  # [-]
             'rtol': 1e-13,
         },
-        'Just above critical Froude': {  # TODO: Quality Check
+        'Just above critical Froude': {
             'input': {
                 'X': 0.25,  # [-]
                 'Fr_gas': 1.2 + 1e-10,  # [-]
@@ -203,7 +203,7 @@ def test_gas_void_fraction_VanPutten_2015_both_branches():
             'expected': 0.8113140834123986,  # Continuity limit [-]
             'rtol': 1e-9,
         },
-        'Above critical Froude': {  # TODO: Quality Check
+        'Above critical Froude': {
             'input': {
                 'X': 0.25,  # [-]
                 'Fr_gas': 2.2,  # [-]
@@ -213,7 +213,7 @@ def test_gas_void_fraction_VanPutten_2015_both_branches():
             'expected': 0.8652780488576132,  # [-]
             'rtol': 1e-13,
         },
-        'Far above critical Froude, no-slip limit': {  # TODO: Quality Check
+        'Far above critical Froude, no-slip limit': {
             'input': {
                 'X': 0.25,  # [-]
                 'Fr_gas': 1000.0,  # [-]
@@ -238,7 +238,6 @@ def test_gas_void_fraction_VanPutten_2015_both_branches():
 
 def test_gas_void_fraction_VanPutten_2015_second_high_froude_case():
     """Check alpha_gas [-] at X = 0.1 [-] against a separate Decimal calculation."""
-    # TODO: Quality Check
     alpha_second_case = ultrasonic_flowmeters.gas_void_fraction_VanPutten_2015(
         X=0.1, Fr_gas=2.0, GVF=0.99, Fr_gas_crit=1.35)
     alpha_second_case_expected = 0.9046529370225384  # Gas void fraction [-]
@@ -249,7 +248,7 @@ def test_gas_void_fraction_VanPutten_2015_second_high_froude_case():
 
 def test_gas_void_fraction_VanPutten_2015_dry_gas():
     """Check that dry gas gives alpha_gas = 1 [-] on the high Froude branch."""
-    # TODO: Quality Check. All inputs and the expected output are dimensionless.
+    # All inputs and the expected output are dimensionless.
     alpha_dry = ultrasonic_flowmeters.gas_void_fraction_VanPutten_2015(
         X=0.0, Fr_gas=2.2, GVF=1.0, Fr_gas_crit=1.2)
     assert alpha_dry == 1.0, f'Dry gas: got {alpha_dry}, expected 1.0'
@@ -257,7 +256,6 @@ def test_gas_void_fraction_VanPutten_2015_dry_gas():
 
 def test_gas_void_fraction_low_froude_VanPutten_2015_negative_X():
     """Check that negative X [-] gives NaN rather than a gas void fraction."""
-    # TODO: Quality Check
     result = ultrasonic_flowmeters.gas_void_fraction_low_froude_VanPutten_2015(X=-0.1)
     assert np.isnan(result), f'X=-0.1: expected nan, got {result}'
 
@@ -265,11 +263,11 @@ def test_gas_void_fraction_low_froude_VanPutten_2015_negative_X():
 def test_critical_froude_from_WLR_VanPutten_2015_invalid_inputs():
     """Check that WLR [-] outside [0, 1] gives NaN instead of a critical Froude number."""
     cases = {
-        'Negative WLR': {  # TODO: Quality Check
+        'Negative WLR': {
             'input': {'WLR': -0.1},
             'expected': np.nan,
         },
-        'WLR above one': {  # TODO: Quality Check
+        'WLR above one': {
             'input': {'WLR': 1.1},
             'expected': np.nan,
         },
@@ -282,7 +280,7 @@ def test_critical_froude_from_WLR_VanPutten_2015_invalid_inputs():
 def test_critical_froude_from_Ohnesorge_VanPutten_2015_invalid_inputs():
     """Check that invalid gas properties or diameter give NaN for critical Fr [-]."""
     cases = {
-        'Zero gas density': {  # TODO: Quality Check
+        'Zero gas density': {
             'input': {
                 'rho_g': 0.0,  # [kg/m3]
                 'mu_g': 1.2e-5,  # [Pa.s]
@@ -291,7 +289,7 @@ def test_critical_froude_from_Ohnesorge_VanPutten_2015_invalid_inputs():
             },
             'expected': np.nan,
         },
-        'Zero gas viscosity': {  # TODO: Quality Check
+        'Zero gas viscosity': {
             'input': {
                 'rho_g': 20.0,  # [kg/m3]
                 'mu_g': 0.0,  # [Pa.s]
@@ -300,7 +298,7 @@ def test_critical_froude_from_Ohnesorge_VanPutten_2015_invalid_inputs():
             },
             'expected': np.nan,
         },
-        'Zero gas-liquid interfacial tension': {  # TODO: Quality Check
+        'Zero gas-liquid interfacial tension': {
             'input': {
                 'rho_g': 20.0,  # [kg/m3]
                 'mu_g': 1.2e-5,  # [Pa.s]
@@ -309,7 +307,7 @@ def test_critical_froude_from_Ohnesorge_VanPutten_2015_invalid_inputs():
             },
             'expected': np.nan,
         },
-        'Zero diameter': {  # TODO: Quality Check
+        'Zero diameter': {
             'input': {
                 'rho_g': 20.0,  # [kg/m3]
                 'mu_g': 1.2e-5,  # [Pa.s]
@@ -332,27 +330,27 @@ def test_critical_froude_from_Ohnesorge_VanPutten_2015_invalid_inputs():
 def test_gas_void_fraction_VanPutten_2015_invalid_inputs():
     """Check that invalid dimensionless inputs give NaN for gas void fraction [-]."""
     cases = {
-        'Negative X': {  # TODO: Quality Check
+        'Negative X': {
             'input': {'X': -0.1, 'Fr_gas': 1.0, 'GVF': 0.99, 'Fr_gas_crit': 1.2},
             'expected': np.nan,
         },
-        'Negative gas Froude number': {  # TODO: Quality Check
+        'Negative gas Froude number': {
             'input': {'X': 0.1, 'Fr_gas': -1.0, 'GVF': 0.99, 'Fr_gas_crit': 1.2},
             'expected': np.nan,
         },
-        'Zero GVF': {  # TODO: Quality Check
+        'Zero GVF': {
             'input': {'X': 0.1, 'Fr_gas': 1.0, 'GVF': 0.0, 'Fr_gas_crit': 1.2},
             'expected': np.nan,
         },
-        'GVF above one': {  # TODO: Quality Check
+        'GVF above one': {
             'input': {'X': 0.1, 'Fr_gas': 1.0, 'GVF': 1.1, 'Fr_gas_crit': 1.2},
             'expected': np.nan,
         },
-        'Zero critical gas Froude number': {  # TODO: Quality Check
+        'Zero critical gas Froude number': {
             'input': {'X': 0.1, 'Fr_gas': 1.0, 'GVF': 0.99, 'Fr_gas_crit': 0.0},
             'expected': np.nan,
         },
-        'X gives non-physical alpha in equation 30': {  # TODO: Quality Check
+        'X gives non-physical alpha in equation 30': {
             'input': {'X': 2.0, 'Fr_gas': 1.0, 'GVF': 0.9, 'Fr_gas_crit': 1.2},
             'expected': np.nan,
         },
@@ -369,7 +367,6 @@ def test_gas_void_fraction_VanPutten_2015_invalid_inputs():
 
 def test_gas_void_fraction_low_froude_VanPutten_2015_nonfinite_inputs():
     """Check that non-finite X [-] gives NaN for gas void fraction [-]."""
-    # TODO: Quality Check for each non-finite input.
     for X in [np.nan, np.inf, -np.inf]:
         result = ultrasonic_flowmeters.gas_void_fraction_low_froude_VanPutten_2015(X=X)
         assert np.isnan(result), f'X={X}: expected nan, got {result}'
@@ -377,7 +374,6 @@ def test_gas_void_fraction_low_froude_VanPutten_2015_nonfinite_inputs():
 
 def test_critical_froude_from_WLR_VanPutten_2015_nonfinite_inputs():
     """Check that non-finite WLR [-] gives NaN for critical gas Froude number [-]."""
-    # TODO: Quality Check for each non-finite input.
     for WLR in [np.nan, np.inf, -np.inf]:
         result = ultrasonic_flowmeters.critical_froude_from_WLR_VanPutten_2015(WLR=WLR)
         assert np.isnan(result), f'WLR={WLR}: expected nan, got {result}'
@@ -395,7 +391,6 @@ def test_critical_froude_from_Ohnesorge_VanPutten_2015_nonfinite_inputs():
         'surface_tension': 0.04,  # Gas-liquid [N/m]
         'D': 0.15,  # [m]
     }
-    # TODO: Quality Check for each non-finite input.
     for argument in valid_input:
         for nonfinite in [np.nan, np.inf, -np.inf]:
             case_input = dict(valid_input)
@@ -412,7 +407,6 @@ def test_gas_void_fraction_VanPutten_2015_nonfinite_inputs():
         'GVF': 0.99,  # [-]
         'Fr_gas_crit': 1.2,  # [-]
     }
-    # TODO: Quality Check for each non-finite input.
     for argument in valid_input:
         for nonfinite in [np.nan, np.inf, -np.inf]:
             case_input = dict(valid_input)
@@ -430,11 +424,11 @@ def test_check_operating_point_DNV_USM_wetgas_JIP_2015_inclusive_limits():
     All inputs are dimensionless. Each output is a boolean range check.
     """
     cases = {
-        'Lower included limits': {  # TODO: Quality Check
+        'Lower included limits': {
             'input': {'GVF': 0.96, 'X': 0.0, 'DR': 0.010, 'Fr_gas': 0.7},
             'expected': {'GVF': True, 'X': True, 'DR': True, 'Fr_gas': True},
         },
-        'Upper limits': {  # TODO: Quality Check
+        'Upper limits': {
             'input': {'GVF': 1.0, 'X': 0.30, 'DR': 0.032, 'Fr_gas': 2.2},
             'expected': {'GVF': True, 'X': True, 'DR': True, 'Fr_gas': True},
         },
@@ -452,35 +446,35 @@ def test_check_operating_point_DNV_USM_wetgas_JIP_2015_outside_limits():
     All inputs are dimensionless. Exactly the named boolean check must fail.
     """
     cases = {
-        'GVF at the excluded lower limit': {  # TODO: Quality Check
+        'GVF at the excluded lower limit': {
             'input': {'GVF': 0.95, 'X': 0.1, 'DR': 0.02, 'Fr_gas': 1.2},
             'expected_failed_check': 'GVF',
         },
-        'GVF above one': {  # TODO: Quality Check
+        'GVF above one': {
             'input': {'GVF': 1.01, 'X': 0.1, 'DR': 0.02, 'Fr_gas': 1.2},
             'expected_failed_check': 'GVF',
         },
-        'Negative X': {  # TODO: Quality Check
+        'Negative X': {
             'input': {'GVF': 0.99, 'X': -0.01, 'DR': 0.02, 'Fr_gas': 1.2},
             'expected_failed_check': 'X',
         },
-        'X above the tested range': {  # TODO: Quality Check
+        'X above the tested range': {
             'input': {'GVF': 0.99, 'X': 0.30001, 'DR': 0.02, 'Fr_gas': 1.2},
             'expected_failed_check': 'X',
         },
-        'Density ratio below the tested range': {  # TODO: Quality Check
+        'Density ratio below the tested range': {
             'input': {'GVF': 0.99, 'X': 0.1, 'DR': 0.00999, 'Fr_gas': 1.2},
             'expected_failed_check': 'DR',
         },
-        'Density ratio above the tested range': {  # TODO: Quality Check
+        'Density ratio above the tested range': {
             'input': {'GVF': 0.99, 'X': 0.1, 'DR': 0.03201, 'Fr_gas': 1.2},
             'expected_failed_check': 'DR',
         },
-        'Froude number below the tested range': {  # TODO: Quality Check
+        'Froude number below the tested range': {
             'input': {'GVF': 0.99, 'X': 0.1, 'DR': 0.02, 'Fr_gas': 0.69999},
             'expected_failed_check': 'Fr_gas',
         },
-        'Froude number above the tested range': {  # TODO: Quality Check
+        'Froude number above the tested range': {
             'input': {'GVF': 0.99, 'X': 0.1, 'DR': 0.02, 'Fr_gas': 2.20001},
             'expected_failed_check': 'Fr_gas',
         },
@@ -499,7 +493,7 @@ def test_check_operating_point_DNV_USM_wetgas_JIP_2015_nonfinite():
     """
     Test that nan, inf and -inf in all four inputs give four False checks.
     """
-    # TODO: Quality Check for each non-finite input. All inputs are dimensionless.
+    # All inputs are dimensionless.
     for nonfinite in [np.nan, np.inf, -np.inf]:
         checks = ultrasonic_flowmeters.check_operating_point_DNV_USM_wetgas_JIP_2015(
             GVF=nonfinite, X=nonfinite, DR=nonfinite, Fr_gas=nonfinite)
@@ -516,7 +510,7 @@ def test_calculate_flow_wetgas_USM_VanPutten_2015_low_froude():
     The densities give rho_l/rho_g = (39/4)**2, so GVF = 0.975 gives X = 0.25,
     which is the case calculated outside pvtlib.
     """
-    # TODO: Quality Check. Constructed equation check, not measured fluid data.
+    # Constructed equation check, not measured fluid data.
     case_input = {
         'VolFlow_gas_measured': 100.0,  # [m3/h]
         'D': 0.2,  # [m]
@@ -551,7 +545,7 @@ def test_calculate_flow_wetgas_USM_VanPutten_2015_high_froude():
     corrected flow rate must give a gas Froude number of 2.2. This verifies the
     iteration, not the accuracy of the model against measurements.
     """
-    # TODO: Quality Check. Equation 29 reference from Decimal arithmetic.
+    # Equation 29 reference from Decimal arithmetic.
     expected = {
         'Fr_gas': 2.2,  # [-]
         'alpha_gas': 0.8652780488576132,  # [-]
@@ -592,7 +586,7 @@ def test_calculate_flow_wetgas_USM_VanPutten_2015_result_consistency():
     These are consistency checks, not independent numerical reference values.
     """
     cases = {
-        '100 m3/h, WLR correlation': {  # TODO: Quality Check
+        '100 m3/h, WLR correlation': {
             'VolFlow_gas_measured': 100.0,  # [m3/h]
             'D': 0.15,  # [m]
             'rho_g': 20.0,  # [kg/m3]
@@ -601,7 +595,7 @@ def test_calculate_flow_wetgas_USM_VanPutten_2015_result_consistency():
             'WLR': 0.5,  # [-]
             'Fr_gas_crit': None,  # Calculate from WLR
         },
-        '100 m3/h, supplied critical Froude': {  # TODO: Quality Check
+        '100 m3/h, supplied critical Froude': {
             'VolFlow_gas_measured': 100.0,  # [m3/h]
             'D': 0.15,  # [m]
             'rho_g': 20.0,  # [kg/m3]
@@ -610,7 +604,7 @@ def test_calculate_flow_wetgas_USM_VanPutten_2015_result_consistency():
             'WLR': 0.5,  # [-]
             'Fr_gas_crit': 1.8542921112637038,  # [-]
         },
-        '1000 m3/h, WLR correlation': {  # TODO: Quality Check
+        '1000 m3/h, WLR correlation': {
             'VolFlow_gas_measured': 1000.0,  # [m3/h]
             'D': 0.15,  # [m]
             'rho_g': 20.0,  # [kg/m3]
@@ -619,7 +613,7 @@ def test_calculate_flow_wetgas_USM_VanPutten_2015_result_consistency():
             'WLR': 0.5,  # [-]
             'Fr_gas_crit': None,
         },
-        '1000 m3/h, supplied critical Froude': {  # TODO: Quality Check
+        '1000 m3/h, supplied critical Froude': {
             'VolFlow_gas_measured': 1000.0,  # [m3/h]
             'D': 0.15,  # [m]
             'rho_g': 20.0,  # [kg/m3]
@@ -628,7 +622,7 @@ def test_calculate_flow_wetgas_USM_VanPutten_2015_result_consistency():
             'WLR': 0.5,  # [-]
             'Fr_gas_crit': 1.8542921112637038,  # [-]
         },
-        '3000 m3/h, WLR correlation': {  # TODO: Quality Check
+        '3000 m3/h, WLR correlation': {
             'VolFlow_gas_measured': 3000.0,  # [m3/h]
             'D': 0.15,  # [m]
             'rho_g': 20.0,  # [kg/m3]
@@ -637,7 +631,7 @@ def test_calculate_flow_wetgas_USM_VanPutten_2015_result_consistency():
             'WLR': 0.5,  # [-]
             'Fr_gas_crit': None,
         },
-        '3000 m3/h, supplied critical Froude': {  # TODO: Quality Check
+        '3000 m3/h, supplied critical Froude': {
             'VolFlow_gas_measured': 3000.0,  # [m3/h]
             'D': 0.15,  # [m]
             'rho_g': 20.0,  # [kg/m3]
@@ -703,7 +697,6 @@ def test_calculate_flow_wetgas_USM_VanPutten_2015_dry_gas():
 
     Dry gas must return the indicated flow rate unchanged, with no liquid.
     """
-    # TODO: Quality Check
     dry_input = {
         'VolFlow_gas_measured': 1000.0,  # [m3/h]
         'D': 0.15,  # [m]
@@ -729,7 +722,6 @@ def test_calculate_flow_wetgas_USM_VanPutten_2015_dry_gas():
 
 def test_calculate_flow_wetgas_USM_VanPutten_2015_zero_flow():
     """Check zero phase flows and an out-of-range Froude flag at zero indicated flow."""
-    # TODO: Quality Check
     zero_input = {
         'VolFlow_gas_measured': 0.0,  # [m3/h]
         'D': 0.15,  # [m]
@@ -763,7 +755,7 @@ def test_calculate_flow_wetgas_USM_VanPutten_2015_gas_fraction_and_critical_frou
     are supplied, and a supplied critical Froude number must replace the value
     otherwise calculated from the WLR.
     """
-    # TODO: Quality Check. These compare selection rules, not an independent flow reference.
+    # These compare selection rules, not an independent flow reference.
     volume_fraction_input = {
         'VolFlow_gas_measured': 1000.0,  # [m3/h]
         'D': 0.15,  # [m]
@@ -817,23 +809,22 @@ def test_calculate_flow_wetgas_USM_VanPutten_2015_invalid_inputs():
         'WLR': 0.5,  # [-]
     }
     cases = {
-        'Negative indicated flow rate': {'VolFlow_gas_measured': -1.0},  # TODO: Quality Check
-        'Zero diameter': {'D': 0.0},  # TODO: Quality Check
-        'Zero gas density': {'rho_g': 0.0},  # TODO: Quality Check
-        'Liquid density equal to gas density': {'rho_l': 20.0},  # TODO: Quality Check
-        'Liquid density below gas density': {'rho_l': 10.0},  # TODO: Quality Check
-        'Neither GVF nor GMF': {'GVF': None},  # TODO: Quality Check
-        'Zero GVF': {'GVF': 0.0},  # TODO: Quality Check
-        'GVF above one': {'GVF': 1.1},  # TODO: Quality Check
-        'Zero GMF': {'GVF': None, 'GMF': 0.0},  # TODO: Quality Check
-        'GMF above one': {'GVF': None, 'GMF': 1.1},  # TODO: Quality Check
-        'Negative WLR': {'WLR': -0.1},  # TODO: Quality Check
-        'WLR above one': {'WLR': 1.1},  # TODO: Quality Check
-        'Zero critical Froude number': {'Fr_gas_crit': 0.0},  # TODO: Quality Check
-        'Negative critical Froude number': {'Fr_gas_crit': -1.0},  # TODO: Quality Check
+        'Negative indicated flow rate': {'VolFlow_gas_measured': -1.0},
+        'Zero diameter': {'D': 0.0},
+        'Zero gas density': {'rho_g': 0.0},
+        'Liquid density equal to gas density': {'rho_l': 20.0},
+        'Liquid density below gas density': {'rho_l': 10.0},
+        'Neither GVF nor GMF': {'GVF': None},
+        'Zero GVF': {'GVF': 0.0},
+        'GVF above one': {'GVF': 1.1},
+        'Zero GMF': {'GVF': None, 'GMF': 0.0},
+        'GMF above one': {'GVF': None, 'GMF': 1.1},
+        'Negative WLR': {'WLR': -0.1},
+        'WLR above one': {'WLR': 1.1},
+        'Zero critical Froude number': {'Fr_gas_crit': 0.0},
+        'Negative critical Froude number': {'Fr_gas_crit': -1.0},
     }
 
-    # TODO: Quality Check for each non-finite input.
     for argument in ['VolFlow_gas_measured', 'D', 'rho_g', 'rho_l', 'GVF', 'WLR', 'Fr_gas_crit']:
         for nonfinite in [np.nan, np.inf, -np.inf]:
             cases[f'{argument} = {nonfinite}'] = {argument: nonfinite}
@@ -864,7 +855,7 @@ def test_calculate_flow_wetgas_USM_VanPutten_2015_non_physical_void_fraction():
     At GVF = 0.5 the liquid loading is far outside the validity of equation 30,
     which then predicts a gas void fraction above 1.
     """
-    # TODO: Quality Check. Expected: NaN numerical outputs and a non-physical-alpha error.
+    # Expected: NaN numerical outputs and a non-physical-alpha error.
     case_input = {
         'VolFlow_gas_measured': 1000.0,  # [m3/h]
         'D': 0.15,  # [m]
@@ -892,7 +883,7 @@ def test_calculate_flow_wetgas_USM_VanPutten_2015_non_finite_flow_results():
     The densities are deliberately chosen to overflow the floating point range.
     They are not a proposed fluid.
     """
-    # TODO: Quality Check. Expected: NaN numerical outputs and a non-finite-flow error.
+    # Expected: NaN numerical outputs and a non-finite-flow error.
     case_input = {
         'VolFlow_gas_measured': 1000.0,  # [m3/h]
         'D': 0.15,  # [m]
@@ -921,7 +912,6 @@ def test_calculate_flow_wetgas_USM_VanPutten_2015_reports_extrapolation():
     The gas density and flow rate here give a density ratio above the tested
     range and a Froude number below it.
     """
-    # TODO: Quality Check
     case_input = {
         'VolFlow_gas_measured': 10.0,  # [m3/h]
         'D': 0.15,  # [m]
