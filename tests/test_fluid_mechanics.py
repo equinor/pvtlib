@@ -1491,3 +1491,30 @@ def test_densimetric_Froude_number_wetgas_cases():
 
         assert np.isclose(Frg, case['Frg_expected'], rtol=1e-8), \
             f"Case {i}: Froude number mismatch: got {Frg}, expected {case['Frg_expected']}"
+
+
+def test_GMF_GVF_conversion_nonfinite_inputs():
+    for func, fraction_name in [(fluid_mechanics.GMF_to_GVF, 'GMF'), (fluid_mechanics.GVF_to_GMF, 'GVF')]:
+        valid = {fraction_name: 0.5, 'rho_gas': 40.0, 'rho_liquid': 700.0}
+        for argument in valid:
+            for nonfinite in [np.nan, np.inf, -np.inf]:
+                kwargs = dict(valid, **{argument: nonfinite})
+                assert np.isnan(func(**kwargs)), f"{func.__name__} {argument}={nonfinite}"
+
+
+def test_lockhart_martinelli_parameter_negative_liquid_flow():
+    X = fluid_mechanics.lockhart_martinelli_parameter(
+        mass_flow_rate_liquid=-1,
+        mass_flow_rate_gas=10,
+        density_liquid=700,
+        density_gas=40
+    )
+    assert np.isnan(X), "Lockhart-Martinelli parameter should be nan for negative liquid flow"
+
+
+def test_lockhart_martinelli_parameter_nonfinite_inputs():
+    valid = dict(mass_flow_rate_liquid=1.0, mass_flow_rate_gas=10.0, density_liquid=700.0, density_gas=40.0)
+    for argument in valid:
+        for nonfinite in [np.nan, np.inf, -np.inf]:
+            kwargs = dict(valid, **{argument: nonfinite})
+            assert np.isnan(fluid_mechanics.lockhart_martinelli_parameter(**kwargs)), f"{argument}={nonfinite}"

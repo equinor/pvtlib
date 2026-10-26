@@ -283,3 +283,92 @@ def test_calculate_flow_wetgas_venturi_ReaderHarrisGraham_invalid_inputs():
         res = func(**case)
         for key, val in res.items():
             assert np.isnan(val), f"Case {i+1} failed for key {key}: expected np.nan, got {val}"
+
+
+def test_calculate_C_wetgas_venturi_ReaderHarrisGraham_nonfinite_inputs():
+    # min(1, nan) returns 1 in Python, so a NaN X must not give a finite C_wet
+    func = differential_pressure_flowmeters.calculate_C_wetgas_venturi_ReaderHarrisGraham
+    for nonfinite in [np.nan, np.inf, -np.inf]:
+        assert np.isnan(func(10.0, nonfinite)), f"X={nonfinite}"
+        assert np.isnan(func(nonfinite, 0.1)), f"Fr_gas_th={nonfinite}"
+
+
+WETGAS_VALID_INPUT = dict(D=0.12, d=0.08, P1=50.0, dP=450.0, rho_g=40.0, rho_l=700.0, GMF=0.9, H=1.0, kappa=1.3)
+
+
+def test_calculate_flow_wetgas_venturi_ReaderHarrisGraham_zero_dP():
+    """
+    dP = 0 gives zero flow. X, C_wet, n, C_Ch and OverRead follow from the
+    correlation at Fr_gas = 0. Expected values calculated independently with
+    50-digit Decimal arithmetic:
+    X = (1 - GMF)/GMF * sqrt(rho_g/rho_l)
+    C_wet = 1 - 0.0463*min(1, sqrt(X/0.016))
+    n = max(0.583 - 0.18*beta**2 - 0.578, 0.392 - 0.18*beta**2)
+    C_Ch = (rho_l/rho_g)**n + (rho_g/rho_l)**n
+    OverRead = sqrt(1 + C_Ch*X + X**2)
+    """
+    expected = {
+        'MassFlow_gas_initial': 0.0,  # [kg/h]
+        'MassFlow_gas_corrected': 0.0,  # [kg/h]
+        'MassFlow_liq': 0.0,  # [kg/h]
+        'MassFlow_tot': 0.0,  # [kg/h]
+        'VolFlow_gas': 0.0,  # [m3/h]
+        'VolFlow_liq': 0.0,  # [m3/h]
+        'VolFlow_tot': 0.0,  # [m3/h]
+        'Fr_gas': 0.0,  # [-]
+        'Fr_gas_th': 0.0,  # [-]
+        'LockhartMartinelli': 0.026560635762986524,  # [-]
+        'C_wet': 0.9537,  # [-]
+        'n': 0.312,  # [-]
+        'C_Ch': 2.8518852110614787,  # [-]
+        'OverRead': 1.0375226993666142,  # [-]
+        'epsilon': 1.0,  # [-]
+        'iterations': 1,  # [-]
+    }
+    for check_input in [False, True]:
+        res = differential_pressure_flowmeters.calculate_flow_wetgas_venturi_ReaderHarrisGraham(
+            **dict(WETGAS_VALID_INPUT, dP=0.0), check_input=check_input)
+        for key, value in expected.items():
+            assert np.isclose(res[key], value, rtol=1e-13, atol=0), f"{key}: got {res[key]}, expected {value}"
+
+
+def test_calculate_flow_wetgas_venturi_ReaderHarrisGraham_invalid_physical_inputs():
+    """
+    Inputs that previously gave a finite but wrong result, or a TypeError or
+    ZeroDivisionError, must give NaN results, or ValueError with check_input=True.
+    """
+    func = differential_pressure_flowmeters.calculate_flow_wetgas_venturi_ReaderHarrisGraham
+    invalid_cases = {
+        'kappa negative': dict(kappa=-1.0),
+        'kappa zero': dict(kappa=0.0),
+        'kappa one': dict(kappa=1.0),
+        'neither epsilon nor kappa': dict(kappa=None),
+        'epsilon zero': dict(epsilon=0.0),
+        'epsilon negative': dict(epsilon=-1.0),
+        'epsilon above one': dict(epsilon=1.1),
+        'H negative': dict(H=-1.0),
+        'H zero': dict(H=0.0),
+        'dP equal to P1': dict(dP=50000.0),
+        'dP above P1': dict(dP=60000.0),
+        'liquid density equal to gas density': dict(rho_l=40.0),
+        'liquid density below gas density': dict(rho_l=30.0),
+        'GVF invalid while GMF is valid': dict(GVF=1.1),
+    }
+    for argument in ['D', 'd', 'P1', 'dP', 'rho_g', 'rho_l', 'GMF', 'H', 'kappa']:
+        for nonfinite in [np.nan, np.inf, -np.inf]:
+            invalid_cases[f'{argument}={nonfinite}'] = {argument: nonfinite}
+    for nonfinite in [np.nan, np.inf, -np.inf]:
+        invalid_cases[f'GVF={nonfinite}'] = dict(GMF=None, GVF=nonfinite)
+        invalid_cases[f'epsilon={nonfinite}'] = dict(epsilon=nonfinite)
+
+    for name, change in invalid_cases.items():
+        kwargs = dict(WETGAS_VALID_INPUT, **change)
+        res = func(**kwargs, check_input=False)
+        for key, val in res.items():
+            assert np.isnan(val), f"{name}: expected NaN for {key}, got {val}"
+        try:
+            func(**kwargs, check_input=True)
+        except ValueError:
+            pass
+        else:
+            assert False, f"{name}: expected ValueError with check_input=True"

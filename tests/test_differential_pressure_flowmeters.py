@@ -656,3 +656,60 @@ def test_calculate_flow_orifice_invalid_inputs():
         # Check that all results are np.nan
         for key in ['MassFlow', 'VolFlow', 'Velocity', 'C', 'epsilon', 'Re']:
             assert np.isnan(res[key])==True, f'Expected np.nan for {key} but got {res[key]} for case {case_name}'
+
+
+def test_calculate_expansibility_venturi_zero_dP():
+    # The formula is 0/0 at tau = 1. The analytical limit is exactly 1.
+    epsilon = differential_pressure_flowmeters.calculate_expansibility_venturi(P1=50.0, dP=0.0, beta=0.6, kappa=1.3)
+    assert epsilon == 1.0
+
+
+def test_calculate_expansibility_venturi_invalid_inputs():
+    invalid_cases = {
+        'P1 zero': dict(P1=0.0, dP=0.0, beta=0.6, kappa=1.3),
+        'P1 negative': dict(P1=-1.0, dP=100.0, beta=0.6, kappa=1.3),
+        'dP negative': dict(P1=50.0, dP=-10.0, beta=0.6, kappa=1.3),
+        'dP equal to P1': dict(P1=50.0, dP=50000.0, beta=0.6, kappa=1.3),
+        'dP above P1': dict(P1=50.0, dP=60000.0, beta=0.6, kappa=1.3),
+        'beta zero': dict(P1=50.0, dP=450.0, beta=0.0, kappa=1.3),
+        'beta one': dict(P1=50.0, dP=450.0, beta=1.0, kappa=1.3),
+        'kappa zero': dict(P1=50.0, dP=450.0, beta=0.6, kappa=0.0),
+        'kappa negative': dict(P1=50.0, dP=450.0, beta=0.6, kappa=-1.0),
+        'kappa one': dict(P1=50.0, dP=450.0, beta=0.6, kappa=1.0),
+    }
+    for name, kwargs in invalid_cases.items():
+        assert np.isnan(differential_pressure_flowmeters.calculate_expansibility_venturi(**kwargs)), name
+
+    valid = dict(P1=50.0, dP=450.0, beta=0.6, kappa=1.3)
+    for argument in valid:
+        for nonfinite in [np.nan, np.inf, -np.inf]:
+            kwargs = dict(valid, **{argument: nonfinite})
+            assert np.isnan(differential_pressure_flowmeters.calculate_expansibility_venturi(**kwargs)), (argument, nonfinite)
+
+
+def test_calculate_expansibility_orifice_invalid_inputs():
+    invalid_cases = {
+        'P1 zero': dict(P1=0.0, dP=0.0, beta=0.6, kappa=1.3),
+        'P1 negative': dict(P1=-1.0, dP=100.0, beta=0.6, kappa=1.3),
+        'dP negative': dict(P1=50.0, dP=-10.0, beta=0.6, kappa=1.3),
+        'dP equal to P1': dict(P1=50.0, dP=50000.0, beta=0.6, kappa=1.3),
+        'dP above P1': dict(P1=50.0, dP=60000.0, beta=0.6, kappa=1.3),
+        'beta zero': dict(P1=50.0, dP=450.0, beta=0.0, kappa=1.3),
+        'beta one': dict(P1=50.0, dP=450.0, beta=1.0, kappa=1.3),
+        'kappa zero': dict(P1=50.0, dP=450.0, beta=0.6, kappa=0.0),
+        'kappa negative': dict(P1=50.0, dP=450.0, beta=0.6, kappa=-1.0),
+    }
+    for name, kwargs in invalid_cases.items():
+        assert np.isnan(differential_pressure_flowmeters.calculate_expansibility_orifice(**kwargs)), name
+
+    valid = dict(P1=50.0, dP=450.0, beta=0.6, kappa=1.3)
+    for argument in valid:
+        for nonfinite in [np.nan, np.inf, -np.inf]:
+            kwargs = dict(valid, **{argument: nonfinite})
+            assert np.isnan(differential_pressure_flowmeters.calculate_expansibility_orifice(**kwargs)), (argument, nonfinite)
+
+
+def test_calculate_expansibility_orifice_zero_dP():
+    # tau = 1 gives epsilon = 1 directly from the formula
+    epsilon = differential_pressure_flowmeters.calculate_expansibility_orifice(P1=50.0, dP=0.0, beta=0.6, kappa=1.3)
+    assert epsilon == 1.0
