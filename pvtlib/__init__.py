@@ -21,6 +21,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+from importlib.metadata import PackageNotFoundError, version as _metadata_version
+
+try:
+    __version__ = _metadata_version("pvtlib")
+except PackageNotFoundError:
+    # A source tree that has never been installed has no package metadata.
+    __version__ = "0+unknown"
+
 from . import metering
 from . import equipment
 from . import fluid_mechanics
