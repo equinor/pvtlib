@@ -41,13 +41,17 @@ properties = gerg.calculate_from_PT(composition, pressure, temperature)
 
 ## Workflows
 
-**python-package-run-tests.yml**: Runs pytest on push/PR for Python 3.9-3.13
+**tests.yml**: Runs on PRs, pushes to main, nightly, and when called by the release workflow. Jobs: `test` (flake8 + pytest on Ubuntu with Python 3.10-3.14 and on Windows with 3.10 and 3.14), `package` (builds sdist and wheel once, `twine check --strict`, inspects their content, installs each in a clean venv and runs the tests from a copy outside the checkout with `PVTLIB_TEST_INSTALLED_PACKAGE=1`; keeps the files as artifact `dist`), `examples` (runs every example script and notebook headless) and `coverage`
 
-**validate-version.yml**: Validates `pyproject.toml` version - runs on releases (fails if mismatch), push/PR (warns only)
+**docs.yml**: Builds the Sphinx documentation site with warnings as errors on PRs; publishes it to GitHub Pages (https://equinor.github.io/pvtlib/) from main
 
-**build-and-distribute-test.yml**: Tests the build & distribution process on pre-releases (validates version, builds package, runs `twine check` - does NOT publish to PyPI)
+**validate-version.yml**: Checks the `pyproject.toml` version format on push/PR (warns only)
 
-**build-and-distribute.yml**: Production release - waits for version validation, then publishes to PyPI on full releases
+**build-and-distribute.yml**: Runs when a GitHub release is published. Checks that the `pyproject.toml` version equals the release tag, runs `tests.yml`, checks the tested files carry that version and uploads exactly those files to PyPI. Only the upload job has the PyPI token
+
+All actions are pinned to full commit SHAs; Dependabot (`.github/dependabot.yml`) keeps them up to date.
 
 ## Releases
-**CRITICAL**: Update `pyproject.toml` version before creating GitHub releases - workflows validate version match before PyPI publish
+**CRITICAL**: Update the version in `pyproject.toml` (merged to main) before publishing a GitHub release whose tag is that version - the release workflow stops on a mismatch. See `docs/releasing.md`.
+
+Supported Python versions: 3.10-3.14 (`requires-python = ">=3.10"`).
