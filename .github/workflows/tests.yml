@@ -7,8 +7,8 @@
 #               content, then installs each of them in a clean virtual environment and runs the
 #               test suite against the installed package. The files are kept as the artifact "dist",
 #               which the release workflow uploads to PyPI unchanged.
-#   examples  - runs every example script and notebook in examples/ headless, from a copy outside
-#               the checkout, so nothing is written back to the repository.
+#   examples  - runs every example script and notebook in examples/ headless on Ubuntu and Windows,
+#               from a copy outside the checkout, so nothing is written back to the repository.
 #   coverage  - the test suite with coverage; coverage.xml is kept as an artifact.
 
 name: Tests
@@ -162,7 +162,17 @@ jobs:
         retention-days: 7
 
   examples:
-    runs-on: ubuntu-latest
+    # Also on Windows, where the output of a script run in CI goes to a pipe and is encoded with
+    # the Windows code page (not UTF-8), as when a user redirects it to a file.
+    name: examples (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    defaults:
+      run:
+        shell: bash
     env:
       MPLBACKEND: Agg
 
@@ -178,6 +188,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         python -m pip install .[examples]
+        python -c "import sys; print('stdout encoding when redirected:', sys.stdout.encoding)"
     - name: Run every example script and notebook
       # From a copy outside the checkout, as some examples write output files next to themselves.
       # Executed notebooks are written to the copy, never back to examples/.

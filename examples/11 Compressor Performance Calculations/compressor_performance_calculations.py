@@ -23,6 +23,12 @@ SOFTWARE.
 
 import pvtlib
 import numpy as np
+import sys
+
+# The output contains Greek letters (Δ, μ, λ) that the default Windows code page cannot
+# encode when the output is redirected to a file or pipe. Writing UTF-8 makes the script run the
+# same everywhere.
+sys.stdout.reconfigure(encoding="utf-8")
 
 # Gas composition
 composition = {
