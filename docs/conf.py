@@ -64,50 +64,48 @@ napoleon_custom_sections = [("Methods", "params_style")]
 
 # The docstrings cite their references as numbered footnotes, [1]_ and .. [1], as is usual in
 # NumPy-style docstrings. autosummary puts all functions of a module on one page, where the same
-# footnote number occurs many times and docutils cannot tell the footnotes apart, and the summary
-# tables would contain references without a target. On the site the references are therefore shown
-# as plain text, "[1]" in the text and a list "[1] <reference>" under References, exactly as they
-# read in help(). The docstrings themselves are not changed.
-# Several docstrings write the reference as [1_] instead of [1]_; both are shown as [1].
-_FOOTNOTE_REFERENCE = re.compile(r"\[(\d+)(?:\]_|_\])")
-_FOOTNOTE_DEFINITION = re.compile(r"^(?P<indent>\s*)\.\.\s+\[(?P<number>\d+)\]\s*(?P<text>.*)$")
+# footnote number then occurs many times and docutils cannot tell the footnotes apart. On the site,
+# each footnote therefore gets a label that is unique to the documented object, [#<object>-1]_, so
+# every reference links to the footnote of its own docstring. docutils numbers the footnotes of a
+# page consecutively, so on a module page the numbers shown can differ from those in help().
+# The docstrings themselves are not changed.
+_FOOTNOTE_REFERENCE = re.compile(r"\[(\d+)\]_")
+_FOOTNOTE_DEFINITION = re.compile(r"^(\s*\.\.\s+)\[(\d+)\]")
+
+# Several docstrings list references under "References" that the text does not cite. docutils warns
+# about every such footnote; the warning is about the docstring style, not a broken link, so it is
+# not treated as an error. References without a footnote still fail the build.
+suppress_warnings = ["ref.footnote"]
 
 
-def _footnotes_as_text(lines):
-    """Replace numbered footnotes in docstring lines with plain text.
+def _unique_footnote_labels(object_name, lines):
+    """Give the numbered footnotes in docstring lines labels that are unique to the object.
 
     Parameters
     ----------
+    object_name : str
+        Fully qualified name of the documented object, e.g. 'pvtlib.aga8.AGA8'.
     lines : list of str
         Docstring lines as passed by autodoc.
 
     Returns
     -------
     list of str
-        The lines with each reference ``[1]_`` (or ``[1_]``) replaced by ``[1]``, and each footnote definition
-        ``.. [1] text`` replaced by a list item ``- [1] text`` preceded by a blank line. Indented
-        continuation lines of a definition are re-indented to belong to the list item.
+        The lines with each reference ``[1]_`` replaced by ``[#<label>-1]_`` and each definition
+        ``.. [1]`` by ``.. [#<label>-1]``, where <label> is the object name in lower case with every
+        run of characters other than letters and digits replaced by one hyphen.
     """
+    label = re.sub(r"[^a-z0-9]+", "-", object_name.lower()).strip("-")
     rewritten = []
-    definition_indent = None
     for line in lines:
-        definition = _FOOTNOTE_DEFINITION.match(line)
-        if definition:
-            definition_indent = definition["indent"]
-            rewritten += ["", f"{definition_indent}- [{definition['number']}] {definition['text']}".rstrip()]
-            continue
-        line_indent = len(line) - len(line.lstrip())
-        if definition_indent is not None and line.strip():
-            if line_indent > len(definition_indent):
-                rewritten.append(f"{definition_indent}  {line.strip()}")
-                continue
-            definition_indent = None
-        rewritten.append(_FOOTNOTE_REFERENCE.sub(r"[\1]", line))
+        line = _FOOTNOTE_DEFINITION.sub(lambda match: f"{match[1]}[#{label}-{match[2]}]", line)
+        line = _FOOTNOTE_REFERENCE.sub(lambda match: f"[#{label}-{match[1]}]_", line)
+        rewritten.append(line)
     return rewritten
 
 
 def _on_autodoc_process_docstring(app, what, name, obj, options, lines):
-    lines[:] = _footnotes_as_text(lines)
+    lines[:] = _unique_footnote_labels(name, lines)
 
 
 # --- Markdown and notebooks ----------------------------------------------------------------------

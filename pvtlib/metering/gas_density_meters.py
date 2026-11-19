@@ -187,9 +187,9 @@ def GDM_VOScorr_dens(DT, K3, K4, G, t , A = 0.00236):
 def GDM_SOScorr_dens(rho, tau, c_cal, c_gas, K=2.1e4):
     '''
     Speed of sound density correction. The correction is performed to take into account the difference in properties between the calibration gas and the actual process gas.
-    The correction factor is given by equation E7 in the Installation and Maintenance Manual for Micro Motion 7812 (P/N MMI-20018377, Rev. AC April 2012) [1_]. 
-    The equation originates from "Velocity of Sound Effect on Gas Density Transducers - The theory, measurement results and methods of correction", by Stansfeld, J W (NSFMW 1986) [2_].
-    The same equation is also available in ISO 15970:2014 [3_], at a slighly different format. 
+    The correction factor is given by equation E7 in the Installation and Maintenance Manual for Micro Motion 7812 (P/N MMI-20018377, Rev. AC April 2012) [1]_. 
+    The equation originates from "Velocity of Sound Effect on Gas Density Transducers - The theory, measurement results and methods of correction", by Stansfeld, J W (NSFMW 1986) [2]_.
+    The same equation is also available in ISO 15970:2014 [3]_, at a slighly different format. 
 
     Parameters
     ----------
@@ -200,7 +200,7 @@ def GDM_SOScorr_dens(rho, tau, c_cal, c_gas, K=2.1e4):
     c_cal : float
         Speed of sound of calibration gas [m/s]
         The conditions of this values are not specified in the manual, however, after checking with both Micro Motion and Kiwa, and they both say that they believe the following:
-        The speed of sound of the calibration gas should be given at the same density condition (or time period) as during calibration, according to ISO 15970 [3_].
+        The speed of sound of the calibration gas should be given at the same density condition (or time period) as during calibration, according to ISO 15970 [3]_.
     c_gas : float
         Speed of sound of measured gas [m/s] at measured conditions (also confirmed by vendor).
     K : float, optional

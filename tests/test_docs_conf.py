@@ -194,40 +194,30 @@ def test_external_anchor_missing_and_outside_links_are_unchanged():
 
 # --- Footnotes in docstrings -----------------------------------------------------------------------
 
-def test_footnote_references_and_definitions_become_text():
+def test_footnotes_get_labels_unique_to_the_object():
     lines = [
-        "Calculated according to ISO 5167-4:2022 [1]_ and [2_].",
-        "",
-        ".. rubric:: References",
+        "Calculated according to ISO 5167-4:2022 [1]_ and [2]_.",
         "",
         ".. [1] ISO 5167-4:2022",
         ".. [2] A paper whose title",
         "   continues on the next line",
-        "",
-        "Text after the references [1]_.",
     ]
     expected = [
-        "Calculated according to ISO 5167-4:2022 [1] and [2].",
+        "Calculated according to ISO 5167-4:2022 [#pvtlib-metering-calc-1]_ and [#pvtlib-metering-calc-2]_.",
         "",
-        ".. rubric:: References",
-        "",
-        "",
-        "- [1] ISO 5167-4:2022",
-        "",
-        "- [2] A paper whose title",
-        "  continues on the next line",
-        "",
-        "Text after the references [1].",
+        ".. [#pvtlib-metering-calc-1] ISO 5167-4:2022",
+        ".. [#pvtlib-metering-calc-2] A paper whose title",
+        "   continues on the next line",
     ]
-    assert docs_conf._footnotes_as_text(lines) == expected
+    assert docs_conf._unique_footnote_labels("pvtlib.metering.calc", lines) == expected
 
 
-def test_indented_footnote_definition_keeps_its_indent():
-    lines = ["    .. [1] Reference", "        continued", "    Next paragraph"]
-    expected = ["", "    - [1] Reference", "      continued", "    Next paragraph"]
-    assert docs_conf._footnotes_as_text(lines) == expected
+def test_footnote_label_of_method_with_mixed_case_name():
+    lines = ["    .. [1] Reference", "Text [1]_"]
+    expected = ["    .. [#pvtlib-aga8-aga8-mix-1] Reference", "Text [#pvtlib-aga8-aga8-mix-1]_"]
+    assert docs_conf._unique_footnote_labels("pvtlib.aga8.AGA8.mix", lines) == expected
 
 
 def test_lines_without_footnotes_are_unchanged():
-    lines = ["Pressure [bara] and list item [a]", "", "x = y[1]"]
-    assert docs_conf._footnotes_as_text(lines) == lines
+    lines = ["Pressure [bara] and list item [a]", "", "x = y[1]", "link_ and [1] without underscore"]
+    assert docs_conf._unique_footnote_labels("pvtlib.x", lines) == lines
