@@ -1,0 +1,12 @@
+# Keeps the GitHub Actions used by the workflows up to date. The actions are pinned to full commit
+# SHAs with the version in a comment; Dependabot updates both together in one grouped pull request.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      github-actions:
+        patterns:
+          - "*"

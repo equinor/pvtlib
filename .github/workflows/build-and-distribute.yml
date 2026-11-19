@@ -1,67 +1,112 @@
+# Publishes pvtlib to PyPI when a GitHub release is published. See docs/releasing.md.
+#
+# The owner sets the version in pyproject.toml, merges that to main and publishes a GitHub release
+# whose tag is that version (for example 1.17.0). This workflow then runs on the tagged commit:
+#   1. validate - the version in pyproject.toml must equal the release tag (a leading "v" is ignored).
+#   2. test     - the full test workflow, tests.yml. Its "package" job builds the sdist and the wheel
+#                 once, installs each in a clean virtual environment and runs the test suite against
+#                 the installed package, and keeps exactly those files as the artifact "dist".
+#   3. check    - the artifact holds exactly pvtlib-<version>.tar.gz and pvtlib-<version>-py3-none-any.whl.
+#   4. upload   - uploads those tested files to PyPI with twine. Nothing is rebuilt. This is the only
+#                 job that can read the PyPI token.
+
 name: Build and Distribute
 
 on:
   release:
     types: [published]
 
-permissions: 
+permissions:
   contents: read
+
+# One release at a time, and never cancel a release that is already running.
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
   validate:
     runs-on: ubuntu-latest
-    
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
       with:
-        python-version: '3.11'
+        python-version: '3.13'
 
     - name: Validate version match
+      id: version
+      env:
+        RELEASE_TAG: ${{ github.event.release.tag_name }}
       run: |
         SETUP_VERSION=$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
-        RELEASE_VERSION=${{ github.event.release.tag_name }}
-        RELEASE_VERSION=${RELEASE_VERSION#v}
-        
+        RELEASE_VERSION=${RELEASE_TAG#v}
+
         echo "pyproject.toml version: $SETUP_VERSION"
         echo "GitHub release version: $RELEASE_VERSION"
-        
+
         if [ "$SETUP_VERSION" != "$RELEASE_VERSION" ]; then
-          echo "❌ ERROR: Version mismatch!"
-          echo "pyproject.toml version ($SETUP_VERSION) does not match GitHub release tag ($RELEASE_VERSION)"
+          echo "::error::Version mismatch: pyproject.toml version ($SETUP_VERSION) does not match GitHub release tag ($RELEASE_VERSION)"
           exit 1
         fi
-        echo "✓ Version check passed!"
+        echo "Version check passed"
+        echo "version=${SETUP_VERSION}" >> "${GITHUB_OUTPUT}"
 
-  build:
-    runs-on: ubuntu-latest
+  test:
     needs: validate
+    uses: ./.github/workflows/tests.yml
+
+  check:
+    needs: [validate, test]
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.validate.outputs.version }}
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up Python
-      uses: actions/setup-python@v4
+    - name: Fetch the tested files
+      uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
       with:
-        python-version: '3.11'
-
-    - name: Install dependencies
+        name: dist
+        path: dist/
+    - name: Check the files carry the release version
       run: |
-        python -m pip install --upgrade pip
-        pip install build
+        set -euo pipefail
+        expected=$(printf '%s\n' "pvtlib-${VERSION}-py3-none-any.whl" "pvtlib-${VERSION}.tar.gz" | sort)
+        found=$(ls dist | sort)
+        echo "${found}"
+        if [ "${found}" != "${expected}" ]; then
+          echo "::error::Expected exactly these files in the artifact: ${expected}"
+          exit 1
+        fi
+        echo '```' >> "${GITHUB_STEP_SUMMARY}"
+        (cd dist && sha256sum *) | tee -a "${GITHUB_STEP_SUMMARY}"
+        echo '```' >> "${GITHUB_STEP_SUMMARY}"
 
-    - name: Build package
-      run: |
-        python -m build
+  upload:
+    needs: check
+    runs-on: ubuntu-latest
 
+    steps:
+    - name: Fetch the tested files
+      uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      with:
+        name: dist
+        path: dist/
+    - name: Set up Python
+      uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+      with:
+        python-version: '3.13'
     - name: Publish package to PyPI
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
       run: |
         python -m pip install --upgrade twine
-        twine upload dist/*
+        twine upload --non-interactive dist/*
