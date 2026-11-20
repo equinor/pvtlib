@@ -55,19 +55,18 @@ when it is installed; after pulling new commits or tags, run `pip install -e .` 
       copy of `tests/` outside the checkout, with a check inside the pytest session that `pvtlib`
       is imported from that environment). Exactly those files are kept, with their SHA-256 in a
       manifest.
-   4. **tag** - waits for approval in the environment `release`, then creates the tag at the
-      tested commit.
-   5. **publish** - waits for approval in the environment `pypi`, checks the files against the
-      manifest and the tag, uploads them to PyPI with
+   4. **publish** - waits for approval in the environment `pypi` (the only approval in the run).
+      It checks the files against the manifest and what PyPI already has, creates the tag at the
+      tested commit, uploads the files to PyPI with
       [Trusted Publishing](https://docs.pypi.org/trusted-publishers/) (no token; PyPI also stores
       a signed attestation of where each file was built), and then checks that PyPI holds exactly
       those files with the same SHA-256.
-   6. **github-release** - creates the GitHub release for the tag, with notes generated from the
+   5. **github-release** - creates the GitHub release for the tag, with notes generated from the
       merged pull requests and the same files attached.
 4. Edit the release notes on GitHub if the effect on calculated results needs explaining.
 
-Nothing is rebuilt between testing and publishing. If anything fails before the `tag` job, nothing
-is published and a new run can simply be started.
+Nothing is rebuilt between testing and publishing. If anything fails before the `publish` job, or
+in it before the tag is created, nothing is published and a new run can simply be started.
 
 ## When a release run fails
 
@@ -88,13 +87,13 @@ is published and a new run can simply be started.
 
 These are settings made once by a repository administrator.
 
-- **Environments** - *Settings → Environments*: create `release` and `pypi`. For each, add
-  *Required reviewers* and under *Deployment branches and tags* choose *Selected branches and
-  tags* with only `main`. Without reviewers, the workflow does not wait for approval.
+- **Environment** - *Settings → Environments*: create `pypi`, add *Required reviewers*, and under
+  *Deployment branches and tags* choose *Selected branches and tags* with only `main`. Without
+  reviewers, the workflow does not wait for approval before tagging and publishing.
 - **Trusted publisher** - on pypi.org, *pvtlib → Manage → Publishing*: add a GitHub trusted
   publisher with owner `equinor`, repository `pvtlib`, workflow `release.yml` and environment
   `pypi`. No PyPI token is stored in the repository.
-- **Protect release tags** - *Settings → Rules → Rulesets → New tag ruleset*, target
+- **Protect release tags** (optional) - *Settings → Rules → Rulesets → New tag ruleset*, target
   `refs/tags/[0-9]*`, with *Restrict updates* and *Restrict deletions*, so a published tag cannot
   be moved or removed. Do not enable *Restrict creations* unless the workflow is allowed to bypass
   it, as the workflow creates the tag.
