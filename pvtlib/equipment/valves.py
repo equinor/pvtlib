@@ -25,7 +25,7 @@ import math
 import numpy as np
 
 def Kv(Q, SG, dP):
-    '''
+    r'''
     Kv is the flow factor (expressed in m3/h), and is the metric equivalent of Cv (flow coefficient of a device).
     
     Kv is proportional to the Cv.         

@@ -1,0 +1,231 @@
+# Runs the checks for pvtlib on every pull request, every push to main, every night and when the
+# release workflow (release.yml) calls it before anything is published.
+#
+# Jobs:
+#   test      - flake8 and the test suite on Ubuntu (Python 3.10-3.14) and Windows (3.10, 3.14).
+#   package   - builds the sdist and the wheel once, checks them with twine and inspects their
+#               content, then installs each of them in a clean virtual environment and runs the
+#               test suite against the installed package (tools/test_installed_distributions.sh).
+#               The files are kept as the artifact "dist" for inspection; they carry a development
+#               version (for example 1.16.2.dev3+g1a2b3c4) and are never published. The release
+#               workflow builds and tests its own files after tagging the commit.
+#   examples  - runs every example script and notebook in examples/ headless on Ubuntu and Windows,
+#               from a copy outside the checkout, so nothing is written back to the repository.
+#   coverage  - the test suite with coverage; coverage.xml is kept as an artifact.
+#
+# The version comes from the git tags (setuptools-scm), so every checkout that installs or builds
+# pvtlib fetches the full history and the tags (fetch-depth: 0).
+
+name: Tests
+
+on:
+  pull_request:
+    branches: [ "main" ]
+  push:
+    branches: [ "main" ]
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test (${{ matrix.os }}, Python ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        include:
+          - os: windows-latest
+            python-version: "3.10"
+          - os: windows-latest
+            python-version: "3.14"
+
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install flake8
+        python -m pip install .[test]
+    - name: Lint with flake8
+      run: |
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    - name: Test with pytest
+      run: |
+        pytest
+
+  package:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - name: Set up Python
+      uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+      with:
+        python-version: '3.13'
+    - name: Build the sdist and the wheel
+      run: |
+        python -m pip install --upgrade pip build twine
+        python -m build
+        ls -l dist
+    - name: Check the metadata with twine
+      run: |
+        twine check --strict dist/*
+    - name: Inspect the content of the sdist and the wheel
+      # Every module in pvtlib/ and the _version.py written by setuptools-scm must be in both files,
+      # with the license. Nothing else may be in the wheel. The two files must carry the same
+      # version, and the wheel metadata must agree with it.
+      run: |
+        python - <<'PY'
+        import email
+        import pathlib
+        import re
+        import tarfile
+        import tomllib
+        import zipfile
+
+        project = tomllib.loads(pathlib.Path("pyproject.toml").read_text(encoding="utf-8"))["project"]
+        sdists = sorted(pathlib.Path("dist").glob("*.tar.gz"))
+        wheels = sorted(pathlib.Path("dist").glob("*.whl"))
+        assert len(sdists) == 1 and len(wheels) == 1, (sdists, wheels)
+        match = re.fullmatch(r"pvtlib-(.+)-py3-none-any\.whl", wheels[0].name)
+        assert match, wheels[0].name
+        version = match.group(1)
+        assert sdists[0].name == f"pvtlib-{version}.tar.gz", (sdists[0].name, version)
+
+        modules = sorted(p.as_posix() for p in pathlib.Path("pvtlib").rglob("*.py") if p.name != "_version.py")
+        modules.append("pvtlib/_version.py")
+        dist_info = f"pvtlib-{version}.dist-info"
+        expected_wheel = set(modules) | {f"{dist_info}/{name}" for name in
+                                         ["METADATA", "WHEEL", "RECORD", "top_level.txt", "licenses/LICENSE"]}
+        wheel_names = set(zipfile.ZipFile(wheels[0]).namelist())
+        assert wheel_names == expected_wheel, (f"missing {sorted(expected_wheel - wheel_names)}, "
+                                               f"unexpected {sorted(wheel_names - expected_wheel)}")
+
+        metadata = email.message_from_bytes(zipfile.ZipFile(wheels[0]).read(f"{dist_info}/METADATA"))
+        assert metadata["Version"] == version, metadata["Version"]
+        assert metadata["License-Expression"] == "MIT", metadata["License-Expression"]
+        assert metadata["Requires-Python"] == project["requires-python"], metadata["Requires-Python"]
+        version_file = zipfile.ZipFile(wheels[0]).read("pvtlib/_version.py").decode("utf-8")
+        assert f"__version__ = version = '{version}'" in version_file, version_file
+
+        sdist_root = f"pvtlib-{version}"
+        sdist_names = set(tarfile.open(sdists[0]).getnames())
+        required_in_sdist = {f"{sdist_root}/{name}" for name in
+                             modules + ["LICENSE", "README.md", "pyproject.toml", "PKG-INFO"]}
+        missing = sorted(required_in_sdist - sdist_names)
+        assert not missing, f"missing from the sdist: {missing}"
+        print(f"OK - {len(modules)} modules, LICENSE and version {version} in {wheels[0].name} and {sdists[0].name}")
+        PY
+    - name: Test the installed wheel and sdist in clean environments
+      run: |
+        bash tools/test_installed_distributions.sh dist "${RUNNER_TEMP}"
+    - name: Keep the tested files
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: dist
+        path: dist/
+        if-no-files-found: error
+        retention-days: 7
+
+  examples:
+    # Also on Windows, where the output of a script run in CI goes to a pipe and is encoded with
+    # the Windows code page (not UTF-8), as when a user redirects it to a file.
+    name: examples (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    defaults:
+      run:
+        shell: bash
+    env:
+      MPLBACKEND: Agg
+
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - name: Set up Python
+      uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+      with:
+        python-version: '3.13'
+    - name: Install pvtlib and the packages the examples need
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install .[examples]
+        python -c "import sys; print('stdout encoding when redirected:', sys.stdout.encoding)"
+    - name: Run every example script and notebook
+      # From a copy outside the checkout, as some examples write output files next to themselves.
+      # Executed notebooks are written to the copy, never back to examples/.
+      run: |
+        set -euo pipefail
+        cp -r examples "${RUNNER_TEMP}/examples"
+        cd "${RUNNER_TEMP}/examples"
+        count=0
+        while IFS= read -r -d '' script; do
+          echo "::group::${script}"
+          (cd "$(dirname "${script}")" && timeout 600 python "$(basename "${script}")")
+          echo "::endgroup::"
+          count=$((count + 1))
+        done < <(find . -name '*.py' -print0 | sort -z)
+        while IFS= read -r -d '' notebook; do
+          echo "::group::${notebook}"
+          timeout 900 jupyter nbconvert --to notebook --execute --ExecutePreprocessor.timeout=600 \
+            --output "$(basename "${notebook}" .ipynb).executed.ipynb" "${notebook}"
+          echo "::endgroup::"
+          count=$((count + 1))
+        done < <(find . -name '*.ipynb' ! -name '*.executed.ipynb' -print0 | sort -z)
+        echo "Ran ${count} examples"
+        test "${count}" -gt 0
+    - name: Check nothing was written to the checkout
+      run: |
+        git status --porcelain
+        test -z "$(git status --porcelain)"
+
+  coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - name: Set up Python
+      uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+      with:
+        python-version: '3.13'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install .[test] pytest-cov
+    - name: Run pytest with coverage
+      run: |
+        pytest --cov=pvtlib --cov-report=term --cov-report=xml
+    - name: Keep coverage.xml
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: coverage-xml
+        path: coverage.xml
+        retention-days: 14

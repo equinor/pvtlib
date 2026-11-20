@@ -41,13 +41,15 @@ properties = gerg.calculate_from_PT(composition, pressure, temperature)
 
 ## Workflows
 
-**python-package-run-tests.yml**: Runs pytest on push/PR for Python 3.9-3.13
+**tests.yml**: Runs on PRs, pushes to main, nightly, and when called by the release workflow. Jobs: `test` (flake8 + pytest on Ubuntu with Python 3.10-3.14 and on Windows with 3.10 and 3.14), `package` (builds sdist and wheel once, `twine check --strict`, inspects their content, installs each in a clean venv and runs the tests from a copy outside the checkout with `PVTLIB_TEST_INSTALLED_PACKAGE=1` via `tools/test_installed_distributions.sh`; keeps the files, which carry a development version, as artifact `dist` - never published), `examples` (runs every example script and notebook headless) and `coverage`. Checkouts use `fetch-depth: 0` because the version is read from the git tags
 
-**validate-version.yml**: Validates `pyproject.toml` version - runs on releases (fails if mismatch), push/PR (warns only)
+**docs.yml**: Builds the Sphinx documentation site with warnings as errors on PRs; publishes it to GitHub Pages (https://equinor.github.io/pvtlib/) from main
 
-**build-and-distribute-test.yml**: Tests the build & distribution process on pre-releases (validates version, builds package, runs `twine check` - does NOT publish to PyPI)
+**release.yml**: Started by hand only (Actions -> Release -> Run workflow on `main`, input `bump` = patch/minor/major). Jobs: `prepare` (main only, next version from the tags with `tools/release_version.py`, fails if the tag or the PyPI version exists), `test` (calls `tests.yml`), `build` (tags the commit locally, builds sdist + wheel once, checks the version, installs and tests both; artifacts `release-dist` and `release-manifest` with SHA256SUMS), `publish` (environment `pypi`, the only approval; permissions `contents: write` + `id-token: write`, no checkout; verifies the artifacts and PyPI state, creates the tag via the API, uploads with Trusted Publishing - no token - and verifies PyPI holds exactly the manifest files) and `github-release`. No workflow uses a repository secret
 
-**build-and-distribute.yml**: Production release - waits for version validation, then publishes to PyPI on full releases
+All actions are pinned to full commit SHAs; Dependabot (`.github/dependabot.yml`) keeps them up to date.
 
 ## Releases
-**CRITICAL**: Update `pyproject.toml` version before creating GitHub releases - workflows validate version match before PyPI publish
+**CRITICAL**: Never write a version in `pyproject.toml` or the code, and never create, move or delete release tags by hand. The version comes from the git tag `MAJOR.MINOR.PATCH` (no prefix) via setuptools-scm, which writes the untracked `pvtlib/_version.py`; `pvtlib.__version__` reads it (`0+unknown` if never installed). Releases are made only with `release.yml`. A change to calculated results is at least a MINOR release. If a release run fails, use "Re-run failed jobs" in the same run - never start a new run for a version that already has files on PyPI. See `docs/releasing.md`.
+
+Supported Python versions: 3.10-3.14 (`requires-python = ">=3.10"`).

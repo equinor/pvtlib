@@ -1,27 +1,27 @@
 [build-system]
-requires = ["setuptools>=64", "wheel"]
+requires = ["setuptools>=77", "setuptools-scm>=8"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "pvtlib"
-version = "1.16.1"
+# The version is taken from the git tag (for example 1.17.0) by setuptools-scm; see docs/releasing.md.
+dynamic = ["version"]
 authors = [
     {name = "Christian Hågenvik", email = "chaagen2013@gmail.com"},
 ]
 description = "A library containing various tools in the categories of thermodynamics, fluid mechanics, metering etc."
 readme = "README.md"
-license = {text = "MIT"}
-requires-python = ">=3.9"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
 keywords = ["thermodynamics", "fluid-mechanics", "metering", "aga8"]
 classifiers = [
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
 dependencies = [
@@ -30,8 +30,32 @@ dependencies = [
     "pyaga8>=0.1.18",
 ]
 
+[project.optional-dependencies]
+# Runs the test suite in tests/.
+test = [
+    "pytest>=7.0",
+]
+# Extra packages the scripts and notebooks in examples/ need, including the notebook runner.
+examples = [
+    "matplotlib",
+    "pandas",
+    "nbconvert",
+    "ipykernel",
+]
+# Builds the documentation site; see docs/conf.py.
+docs = [
+    "sphinx>=7.3",
+    "myst-nb>=1.1",
+    "furo>=2024.1.29",
+]
+
 [project.urls]
 Homepage = "https://github.com/equinor/pvtlib"
+Documentation = "https://equinor.github.io/pvtlib/"
+
+[tool.setuptools_scm]
+# Written at build and install time, never committed. pvtlib.__version__ reads it.
+version_file = "pvtlib/_version.py"
 
 [tool.setuptools.packages.find]
 include = ["pvtlib*"]

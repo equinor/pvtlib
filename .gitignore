@@ -26,6 +26,9 @@ share/python-wheels/
 *.egg
 MANIFEST
 
+# Written by setuptools-scm at build and install time (see pyproject.toml)
+pvtlib/_version.py
+
 # PyInstaller
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
@@ -70,6 +73,8 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+docs/_autosummary/
+docs/_examples/
 
 # PyBuilder
 .pybuilder/

@@ -1,0 +1,12 @@
+# Weekly update check for the GitHub Actions in .github/workflows. Each action is referenced by its
+# commit SHA plus a version comment, and all updates arrive together in a single pull request.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      github-actions:
+        patterns:
+          - "*"

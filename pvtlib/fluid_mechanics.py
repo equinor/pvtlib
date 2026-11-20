@@ -535,7 +535,7 @@ def liquid_holdup_from_density(measured_density, liquid_density, gas_density):
 
 def critical_velocity_for_uniform_wio_dispersion_horizontal(ST_oil_aq, rho_o, rho_aq, Visc_o, D, K1=2.02, G=10):
     '''
-    Calculate critical (minimum) velocity for maintaining a dispersion degree G, based on NFOGM HANDBOOK of Water Fraction Metering [1_].
+    Calculate critical (minimum) velocity for maintaining a dispersion degree G, based on NFOGM HANDBOOK of Water Fraction Metering [1]_.
     
     The value G = 10 gives a concentration ratio 0.9, and is recommended by ISO 3171. This corresponds to ±5 % deviation from the mean concentration and it is in
     practise considered as a homogeneous mixture.
@@ -588,7 +588,7 @@ def critical_velocity_for_uniform_wio_dispersion_horizontal(ST_oil_aq, rho_o, rh
    
 def critical_velocity_for_uniform_wio_dispersion_vertical(beta, ST_oil_aq, rho_o, rho_aq, Visc_o, D, K2=2910):
     '''
-    Calculate the critical (minimum) velocity Vc which is required to maintain a homogeneous flow in a vertical, or inclined pipe, based on NFOGM HANDBOOK of Water Fraction Metering [1_].
+    Calculate the critical (minimum) velocity Vc which is required to maintain a homogeneous flow in a vertical, or inclined pipe, based on NFOGM HANDBOOK of Water Fraction Metering [1]_.
     The numerical constant K2 depends on the unit system being used and the default K2 corresponds to SI units, which is being used in this function.
     The function will also work for field SI units (K2 = 550), but the units will no longer be valid. 
 

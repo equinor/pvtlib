@@ -90,7 +90,7 @@ def _calculate_flow_DP_meter(C, D, d, epsilon, dP, rho1):
 def calculate_flow_venturi(D, d, dP, rho1, C=None, epsilon=None, check_input=False):
     '''
     Calculate the flow rates (mass flow, volume flow, and velocity) through a Venturi meter.
-    Calculations performed according to ISO 5167-4:2022 [1_]. 
+    Calculations performed according to ISO 5167-4:2022 [1]_. 
 
     If discharge coefficient is not provided, the function uses the value of 0.984 given in ISO 5167-4:2022 for "as cast" Venturi tubes. 
 
@@ -742,7 +742,7 @@ def calculate_C_orifice_ReaderHarrisGallagher(D, beta, Re, tapping='corner', che
 
 def calculate_C_wetgas_venturi_ReaderHarrisGraham(Fr_gas_th, X):
     """
-    Calculate the discharge coefficient correction for wet-gas Venturi flow meters using the Reader-Harris/Graham correlation [1_].
+    Calculate the discharge coefficient correction for wet-gas Venturi flow meters using the Reader-Harris/Graham correlation [1]_.
 
     Parameters
     ----------
@@ -774,7 +774,7 @@ def calculate_C_wetgas_venturi_ReaderHarrisGraham(Fr_gas_th, X):
 def calculate_flow_wetgas_venturi_ReaderHarrisGraham(
     D, d, P1, dP, rho_g, rho_l, GMF=None, GVF=None, H=1, epsilon=None, kappa=None, check_input=False):
     """
-    Calculate flowrates for a standard venturi meter in wet-gas conditions using the Reader-Harris/Graham correlation [1_], described in ISO/TR 11583:2012 [2_].
+    Calculate flowrates for a standard venturi meter in wet-gas conditions using the Reader-Harris/Graham correlation [1]_, described in ISO/TR 11583:2012 [2]_.
     
     The function uses an iterative approach to solve for the corrected gas mass flow rate. It calculates initial flow rates, 
     then iteratively updates the Lockhart-Martinelli parameter, Froude numbers, discharge coefficient, and over-read factor 

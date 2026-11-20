@@ -39,6 +39,12 @@ from pvtlib.metering.gas_density_meters import (
     GDM_SOScorr_dens,
 )
 from pvtlib import AGA8
+import sys
+
+# The output contains the Greek letter μ (in μs), which the default Windows code page cannot
+# encode when the output is redirected to a file or pipe. Writing UTF-8 makes the script run the
+# same everywhere.
+sys.stdout.reconfigure(encoding="utf-8")
 
 print("="*70)
 print("Gas Density Meter Correction Example")

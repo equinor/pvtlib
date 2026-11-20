@@ -2,7 +2,8 @@
 
 [![PyPI version](https://img.shields.io/pypi/v/pvtlib)](https://pypi.org/project/pvtlib/)
 [![Python versions](https://img.shields.io/pypi/pyversions/pvtlib)](https://pypi.org/project/pvtlib/)
-[![Tests](https://github.com/equinor/pvtlib/actions/workflows/python-package-run-tests.yml/badge.svg)](https://github.com/equinor/pvtlib/actions/workflows/python-package-run-tests.yml)
+[![Tests](https://github.com/equinor/pvtlib/actions/workflows/tests.yml/badge.svg)](https://github.com/equinor/pvtlib/actions/workflows/tests.yml)
+[![Documentation](https://github.com/equinor/pvtlib/actions/workflows/docs.yml/badge.svg)](https://equinor.github.io/pvtlib/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 `pvtlib` is a Python library that provides various tools in the categories of thermodynamics, fluid mechanics, metering and various process equipment. The library includes functions for calculating flow rates, gas properties, and other related calculations.
@@ -14,6 +15,11 @@ You can install the library using `pip`:
 ```sh
 pip install pvtlib
 ```
+
+A specific release can be installed by its version, for example `pip install pvtlib==1.16.1`.
+`pvtlib.__version__` reports the installed version. Releases are listed at
+https://github.com/equinor/pvtlib/releases; see [releasing](docs/releasing.md) for how versions are
+numbered and made.
 
 ## Usage
 
@@ -28,6 +34,8 @@ print(result)
 ```
 
 More examples are provided in the examples folder: https://github.com/equinor/pvtlib/tree/main/examples
+
+The documentation, with the examples and the API reference, is at https://equinor.github.io/pvtlib/.
 
 ## Features
 
@@ -50,10 +58,10 @@ This library is used for analyzing large amounts of data, as well as in live app
 
 ## Running Tests
 
-Tests are located in the `tests/` folder and use [pytest](https://docs.pytest.org/). Install it before running:
+Tests are located in the `tests/` folder and use [pytest](https://docs.pytest.org/). Install pvtlib from a git clone of the repository (with its tags, as the version is read from them) with the `test` extra before running:
 
 ```sh
-pip install pytest
+pip install -e .[test]
 ```
 
 Then run the tests from the project root:
