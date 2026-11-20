@@ -9,8 +9,10 @@
 #               The files are kept as the artifact "dist" for inspection; they carry a development
 #               version (for example 1.16.2.dev3+g1a2b3c4) and are never published. The release
 #               workflow builds and tests its own files after tagging the commit.
-#   examples  - runs every example script and notebook in examples/ headless on Ubuntu and Windows,
-#               from a copy outside the checkout, so nothing is written back to the repository.
+#   examples  - checks that no tracked file contains a path from a developer's machine
+#               (tools/check_no_local_paths.py), then runs every example script and notebook in
+#               examples/ headless on Ubuntu and Windows, from a copy outside the checkout, so
+#               nothing is written back to the repository.
 #   coverage  - the test suite with coverage; coverage.xml is kept as an artifact.
 #
 # The version comes from the git tags (setuptools-scm), so every checkout that installs or builds
@@ -171,6 +173,11 @@ jobs:
       uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
       with:
         python-version: '3.13'
+    - name: No local paths in tracked files
+      # Stored notebook outputs and tracebacks can carry paths from a developer's machine; this
+      # repository is public. See tools/check_no_local_paths.py.
+      run: |
+        python tools/check_no_local_paths.py
     - name: Install pvtlib and the packages the examples need
       run: |
         python -m pip install --upgrade pip
