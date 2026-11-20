@@ -1,15 +1,20 @@
 # Runs the checks for pvtlib on every pull request, every push to main, every night and when the
-# release workflow (build-and-distribute.yml) calls it before anything is published.
+# release workflow (release.yml) calls it before anything is published.
 #
 # Jobs:
 #   test      - flake8 and the test suite on Ubuntu (Python 3.10-3.14) and Windows (3.10, 3.14).
 #   package   - builds the sdist and the wheel once, checks them with twine and inspects their
 #               content, then installs each of them in a clean virtual environment and runs the
-#               test suite against the installed package. The files are kept as the artifact "dist",
-#               which the release workflow uploads to PyPI unchanged.
+#               test suite against the installed package (tools/test_installed_distributions.sh).
+#               The files are kept as the artifact "dist" for inspection; they carry a development
+#               version (for example 1.16.2.dev3+g1a2b3c4) and are never published. The release
+#               workflow builds and tests its own files after tagging the commit.
 #   examples  - runs every example script and notebook in examples/ headless on Ubuntu and Windows,
 #               from a copy outside the checkout, so nothing is written back to the repository.
 #   coverage  - the test suite with coverage; coverage.xml is kept as an artifact.
+#
+# The version comes from the git tags (setuptools-scm), so every checkout that installs or builds
+# pvtlib fetches the full history and the tags (fetch-depth: 0).
 
 name: Tests
 
@@ -44,6 +49,7 @@ jobs:
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
+        fetch-depth: 0
         persist-credentials: false
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
@@ -70,6 +76,7 @@ jobs:
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
+        fetch-depth: 0
         persist-credentials: false
     - name: Set up Python
       uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
@@ -84,24 +91,29 @@ jobs:
       run: |
         twine check --strict dist/*
     - name: Inspect the content of the sdist and the wheel
-      # Every module in pvtlib/ must be in both files, with the license and the version from
-      # pyproject.toml. Nothing else may be in the wheel.
+      # Every module in pvtlib/ and the _version.py written by setuptools-scm must be in both files,
+      # with the license. Nothing else may be in the wheel. The two files must carry the same
+      # version, and the wheel metadata must agree with it.
       run: |
         python - <<'PY'
         import email
         import pathlib
+        import re
         import tarfile
         import tomllib
         import zipfile
 
         project = tomllib.loads(pathlib.Path("pyproject.toml").read_text(encoding="utf-8"))["project"]
-        version = project["version"]
         sdists = sorted(pathlib.Path("dist").glob("*.tar.gz"))
         wheels = sorted(pathlib.Path("dist").glob("*.whl"))
-        assert [p.name for p in sdists] == [f"pvtlib-{version}.tar.gz"], sdists
-        assert [p.name for p in wheels] == [f"pvtlib-{version}-py3-none-any.whl"], wheels
+        assert len(sdists) == 1 and len(wheels) == 1, (sdists, wheels)
+        match = re.fullmatch(r"pvtlib-(.+)-py3-none-any\.whl", wheels[0].name)
+        assert match, wheels[0].name
+        version = match.group(1)
+        assert sdists[0].name == f"pvtlib-{version}.tar.gz", (sdists[0].name, version)
 
-        modules = sorted(p.as_posix() for p in pathlib.Path("pvtlib").rglob("*.py"))
+        modules = sorted(p.as_posix() for p in pathlib.Path("pvtlib").rglob("*.py") if p.name != "_version.py")
+        modules.append("pvtlib/_version.py")
         dist_info = f"pvtlib-{version}.dist-info"
         expected_wheel = set(modules) | {f"{dist_info}/{name}" for name in
                                          ["METADATA", "WHEEL", "RECORD", "top_level.txt", "licenses/LICENSE"]}
@@ -113,46 +125,20 @@ jobs:
         assert metadata["Version"] == version, metadata["Version"]
         assert metadata["License-Expression"] == "MIT", metadata["License-Expression"]
         assert metadata["Requires-Python"] == project["requires-python"], metadata["Requires-Python"]
+        version_file = zipfile.ZipFile(wheels[0]).read("pvtlib/_version.py").decode("utf-8")
+        assert f"__version__ = version = '{version}'" in version_file, version_file
 
         sdist_root = f"pvtlib-{version}"
         sdist_names = set(tarfile.open(sdists[0]).getnames())
-        required_in_sdist = {f"{sdist_root}/{name}" for name in modules + ["LICENSE", "README.md", "pyproject.toml"]}
+        required_in_sdist = {f"{sdist_root}/{name}" for name in
+                             modules + ["LICENSE", "README.md", "pyproject.toml", "PKG-INFO"]}
         missing = sorted(required_in_sdist - sdist_names)
         assert not missing, f"missing from the sdist: {missing}"
         print(f"OK - {len(modules)} modules, LICENSE and version {version} in {wheels[0].name} and {sdists[0].name}")
         PY
     - name: Test the installed wheel and sdist in clean environments
-      # Each file is installed in its own virtual environment. The tests run from a copy outside
-      # the checkout with --import-mode=importlib, so the pvtlib folder of the checkout is never on
-      # sys.path. PVTLIB_TEST_INSTALLED_PACKAGE=1 makes tests/conftest.py stop the session unless
-      # pvtlib is imported from that environment's site-packages. The sdist is unpacked into a
-      # folder without .git before it is installed.
-      env:
-        PVTLIB_TEST_INSTALLED_PACKAGE: "1"
       run: |
-        set -euo pipefail
-        test_installed() {
-          label="$1"
-          requirement="$2"
-          venv="${RUNNER_TEMP}/venv-${label}"
-          work="${RUNNER_TEMP}/tests-${label}"
-          echo "::group::Test the installed ${label}: ${requirement}"
-          python -m venv "${venv}"
-          "${venv}/bin/python" -m pip install --upgrade pip
-          "${venv}/bin/python" -m pip install "${requirement}"
-          mkdir -p "${work}"
-          cp -r tests docs examples README.md LICENSE "${work}/"
-          (cd "${work}" && "${venv}/bin/python" -m pytest --import-mode=importlib -p no:cacheprovider tests)
-          echo "::endgroup::"
-        }
-        wheel=$(ls "${GITHUB_WORKSPACE}"/dist/*.whl)
-        sdist=$(ls "${GITHUB_WORKSPACE}"/dist/*.tar.gz)
-        test_installed wheel "${wheel}[test]"
-        mkdir -p "${RUNNER_TEMP}/sdist"
-        tar -xzf "${sdist}" -C "${RUNNER_TEMP}/sdist"
-        sdist_dir=$(ls -d "${RUNNER_TEMP}"/sdist/pvtlib-*)
-        test ! -e "${sdist_dir}/.git"
-        test_installed sdist "${sdist_dir}[test]"
+        bash tools/test_installed_distributions.sh dist "${RUNNER_TEMP}"
     - name: Keep the tested files
       uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
@@ -179,6 +165,7 @@ jobs:
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
+        fetch-depth: 0
         persist-credentials: false
     - name: Set up Python
       uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
@@ -223,6 +210,7 @@ jobs:
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
+        fetch-depth: 0
         persist-credentials: false
     - name: Set up Python
       uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0

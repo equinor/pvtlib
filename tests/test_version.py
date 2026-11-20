@@ -23,9 +23,9 @@ SOFTWARE.
 
 """Tests for the package version, pvtlib.__version__.
 
-The version is set by hand in pyproject.toml (see docs/releasing.md). pvtlib.__version__ reads it
-from the metadata of the installed package, so the version a calculation reports is the version
-pip installed.
+The version comes from the git tag through setuptools-scm, which writes it into pvtlib/_version.py
+when the package is built or installed (see docs/releasing.md). These tests check that the version
+the code reports is the version pip installed it as, so a calculation can be traced to a release.
 """
 
 import importlib.metadata
@@ -35,8 +35,8 @@ import pvtlib
 
 def test_version_matches_installed_package_metadata():
     # Fails if the code being tested is not the code that was installed, e.g. a source tree that
-    # was never installed ("0+unknown"), or an older editable install. The fix is to reinstall:
-    # pip install -e .
+    # was never installed ("0+unknown"), or an editable install made before the latest tag or
+    # commit. The fix is to reinstall: pip install -e .
     assert pvtlib.__version__ == importlib.metadata.version("pvtlib")
 
 

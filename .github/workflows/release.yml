@@ -1,0 +1,458 @@
+# Releases pvtlib: a git tag MAJOR.MINOR.PATCH (for example 1.17.0), the files on PyPI and a GitHub
+# release with the same files attached. See docs/releasing.md.
+#
+# Started by hand only - Actions -> Release -> Run workflow, on branch main, choosing which part of
+# the version to increase. Nothing is released by merging or pushing.
+#
+# All jobs work on the one commit the run was started on (github.sha):
+#   1. prepare        - checks the run is on main, works out the version from the existing tags and
+#                       checks that neither the tag nor the version on PyPI exists yet
+#   2. test           - the full test workflow, tests.yml, called directly
+#   3. build          - tags the commit locally (not pushed) so setuptools-scm gives the release
+#                       version, builds the sdist and the wheel once, checks them, installs each in a
+#                       clean virtual environment and runs the test suite against it. Keeps exactly
+#                       those files (artifact "release-dist") and their SHA-256 (artifact
+#                       "release-manifest")
+#   4. tag            - waits for approval (environment "release"), then creates the tag at
+#                       github.sha through the GitHub API
+#   5. publish        - waits for approval (environment "pypi"), then uploads the tested files to
+#                       PyPI with Trusted Publishing (OIDC, no token) and checks PyPI has exactly
+#                       those files
+#   6. github-release - creates the GitHub release for the tag with the same files attached
+#
+# If a job fails, use "Re-run failed jobs" in the same run; never start a new run for a version that
+# already has files on PyPI. A re-run never rebuilds files that were published, and accepts a tag or
+# PyPI files from an earlier attempt of the same run only if they match exactly.
+#
+# Tags and releases created with GITHUB_TOKEN do not start other workflows, which is why the tests
+# are called from here before anything is published.
+#
+# One-time setup (see docs/releasing.md): environments "release" and "pypi" with required reviewers
+# and deployment branch main only, and a trusted publisher on pypi.org for this workflow file and
+# the environment "pypi".
+
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Part of the version to increase (patch, minor or major). See docs/releasing.md."
+        required: true
+        type: choice
+        options:
+        - patch
+        - minor
+        - major
+
+permissions:
+  contents: read
+
+# One release at a time, and never cancel a release that is already running.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+    - name: Only release from main, and only in the first attempt
+      # A later attempt of this job would work out the version from tags that may include the one
+      # this run already created, and so release a different version. "Re-run failed jobs" does not
+      # run this job again once it has succeeded.
+      env:
+        RUN_ATTEMPT: ${{ github.run_attempt }}
+      run: |
+        if [ "${GITHUB_REF}" != "refs/heads/main" ]; then
+          echo "::error::Releases are made from main only. This run is on ${GITHUB_REF}."
+          exit 1
+        fi
+        if [ "${RUN_ATTEMPT}" != "1" ]; then
+          echo "::error::The prepare job runs only in the first attempt. Use \"Re-run failed jobs\", or start a new run if nothing was published."
+          exit 1
+        fi
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - name: Set up Python
+      uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+      with:
+        python-version: '3.13'
+    - name: Work out the release version
+      id: version
+      env:
+        BUMP: ${{ inputs.bump }}
+      run: |
+        set -euo pipefail
+        version=$(git tag --list | python tools/release_version.py --bump "${BUMP}")
+        if ! [[ "${version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "::error::Unexpected version '${version}'."
+          exit 1
+        fi
+        if git rev-parse --quiet --verify "refs/tags/${version}" > /dev/null; then
+          echo "::error::Tag ${version} already exists."
+          exit 1
+        fi
+        if [ -n "$(git ls-remote --tags origin "refs/tags/${version}")" ]; then
+          echo "::error::Tag ${version} already exists on GitHub."
+          exit 1
+        fi
+        status=$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
+          "https://pypi.org/pypi/pvtlib/${version}/json")
+        if [ "${status}" != "404" ]; then
+          echo "::error::https://pypi.org/pypi/pvtlib/${version}/json returned HTTP ${status}, expected 404 (version not on PyPI)."
+          exit 1
+        fi
+        echo "version=${version}" >> "${GITHUB_OUTPUT}"
+        echo "Release **${version}** (${BUMP}) from commit \`${GITHUB_SHA}\`" >> "${GITHUB_STEP_SUMMARY}"
+
+  test:
+    needs: prepare
+    uses: ./.github/workflows/tests.yml
+
+  build:
+    needs: [prepare, test]
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
+
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - name: Set up Python
+      uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+      with:
+        python-version: '3.13'
+    - name: Tag the commit locally
+      # Not pushed. setuptools-scm reads the version from this tag exactly as it will from the
+      # published one. The working tree must be clean, or setuptools-scm adds a local suffix.
+      run: |
+        set -euo pipefail
+        test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+        test -z "$(git status --porcelain)"
+        git tag "${VERSION}" "${GITHUB_SHA}"
+        git describe --tags --exact-match HEAD
+    - name: Build the sdist and the wheel
+      run: |
+        python -m pip install --upgrade pip build twine
+        python -m build
+        ls -l dist
+    - name: Check the files carry the release version
+      run: |
+        set -euo pipefail
+        expected=$(printf '%s\n' "pvtlib-${VERSION}-py3-none-any.whl" "pvtlib-${VERSION}.tar.gz" | sort)
+        found=$(ls dist | sort)
+        if [ "${found}" != "${expected}" ]; then
+          echo "::error::Expected exactly these files in dist/: ${expected}"
+          exit 1
+        fi
+        python - <<'PY'
+        import email
+        import os
+        import tarfile
+        import zipfile
+
+        version = os.environ["VERSION"]
+        wheel = zipfile.ZipFile(f"dist/pvtlib-{version}-py3-none-any.whl")
+        metadata = email.message_from_bytes(wheel.read(f"pvtlib-{version}.dist-info/METADATA"))
+        assert metadata["Version"] == version, metadata["Version"]
+        version_file = wheel.read("pvtlib/_version.py").decode("utf-8")
+        assert f"__version__ = version = '{version}'" in version_file, version_file
+        with tarfile.open(f"dist/pvtlib-{version}.tar.gz") as sdist:
+            pkg_info = email.message_from_bytes(sdist.extractfile(f"pvtlib-{version}/PKG-INFO").read())
+        assert pkg_info["Version"] == version, pkg_info["Version"]
+        print(f"OK - wheel METADATA, pvtlib/_version.py and sdist PKG-INFO all say {version}")
+        PY
+    - name: Check the metadata with twine
+      run: |
+        twine check --strict dist/*
+    - name: Test the installed wheel and sdist in clean environments
+      run: |
+        mkdir -p "${RUNNER_TEMP}/installed"
+        bash tools/test_installed_distributions.sh dist "${RUNNER_TEMP}/installed" "${VERSION}"
+    - name: Write the manifest
+      run: |
+        set -euo pipefail
+        (cd dist && sha256sum -- *) > SHA256SUMS
+        cat SHA256SUMS
+        {
+          echo '```'
+          cat SHA256SUMS
+          echo '```'
+        } >> "${GITHUB_STEP_SUMMARY}"
+    - name: Keep the tested files
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: release-dist
+        path: dist/
+        if-no-files-found: error
+        retention-days: 90
+    - name: Keep the manifest
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: release-manifest
+        path: SHA256SUMS
+        if-no-files-found: error
+        retention-days: 90
+
+  tag:
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
+      RUN_ATTEMPT: ${{ github.run_attempt }}
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+
+    steps:
+    - name: Create the tag at the tested commit
+      # A lightweight tag, like all earlier pvtlib tags. If it exists already, it is accepted only
+      # when it points at this commit and this is a re-run of this run.
+      run: |
+        set -euo pipefail
+        if ref_json=$(gh api "repos/${GH_REPO}/git/ref/tags/${VERSION}" 2> ref_error.txt); then
+          ref_type=$(jq -r .object.type <<< "${ref_json}")
+          ref_sha=$(jq -r .object.sha <<< "${ref_json}")
+          if [ "${ref_type}" = "commit" ] && [ "${ref_sha}" = "${GITHUB_SHA}" ] && [ "${RUN_ATTEMPT}" -gt 1 ]; then
+            echo "Tag ${VERSION} already points at ${GITHUB_SHA} (made by an earlier attempt of this run)."
+            exit 0
+          fi
+          echo "::error::Tag ${VERSION} already exists (${ref_type} ${ref_sha}, run attempt ${RUN_ATTEMPT}). Nothing is published."
+          exit 1
+        fi
+        if ! grep -q "HTTP 404" ref_error.txt; then
+          cat ref_error.txt
+          echo "::error::Could not check whether tag ${VERSION} exists."
+          exit 1
+        fi
+        gh api --method POST "repos/${GH_REPO}/git/refs" -f "ref=refs/tags/${VERSION}" -f "sha=${GITHUB_SHA}" > /dev/null
+        tagged=$(gh api "repos/${GH_REPO}/git/ref/tags/${VERSION}" --jq .object.sha)
+        if [ "${tagged}" != "${GITHUB_SHA}" ]; then
+          echo "::error::Tag ${VERSION} points at ${tagged}, expected ${GITHUB_SHA}."
+          exit 1
+        fi
+        echo "Created tag ${VERSION} at ${GITHUB_SHA}" | tee -a "${GITHUB_STEP_SUMMARY}"
+
+  publish:
+    needs: [prepare, build, tag]
+    runs-on: ubuntu-latest
+    environment: pypi
+    # Only what Trusted Publishing needs. No checkout and no project code run in this job.
+    permissions:
+      id-token: write
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
+      RUN_ATTEMPT: ${{ github.run_attempt }}
+      REPOSITORY: ${{ github.repository }}
+
+    steps:
+    - name: Fetch the tested files
+      uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      with:
+        name: release-dist
+        path: dist/
+    - name: Fetch the manifest
+      uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      with:
+        name: release-manifest
+        path: manifest/
+    - name: Check the files against the manifest
+      run: |
+        set -euo pipefail
+        expected=$(printf '%s\n' "pvtlib-${VERSION}-py3-none-any.whl" "pvtlib-${VERSION}.tar.gz" | sort)
+        listed=$(awk '{print $2}' manifest/SHA256SUMS | sort)
+        found=$(ls dist | sort)
+        if [ "${listed}" != "${expected}" ] || [ "${found}" != "${expected}" ]; then
+          echo "::error::dist/ (${found}) and the manifest (${listed}) must both be exactly: ${expected}"
+          exit 1
+        fi
+        (cd dist && sha256sum --check --strict ../manifest/SHA256SUMS)
+    - name: Check the tag still points at the tested commit
+      # git ls-remote reads the public repository without a token.
+      run: |
+        set -euo pipefail
+        refs=$(git ls-remote "https://github.com/${REPOSITORY}.git" "refs/tags/${VERSION}" "refs/tags/${VERSION}^{}")
+        echo "${refs}"
+        if [ "${refs}" != "$(printf '%s\trefs/tags/%s' "${GITHUB_SHA}" "${VERSION}")" ]; then
+          echo "::error::Tag ${VERSION} must be a lightweight tag at ${GITHUB_SHA}."
+          exit 1
+        fi
+    - name: Check what is on PyPI already
+      # Normally nothing. Files from an earlier attempt of this run are accepted only if each of
+      # them is in the manifest with the same SHA-256 and PyPI holds provenance for it from this
+      # repository's release.yml and the environment "pypi"; the missing files are then uploaded.
+      id: pypi
+      run: |
+        python3 - <<'PY'
+        import json
+        import os
+        import urllib.error
+        import urllib.parse
+        import urllib.request
+
+        version = os.environ["VERSION"]
+        run_attempt = int(os.environ["RUN_ATTEMPT"])
+        repository = os.environ["REPOSITORY"].lower()
+
+        manifest = {}
+        with open("manifest/SHA256SUMS", encoding="utf-8") as file:
+            for line in file:
+                sha256, name = line.split()
+                manifest[name.lstrip("*")] = sha256
+
+        def get_json(url, accept="application/json"):
+            request = urllib.request.Request(url, headers={"Accept": accept})
+            try:
+                with urllib.request.urlopen(request, timeout=60) as response:
+                    return json.load(response)
+            except urllib.error.HTTPError as error:
+                if error.code == 404:
+                    return None
+                raise
+
+        release = get_json(f"https://pypi.org/pypi/pvtlib/{version}/json")
+        existing = {} if release is None else {f["filename"]: f["digests"]["sha256"] for f in release["urls"]}
+        print("Files for", version, "on PyPI:", existing or "none")
+
+        if existing:
+            if run_attempt < 2:
+                raise SystemExit(f"::error::PyPI already has files for {version}, but this is the first attempt of the run.")
+            for name, sha256 in existing.items():
+                if manifest.get(name) != sha256:
+                    raise SystemExit(f"::error::{name} on PyPI (sha256 {sha256}) is not the tested file "
+                                     f"(manifest: {manifest.get(name)}).")
+                url = f"https://pypi.org/integrity/pvtlib/{version}/{urllib.parse.quote(name)}/provenance"
+                provenance = get_json(url, accept="application/vnd.pypi.integrity.v1+json")
+                if provenance is None:
+                    raise SystemExit(f"::error::{name} on PyPI has no provenance ({url}).")
+                publishers = [bundle.get("publisher") or {} for bundle in provenance.get("attestation_bundles", [])]
+                if not any(p.get("kind") == "GitHub"
+                           and str(p.get("repository", "")).lower() == repository
+                           and p.get("workflow") == "release.yml"
+                           and p.get("environment") == "pypi" for p in publishers):
+                    raise SystemExit(f"::error::{name} on PyPI was not published by {repository} release.yml "
+                                     f"(environment pypi): {publishers}")
+                print(f"{name}: identical to the tested file, published by {repository} release.yml")
+
+        with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+            output.write(f"skip-existing={'true' if existing else 'false'}\n")
+        PY
+    - name: Upload to PyPI
+      uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
+      with:
+        packages-dir: dist/
+        skip-existing: ${{ steps.pypi.outputs.skip-existing }}
+    - name: Check PyPI has exactly the tested files
+      run: |
+        python3 - <<'PY'
+        import json
+        import os
+        import time
+        import urllib.error
+        import urllib.request
+
+        version = os.environ["VERSION"]
+        manifest = {}
+        with open("manifest/SHA256SUMS", encoding="utf-8") as file:
+            for line in file:
+                sha256, name = line.split()
+                manifest[name.lstrip("*")] = sha256
+
+        url = f"https://pypi.org/pypi/pvtlib/{version}/json"
+        on_pypi = None
+        for attempt in range(1, 31):
+            try:
+                with urllib.request.urlopen(urllib.request.Request(url, headers={"Accept": "application/json"}),
+                                            timeout=60) as response:
+                    on_pypi = {f["filename"]: f["digests"]["sha256"] for f in json.load(response)["urls"]}
+            except urllib.error.HTTPError as error:
+                print(f"attempt {attempt}: HTTP {error.code}")
+                on_pypi = None
+            if on_pypi == manifest:
+                print("PyPI has exactly the tested files:")
+                for name, sha256 in sorted(on_pypi.items()):
+                    print(f"  {sha256}  {name}")
+                break
+            print(f"attempt {attempt}: PyPI shows {on_pypi}, waiting")
+            time.sleep(20)
+        else:
+            raise SystemExit(f"::error::PyPI shows {on_pypi} for {version}, expected exactly {manifest}.")
+        PY
+        echo "Published **pvtlib ${VERSION}** - https://pypi.org/project/pvtlib/${VERSION}/" >> "${GITHUB_STEP_SUMMARY}"
+
+  github-release:
+    needs: [prepare, tag, publish]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+
+    steps:
+    - name: Fetch the tested files
+      uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      with:
+        name: release-dist
+        path: dist/
+    - name: Fetch the manifest
+      uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      with:
+        name: release-manifest
+        path: manifest/
+    - name: Check the files against the manifest
+      run: |
+        set -euo pipefail
+        listed=$(awk '{print $2}' manifest/SHA256SUMS | sort)
+        found=$(ls dist | sort)
+        if [ "${found}" != "${listed}" ]; then
+          echo "::error::dist/ (${found}) differs from the manifest (${listed})."
+          exit 1
+        fi
+        (cd dist && sha256sum --check --strict ../manifest/SHA256SUMS)
+    - name: Create the GitHub release, or complete one from an earlier attempt
+      run: |
+        set -euo pipefail
+        if gh release view "${VERSION}" --repo "${GH_REPO}" --json tagName > /dev/null 2> view_error.txt; then
+          echo "Release ${VERSION} exists; checking its assets."
+          mkdir -p existing
+          gh release view "${VERSION}" --repo "${GH_REPO}" --json assets --jq '.assets[].name' > existing_assets.txt
+          while IFS= read -r asset; do
+            [ -z "${asset}" ] && continue
+            expected_sha=$(awk -v name="${asset}" '$2 == name {print $1}' manifest/SHA256SUMS)
+            if [ -z "${expected_sha}" ]; then
+              echo "::error::Release ${VERSION} has an asset ${asset} that is not in the manifest."
+              exit 1
+            fi
+            gh release download "${VERSION}" --repo "${GH_REPO}" --pattern "${asset}" --dir existing --clobber
+            actual_sha=$(sha256sum "existing/${asset}" | awk '{print $1}')
+            if [ "${actual_sha}" != "${expected_sha}" ]; then
+              echo "::error::Asset ${asset} has sha256 ${actual_sha}, expected ${expected_sha}."
+              exit 1
+            fi
+          done < existing_assets.txt
+          for file in dist/*; do
+            name=$(basename "${file}")
+            if ! grep -qxF "${name}" existing_assets.txt; then
+              gh release upload "${VERSION}" --repo "${GH_REPO}" "${file}"
+            fi
+          done
+        elif grep -q "release not found" view_error.txt; then
+          gh release create "${VERSION}" dist/* --repo "${GH_REPO}" --verify-tag --generate-notes --title "${VERSION}"
+        else
+          cat view_error.txt
+          echo "::error::Could not check whether release ${VERSION} exists."
+          exit 1
+        fi
+        echo "GitHub release: https://github.com/${GH_REPO}/releases/tag/${VERSION}" | tee -a "${GITHUB_STEP_SUMMARY}"

@@ -16,6 +16,11 @@ You can install the library using `pip`:
 pip install pvtlib
 ```
 
+A specific release can be installed by its version, for example `pip install pvtlib==1.16.1`.
+`pvtlib.__version__` reports the installed version. Releases are listed at
+https://github.com/equinor/pvtlib/releases; see [releasing](docs/releasing.md) for how versions are
+numbered and made.
+
 ## Usage
 
 Here is an example of how to use the library:
@@ -53,7 +58,7 @@ This library is used for analyzing large amounts of data, as well as in live app
 
 ## Running Tests
 
-Tests are located in the `tests/` folder and use [pytest](https://docs.pytest.org/). Install pvtlib from the repository root with the `test` extra before running:
+Tests are located in the `tests/` folder and use [pytest](https://docs.pytest.org/). Install pvtlib from a git clone of the repository (with its tags, as the version is read from them) with the `test` extra before running:
 
 ```sh
 pip install -e .[test]

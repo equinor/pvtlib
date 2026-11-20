@@ -1,10 +1,11 @@
 [build-system]
-requires = ["setuptools>=77"]
+requires = ["setuptools>=77", "setuptools-scm>=8"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "pvtlib"
-version = "1.16.1"
+# The version is taken from the git tag (for example 1.17.0) by setuptools-scm; see docs/releasing.md.
+dynamic = ["version"]
 authors = [
     {name = "Christian Hågenvik", email = "chaagen2013@gmail.com"},
 ]
@@ -51,6 +52,10 @@ docs = [
 [project.urls]
 Homepage = "https://github.com/equinor/pvtlib"
 Documentation = "https://equinor.github.io/pvtlib/"
+
+[tool.setuptools_scm]
+# Written at build and install time, never committed. pvtlib.__version__ reads it.
+version_file = "pvtlib/_version.py"
 
 [tool.setuptools.packages.find]
 include = ["pvtlib*"]

@@ -1,0 +1,3 @@
+# git fills in .git_archival.txt when a source archive is made (for example the "Source code" zip
+# on a GitHub release), so setuptools-scm can read the version without a .git folder.
+.git_archival.txt  export-subst
